@@ -3189,6 +3189,36 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 
 [[package]]
+name = "sam-terminal"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "base64 0.21.7",
+ "chrono",
+ "csv",
+ "futures-util",
+ "glob",
+ "lazy_static",
+ "libc",
+ "md5",
+ "regex",
+ "reqwest",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "shellexpand",
+ "ssh2",
+ "tauri",
+ "tauri-build",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-tungstenite",
+ "uuid",
+ "warp_core",
+]
+
+[[package]]
 name = "same-file"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4505,36 +4535,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bfa7760aed19e106de2c7c0b581b509f2f25d3dacaf737cb82ac61bc6d760b0e"
 dependencies = [
  "try-lock",
-]
-
-[[package]]
-name = "warp-tauri"
-version = "1.0.0"
-dependencies = [
- "anyhow",
- "base64 0.21.7",
- "chrono",
- "csv",
- "futures-util",
- "glob",
- "lazy_static",
- "libc",
- "md5",
- "regex",
- "reqwest",
- "rusqlite",
- "serde",
- "serde_json",
- "shellexpand",
- "ssh2",
- "tauri",
- "tauri-build",
- "tempfile",
- "thiserror 1.0.69",
- "tokio",
- "tokio-tungstenite",
- "uuid",
- "warp_core",
 ]
 
 [[package]]
