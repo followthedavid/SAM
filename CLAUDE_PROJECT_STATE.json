@@ -1,0 +1,109 @@
+{
+  "project": "Warp_Open",
+  "description": "Open-source Warp-like terminal with AI integration",
+  "last_updated": "2025-12-14T16:00:00Z",
+  "updated_by": "Claude (Opus 4.5)",
+
+  "locations": {
+    "root": "/Users/davidquinton/ReverseLab/Warp_Open",
+    "tauri_app": "/Users/davidquinton/ReverseLab/Warp_Open/warp_tauri",
+    "electron_app": "/Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron",
+    "core_lib": "/Users/davidquinton/ReverseLab/Warp_Open/warp_core",
+    "chatgpt_bridge": "/Users/davidquinton/ReverseLab/Warp_Open/warp_tauri/chatgpt_bridge.cjs"
+  },
+
+  "completion_status": {
+    "overall": "79%",
+    "phase1_pty": "100%",
+    "phase2_session": "100%",
+    "phase3_mvp": "100%",
+    "phase4_tauri_gui": "64%",
+    "phase5_terminal": "50%",
+    "phase6_scheduler": "0%"
+  },
+
+  "working_features": {
+    "core": [
+      "Multi-tab terminal sessions",
+      "Split pane support (scaffolded)",
+      "Session persistence to JSON",
+      "Scrollback buffer (1000+ lines)",
+      "Search functionality (string + regex)",
+      "OSC sequence parsing",
+      "Cross-platform PTY (portable-pty)"
+    ],
+    "ai_integration": [
+      "Ollama local LLM support",
+      "Real-time streaming AI responses",
+      "Shell command execution (/shell prefix)",
+      "File operations abstraction (fsOps.js)",
+      "Directory context tracking (cwdTracker.js)",
+      "Action journal with undo (journalStore.js)",
+      "IPC bridge for AI (ai2-main.js)"
+    ],
+    "ui": [
+      "Vue 3 frontend with xterm.js",
+      "Drag-and-drop tab reordering",
+      "Monaco editor integration",
+      "Theme support (dark/light/system)"
+    ]
+  },
+
+  "in_progress": [
+    "UI polish - tab rendering timing",
+    "Terminal features - OSC sequences",
+    "Theme switching UI",
+    "Clipboard integration",
+    "Split pane functionality"
+  ],
+
+  "not_started": [
+    "Advanced terminal edge cases",
+    "Performance profiling",
+    "Plugin system",
+    "Remote/SSH sessions"
+  ],
+
+  "tech_stack": {
+    "backend": ["Rust", "Tauri", "tokio", "portable-pty", "serde"],
+    "frontend": ["Vue 3", "Vite", "xterm.js", "Monaco Editor"],
+    "ai": ["Anthropic Claude SDK", "Ollama"],
+    "testing": ["Playwright", "cargo test"]
+  },
+
+  "key_commands": {
+    "dev": "cd /Users/davidquinton/ReverseLab/Warp_Open/warp_tauri && npm run tauri:dev",
+    "build": "cd /Users/davidquinton/ReverseLab/Warp_Open/warp_tauri && npm run tauri:build",
+    "test_backend": "cd /Users/davidquinton/ReverseLab/Warp_Open/warp_tauri && npm run tauri:test",
+    "test_ui": "cd /Users/davidquinton/ReverseLab/Warp_Open/warp_tauri && npm run test:ui"
+  },
+
+  "chatgpt_integration": {
+    "bridge_script": "chatgpt_bridge.cjs",
+    "thread_manager": "chatgpt_thread_manager.cjs",
+    "stealth_browser": "chatgpt_web_stealth.cjs",
+    "profile_dir": "~/.chatgpt-stealth-profile-chromium",
+    "capabilities": [
+      "List ChatGPT threads",
+      "Read thread messages",
+      "Send messages to threads",
+      "Watch for approvals",
+      "Execute approved commands"
+    ]
+  },
+
+  "continuation_context": {
+    "chatgpt_thread_id": "69102be8-0f18-832d-a74f-592fac0e565b",
+    "chatgpt_thread_name": "Continuation brief and plan",
+    "phase4_manifest": "~/Desktop/phase4_tasks.json",
+    "startup_script": "~/Desktop/phase4_start.sh"
+  },
+
+  "next_steps": [
+    "1. Connect Claude to ChatGPT threads for context",
+    "2. Allow Claude-ChatGPT conversation for implementation guidance",
+    "3. You approve from phone, commands execute locally",
+    "4. Integrate approval flow into Warp_Open terminal",
+    "5. Eventually run Claude locally via Ollama/local LLM"
+  ]
+}

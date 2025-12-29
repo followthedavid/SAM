@@ -1,0 +1,14 @@
+---
+source: tests/golden_screen_tests.rs
+expression: json_lines
+---
+[
+  {
+    "block_type": "unknown",
+    "content": "user@host:~$ echo test\ntest",
+    "exit_code": null,
+    "id": "[redacted]",
+    "line_count": 2,
+    "type": "block"
+  }
+]

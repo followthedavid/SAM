@@ -1,0 +1,162 @@
+name: Tauri CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-backend:
+    name: Test Rust Backend
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: stable
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Cache cargo index
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Cache cargo build
+      uses: actions/cache@v3
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Run warp_core tests
+      run: |
+        cd warp_core
+        cargo test --lib -- --test-threads=1 --nocapture
+    
+    - name: Run Tauri backend tests
+      run: |
+        cd warp_tauri/src-tauri
+        cargo test -- --test-threads=1 --nocapture
+
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Setup Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+    
+    - name: Build warp_cli
+      run: |
+        cd warp_core
+        cargo build --bin warp_cli --release
+    
+    - name: Run integration tests
+      run: |
+        python3 tests/integration/test_pty_live.py
+
+  build-tauri:
+    name: Build Tauri App
+    needs: [test-backend, test-integration]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: warp_tauri/package-lock.json
+    
+    - name: Setup Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+    
+    - name: Install dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+    
+    - name: Install frontend dependencies
+      run: |
+        cd warp_tauri
+        npm ci
+    
+    - name: Build Tauri app
+      run: |
+        cd warp_tauri
+        npm run tauri build
+    
+    - name: Upload artifacts (macOS)
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: warp-open-macos
+        path: warp_tauri/src-tauri/target/release/bundle/dmg/*.dmg
+    
+    - name: Upload artifacts (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: warp-open-linux
+        path: |
+          warp_tauri/src-tauri/target/release/bundle/deb/*.deb
+          warp_tauri/src-tauri/target/release/bundle/appimage/*.AppImage
+    
+    - name: Upload artifacts (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: warp-open-windows
+        path: warp_tauri/src-tauri/target/release/bundle/msi/*.msi
+
+  release:
+    name: Create Release
+    needs: [build-tauri]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          warp-open-macos/**
+          warp-open-linux/**
+          warp-open-windows/**
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

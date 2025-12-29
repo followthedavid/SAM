@@ -1,0 +1,7 @@
+==> [06_pack_mac] 06_pack_mac
+
+> warp-open-electron@0.1.0 pack:mac
+> electron-packager . Warp_Open --platform=darwin --out=dist --overwrite
+
+Packaging app for platform darwin arm64 using electron v30.5.1
+Wrote new app to: dist/Warp_Open-darwin-arm64

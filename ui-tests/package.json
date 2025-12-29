@@ -1,0 +1,14 @@
+{
+  "name": "warp-ui-tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:ui": "npx playwright test",
+    "test:ui:headed": "npx playwright test --headed",
+    "test:ui:advanced": "npx playwright test tests/replay_advanced.spec.ts",
+    "install-browsers": "npx playwright install --with-deps"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  }
+}

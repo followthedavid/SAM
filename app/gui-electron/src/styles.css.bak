@@ -1,0 +1,68 @@
+html, body { height: 100%; margin: 0; background: #0b0f14; color: #e6edf3; }
+#titlebar {
+  height: 36px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 12px; background: #0f141b; border-bottom: 1px solid #121a22;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+#titlebar .actions button {
+  background: #182230; color: #dbe6f0; border: 1px solid #2a3a4a;
+  padding: 6px 10px; border-radius: 8px; cursor: pointer; margin-left: 6px;
+}
+#titlebar .actions button:hover { background: #1d2a3a; }
+#boot { position: absolute; top: 40px; left: 12px; font-size: 12px; opacity: .7; }
+#terminal { position: absolute; top: 36px; left: 0; right: 0; bottom: 0; }
+
+/* --- Palette overlay --- */
+#palette-root { position: fixed; inset: 0; display: none; z-index: 9999; }
+#palette-root .pal-panel {
+  position: absolute; left: 50%; top: 18%;
+  transform: translateX(-50%);
+  width: min(900px, 92vw);
+  background: rgba(13, 18, 26, 0.9);
+  border: 1px solid #1f2b3a;
+  border-radius: 12px;
+  box-shadow: 0 10px 32px rgba(0,0,0,0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+  font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+#palette-root .pal-input {
+  width: 100%; box-sizing: border-box;
+  background: #0b0f14; color: #e6edf3; border: none; outline: none;
+  padding: 14px 16px; font-size: 16px; border-bottom: 1px solid #1f2b3a;
+}
+#palette-root .pal-list { max-height: 50vh; overflow: auto; }
+#palette-root .pal-row {
+  display: grid; grid-template-columns: 28% 1fr; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px dashed #192433; cursor: pointer;
+}
+#palette-root .pal-row:hover { background: rgba(166,218,149,0.06); }
+#palette-root .pal-row.active { background: rgba(166,218,149,0.12); }
+#palette-root .pal-name { color: #a6da95; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#palette-root .pal-cmd { color: #c8d3df; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#palette-root .pal-footer { padding: 10px 14px; font-size: 12px; color: #9bb3c7; background: #0f141b; }
+
+/* === WARP_OPEN_TAB_BADGES === */
+.tab[data-kind="tab"] {
+  position: relative;
+}
+.tab[data-kind="tab"]::before {
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  font: 10px/1 ui-monospace, Menlo, monospace;
+  opacity: 0.65;
+}
+
+/* 1–9 badge labels via nth-child (adjust selector if your markup wraps tabs) */
+.tab[data-kind="tab"]:nth-child(1)::before { content: "1"; }
+.tab[data-kind="tab"]:nth-child(2)::before { content: "2"; }
+.tab[data-kind="tab"]:nth-child(3)::before { content: "3"; }
+.tab[data-kind="tab"]:nth-child(4)::before { content: "4"; }
+.tab[data-kind="tab"]:nth-child(5)::before { content: "5"; }
+.tab[data-kind="tab"]:nth-child(6)::before { content: "6"; }
+.tab[data-kind="tab"]:nth-child(7)::before { content: "7"; }
+.tab[data-kind="tab"]:nth-child(8)::before { content: "8"; }
+.tab[data-kind="tab"]:nth-child(9)::before { content: "9"; }
+/* === /WARP_OPEN_TAB_BADGES === */

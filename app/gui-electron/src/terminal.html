@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en" data-theme="warp-dark">
+<head>
+  <meta charset="utf-8"/>
+  <title>Warp_Open — Phase 5 Terminal</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline';"/>
+  <link rel="stylesheet" href="./terminal/terminal.css"/>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      background: #0b0f14;
+      color: #c0caf5;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #tabBarContainer {
+      flex-shrink: 0;
+    }
+
+    #terminalContainer {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      background: #1a1b26;
+    }
+
+    #terminalInputBar {
+      flex-shrink: 0;
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      background: #16161e;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    #cmdInput {
+      flex: 1;
+      padding: 10px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      background: #1a1b26;
+      color: #c0caf5;
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    #cmdInput:focus {
+      border-color: #7aa2f7;
+      box-shadow: 0 0 0 2px rgba(122, 162, 247, 0.2);
+    }
+
+    #cmdInput::placeholder {
+      color: #565f89;
+    }
+
+    #runBtn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 6px;
+      background: #7aa2f7;
+      color: #1a1b26;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    #runBtn:hover {
+      background: #89b4fa;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(122, 162, 247, 0.3);
+    }
+
+    #runBtn:active {
+      transform: translateY(0);
+    }
+
+    #statusBar {
+      padding: 8px 16px;
+      background: #16161e;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+      color: #565f89;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-badge {
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(122, 162, 247, 0.12);
+      color: #7aa2f7;
+      font-size: 11px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Tab Bar -->
+    <div id="tabBarContainer"></div>
+
+    <!-- Terminal Blocks Container -->
+    <div id="terminalContainer"></div>
+
+    <!-- Input Bar -->
+    <div id="terminalInputBar">
+      <input 
+        id="cmdInput" 
+        type="text" 
+        placeholder="Type a command or /ask, /fix, /explain..." 
+        autocomplete="off"
+      />
+      <button id="runBtn">Run ⏎</button>
+    </div>
+
+    <!-- Status Bar -->
+    <div id="statusBar">
+      <div class="status-item">
+        <span>Phase 5 Terminal</span>
+        <span class="status-badge" id="terminalStatus">Ready</span>
+      </div>
+      <div class="status-item">
+        <span id="cwdDisplay">~</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="./terminal_renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+==> [05_install_packager] 05_install_packager
+npm warn deprecated xterm-addon-search@0.13.0: This package is now deprecated. Move to @xterm/addon-search instead.
+
+added 1 package, and audited 178 packages in 1s
+
+31 packages are looking for funding
+  run `npm fund` for details
+
+1 moderate severity vulnerability
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.

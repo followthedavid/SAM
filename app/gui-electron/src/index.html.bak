@@ -1,0 +1,185 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self';" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Warp_Open — Terminal</title>
+    <link rel="stylesheet" href="../node_modules/xterm/css/xterm.css" />
+    <style>
+      :root { --bg:#0b0f14; --fg:#e6edf3; --tabbg:#11161d; --tabsel:#1a212b; }
+      :root[data-theme='light'] { --bg:#f6f8fa; --fg:#0b0f14; --tabbg:#e7edf3; --tabsel:#d6e2ee; }
+      html, body, #app { height: 100%; width: 100%; margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
+      #tabs { height: 34px; display:flex; align-items:center; gap:6px; padding:4px 8px; background: var(--tabbg); border-bottom:1px solid #1f2833; box-sizing:border-box; }
+      #tab-list { flex:1; display:flex; gap:6px; overflow-x: auto; }
+      .tab { display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border-radius:6px; background:#131a23; cursor:pointer; user-select:none; }
+      :root[data-theme='light'] .tab { background:#e1e8f1; }
+      .tab.active { background: var(--tabsel); outline:1px solid #233043; }
+      .tab .close { opacity:.7; }
+      .tab .close:hover { opacity:1; }
+      #tab-add { width:26px; height:26px; border:1px solid #253244; color:var(--fg); background:#0e141b; border-radius:6px; cursor:pointer; }
+      :root[data-theme='light'] #tab-add { background:#f0f3f7; }
+      #tab-add:hover { background:#121a24; }
+      #terminals { height: calc(100% - 34px - 22px); }
+      .tab-host { width:100%; height:100%; display:none; }
+      .tab-host.active { display:block; }
+      .pane-container { width:100%; height:100%; display:grid; position: relative; }
+      .pane-host { width:100%; height:100%; overflow:hidden; }
+      .pane-host.active { outline: 1px solid #233043; }
+      .resizer { position:absolute; background:#233043; opacity:.6; z-index:5; }
+      .resizer.v { cursor: col-resize; width:6px; top:0; bottom:0; }
+      .resizer.h { cursor: row-resize; height:6px; left:0; right:0; }
+      .resizer:hover { background:#2f4b6b; }
+      .pane-container.zoom .pane-host { display: none; }
+      .pane-container.zoom .pane-host.active { display: block; }
+      #status-bar { height: 22px; line-height: 22px; padding: 0 8px; font-size: 12px; background: var(--tabbg); border-top: 1px solid #1f2833; color: var(--fg); box-sizing: border-box; }
+      /* Palette overlay */
+      #palette-backdrop { position: fixed; inset: 0; display: none; align-items: flex-start; justify-content: center; padding-top: 10vh; z-index: 25; background: rgba(0,0,0,0.35); }
+      #palette-backdrop.show { display: flex; }
+      #palette { width: 640px; max-width: 90vw; background: var(--tabbg); color: var(--fg); border: 1px solid #233043; border-radius: 10px; box-shadow: 0 18px 40px rgba(0,0,0,0.45); overflow: hidden; }
+      #palette-input { width: 100%; box-sizing: border-box; padding: 10px 12px; background: #0e141b; color: var(--fg); border: 0; border-bottom: 1px solid #233043; font-size: 14px; outline: none; }
+      #palette-list { max-height: 320px; overflow: auto; }
+      .palette-item { padding: 8px 12px; border-bottom: 1px solid #1b2533; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+      .palette-item:hover { background: #131a23; }
+      .palette-item.selected { background: #1a212b; outline: 1px solid #233043; }
+      .palette-name { font-weight: 600; }
+      .palette-cmd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; opacity: 0.85; }
+      .palette-meta { font-size: 12px; opacity: 0.7; }
+      .palette-actions { display: flex; gap: 8px; justify-content: flex-end; }
+      .palette-btn { font-size: 12px; padding: 3px 6px; border: 1px solid #253244; background: #0e141b; color: var(--fg); border-radius: 5px; cursor: pointer; }
+      .palette-btn:hover { background: #121a24; }
+      /* Preferences overlay */
+      #prefs-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 20; }
+      #prefs-backdrop.show { display: flex; }
+      #prefs-dialog { width: 520px; background: var(--tabbg); color: var(--fg); border: 1px solid #233043; border-radius: 8px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+      #prefs-dialog h2 { margin-top: 0; font-size: 16px; }
+      #prefs-dialog .row { margin: 10px 0; display: flex; align-items: center; justify-content: space-between; }
+      #prefs-dialog .actions { margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end; }
+      #prefs-dialog input[type="number"] { width: 80px; }
+      #prefs-dialog button { padding: 6px 10px; border: 1px solid #253244; background: #0e141b; color: var(--fg); border-radius: 6px; cursor: pointer; }
+      #prefs-dialog button:hover { background: #121a24; }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="tabs" role="toolbar" aria-label="Tabs">
+        <div id="tab-list" role="tablist" aria-label="Open tabs"></div>
+        <button id="tab-add" title="New Tab" aria-label="New Tab">+</button>
+      </div>
+      <div id="terminals"></div>
+      <div id="find-bar" style="position:absolute; top:40px; right:16px; z-index:15; display:none; background: var(--tabbg); color: var(--fg); border:1px solid #233043; border-radius:6px; padding:6px; box-shadow:0 6px 18px rgba(0,0,0,0.4);">
+        <input id="find-input" type="text" placeholder="Find" style="width:240px; background:#0e141b; color:inherit; border:1px solid #253244; border-radius:4px; padding:4px 6px;" />
+        <label title="Case sensitive" style="margin-left:6px; user-select:none;"><input type="checkbox" id="find-case" /> Aa</label>
+        <label title="Regex" style="margin-left:6px; user-select:none;"><input type="checkbox" id="find-regex" /> .* </label>
+        <button id="find-prev" title="Previous">↑</button>
+        <button id="find-next" title="Next">↓</button>
+        <button id="find-close" title="Close">✕</button>
+      </div>
+      <div id="palette-backdrop" aria-hidden="true">
+        <div id="palette" role="dialog" aria-modal="true" aria-label="Command Palette">
+          <input id="palette-input" type="text" placeholder="Run command or search… (Cmd/Ctrl+P)" />
+          <div id="palette-list" role="listbox" aria-label="Workflows"></div>
+        </div>
+      </div>
+      <div id="status-bar" role="status" aria-live="polite"></div>
+    </div>
+
+    <div id="toast" style="position:absolute; bottom:30px; right:16px; background:#222a; color:#fff; padding:6px 10px; border-radius:6px; display:none; z-index:50;">Toast</div>
+
+    <div id="prefs-backdrop" aria-hidden="true">
+      <div id="prefs-dialog" role="dialog" aria-modal="true" aria-label="Preferences">
+        <h2>Preferences</h2>
+        <div class="row">
+          <label>Theme</label>
+          <div>
+            <label><input type="radio" name="prefs-theme" id="prefs-theme-system" value="system"> System</label>
+            <label style="margin-left:12px;"><input type="radio" name="prefs-theme" id="prefs-theme-dark" value="dark"> Dark</label>
+            <label style="margin-left:12px;"><input type="radio" name="prefs-theme" id="prefs-theme-light" value="light"> Light</label>
+          </div>
+        </div>
+        <div class="row">
+          <label for="prefs-font-size">Font size</label>
+          <input type="number" id="prefs-font-size" min="8" max="32" step="1" />
+        </div>
+        <div class="row">
+          <label for="prefs-copy-on-select">Copy on selection</label>
+          <input type="checkbox" id="prefs-copy-on-select" />
+        </div>
+        <div class="row">
+          <label for="prefs-scrollback">Scrollback</label>
+          <input type="number" id="prefs-scrollback" min="1000" max="100000" step="1000" />
+        </div>
+        <div class="row">
+          <label for="prefs-bell-sound">Bell sound</label>
+          <input type="checkbox" id="prefs-bell-sound" />
+        </div>
+        <div class="row">
+          <label for="prefs-bell-toast">Bell toast</label>
+          <input type="checkbox" id="prefs-bell-toast" />
+        </div>
+        <div class="row">
+          <label for="prefs-restore-session">Restore last session on launch</label>
+          <input type="checkbox" id="prefs-restore-session" />
+        </div>
+        <div class="row">
+          <label for="prefs-autosave-enabled">Enable periodic autosave</label>
+          <input type="checkbox" id="prefs-autosave-enabled" />
+        </div>
+        <div class="row">
+          <label for="prefs-autosave-interval">Autosave interval (sec)</label>
+          <input type="number" id="prefs-autosave-interval" min="5" max="600" step="5" />
+        </div>
+        <div class="row">
+          <label for="prefs-autosave-toast">Show autosave toast</label>
+          <input type="checkbox" id="prefs-autosave-toast" />
+        </div>
+        <div class="row">
+          <label for="prefs-devtools-start">Open DevTools on start</label>
+          <input type="checkbox" id="prefs-devtools-start" />
+        </div>
+        <div class="row">
+          <label for="prefs-shell-path">Shell path</label>
+          <div>
+            <input type="text" id="prefs-shell-path" placeholder="/bin/zsh" style="width:280px; background:#0e141b; color:inherit; border:1px solid #253244; border-radius:4px; padding:4px 6px;" />
+            <button id="prefs-shell-browse" type="button" style="margin-left:6px;">Browse…</button>
+          </div>
+        </div>
+        <div class="row">
+          <label for="prefs-shell-login">Login shell (-l)</label>
+          <input type="checkbox" id="prefs-shell-login" />
+        </div>
+        <div class="row">
+          <label for="prefs-shell-args">Extra shell args</label>
+          <input type="text" id="prefs-shell-args" placeholder="e.g. -i" style="width:280px; background:#0e141b; color:inherit; border:1px solid #253244; border-radius:4px; padding:4px 6px;" />
+        </div>
+        <div class="row">
+          <label for="prefs-confirm-quit">Confirm before quit</label>
+          <input type="checkbox" id="prefs-confirm-quit" />
+        </div>
+        <div class="row">
+          <label for="prefs-write-last">Update last session file on quit</label>
+          <input type="checkbox" id="prefs-write-last" />
+        </div>
+        <div class="row">
+          <label for="prefs-default-cwd">Default new tab folder</label>
+          <div>
+            <input type="text" id="prefs-default-cwd" placeholder="(empty = Home)" style="width:280px; background:#0e141b; color:inherit; border:1px solid #253244; border-radius:4px; padding:4px 6px;" />
+            <button id="prefs-default-cwd-browse" type="button" style="margin-left:6px;">Browse…</button>
+          </div>
+        </div>
+        <div class="row">
+          <label for="prefs-use-last-cwd">Use last tab folder for new tabs</label>
+          <input type="checkbox" id="prefs-use-last-cwd" />
+        </div>
+        <div class="actions">
+          <button id="prefs-open-file" type="button">Open Config File</button>
+          <button id="prefs-reset" type="button">Reset Defaults</button>
+          <button id="prefs-cancel" type="button">Cancel</button>
+          <button id="prefs-save" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="renderer.js" defer></script>
+  </body>
+</html>
