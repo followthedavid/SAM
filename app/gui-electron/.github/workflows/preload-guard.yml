@@ -1,0 +1,20 @@
+name: Preload Guard
+on:
+  push:
+  pull_request:
+jobs:
+  guard:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Install deps
+        run: npm ci
+        working-directory: ./app/gui-electron
+      - name: Rebuild native modules
+        run: npm run rebuild || true
+        working-directory: ./app/gui-electron
+      - name: Preload regression test
+        run: npm run test:preload
+        working-directory: ./app/gui-electron

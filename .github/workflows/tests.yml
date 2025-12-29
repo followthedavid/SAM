@@ -1,0 +1,84 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'warp_core/**'
+      - 'tests/**'
+      - 'tooling/**'
+      - '.github/workflows/tests.yml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'warp_core/**'
+      - 'tests/**'
+      - 'tooling/**'
+      - '.github/workflows/tests.yml'
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    name: Rust + Integration Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry + build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            warp_core/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('warp_core/Cargo.toml', 'warp_core/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build Rust (release)
+        run: |
+          cd warp_core
+          cargo build --release
+
+      - name: Run Rust unit & golden tests
+        run: |
+          cd warp_core
+          cargo test --all --verbose
+
+      - name: Generate long scroll fixture
+        run: |
+          python3 tooling/generate_long_scroll.py 20000
+
+      - name: Run integration tests
+        run: |
+          python3 tests/integration/run_fullstack_test.py
+          python3 tests/integration/run_malformed_stream_test.py
+          python3 tests/integration/run_partial_utf8_test.py
+          python3 tests/integration/run_overlapping_osc_test.py
+          python3 tests/integration/run_cjk_utf8_test.py
+          python3 tests/integration/run_partial_escape_test.py
+          python3 tests/integration/run_long_scroll_test.py
+
+      - name: Upload test artifacts on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-artifacts-${{ matrix.os }}
+          path: |
+            warp_core/snapshots/
+            tests/integration/*.log
+          retention-days: 7

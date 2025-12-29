@@ -1,0 +1,47 @@
+{
+  "name": "warp-open-electron",
+  "version": "0.1.2",
+  "description": "Clean-room terminal (Electron + xterm.js) with Blocks + Smoke",
+  "main": "src/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "electron .",
+    "rebuild": "electron-rebuild -f -w node-pty",
+    "smoke": "WARP_OPEN_ENABLE_SMOKE=1 node -e \"require('electron').app\" || npx electron .",
+    "smoke:once": "WARP_OPEN_ENABLE_SMOKE=1 npx electron .",
+    "smoke:validate": "node scripts/validate_smoke.js",
+    "smoke:summary": "bash scripts/smoke_summary.sh",
+    "pack:mac": "electron-rebuild -f -w node-pty && electron-packager . Warp_Open --platform=darwin --arch=arm64 --out=dist --overwrite --asar --ignore=dist",
+    "replay": "node scripts/replay_session.js",
+    "test": "node --test test/**/*.test.js",
+    "ci": "npm run rebuild && npm run smoke:once && npm run smoke:validate && npm run smoke:summary",
+    "interactive:once": "WARP_OPEN_INTERACTIVE_SMOKE=1 npx electron .",
+    "blocks:validate": "node scripts/validate_blocks.js",
+    "blocks:summary": "scripts/blocks_summary.sh",
+    "blocks:replay": "node scripts/replay_session.js",
+    "test:preload": "ELECTRON_ENABLE_LOGGING=1 ELECTRON_DISABLE_SECURITY_WARNINGS=1 WARP_OPEN_ENABLE_SMOKE=1 node scripts/test_preload.js",
+    "replay:ping": "node -e \"console.log(\\\"replay-ui ready\\\")\"",
+    "ft:apply": "bash ./scripts/ft_pack_apply.sh",
+    "final:verify": "node ./scripts/validate_smoke.js \"$(ls -t $HOME/.warp_open/sessions/session-*.jsonl | head -1)\" || true",
+    "final:smoke": "WARP_OPEN_ENABLE_SMOKE=1 npx electron . || true",
+    "final:pack": "electron-rebuild -f -w node-pty && electron-packager . Warp_Open --platform=darwin --arch=arm64 --out=dist --overwrite --asar --ignore=dist",
+    "final:codesign": "bash ./scripts/codesign_adhoc.sh",
+    "final:all": "npm run rebuild && npm run final:smoke && npm run final:verify && npm run final:pack && npm run final:codesign",
+    "rebuild:pty": "electron-rebuild -f -w node-pty -v 30.5.1",
+    "pack:mac:noasar": "electron-packager . Warp_Open --platform=darwin --arch=arm64 --out=dist --overwrite --asar=false --ignore=dist",
+    "pack:mac:asar": "electron-packager . Warp_Open --platform=darwin --arch=arm64 --out=dist --overwrite --asar.unpack=\"**/*.node\" --ignore=dist"
+  },
+  "dependencies": {
+    "electron": "^30.5.1",
+    "marked": "^16.4.1",
+    "node-pty": "^0.10.1",
+    "openai": "^4.104.0",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0",
+    "xterm-addon-web-links": "^0.9.0"
+  },
+  "devDependencies": {
+    "electron-packager": "^17.1.2",
+    "electron-rebuild": "^3.2.9"
+  }
+}

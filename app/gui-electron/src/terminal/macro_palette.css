@@ -1,0 +1,256 @@
+/**
+ * Macro Palette Styles
+ */
+
+.macro-palette {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+}
+
+.macro-palette.hidden {
+  display: none;
+}
+
+.macro-palette-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.macro-palette-content {
+  position: relative;
+  width: 700px;
+  max-width: 90vw;
+  max-height: 80vh;
+  background: #1e1e1e;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.macro-palette-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #333;
+  background: #252525;
+}
+
+#macro-search {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 15px;
+  background: #1e1e1e;
+  border: 1px solid #444;
+  border-radius: 6px;
+  color: #e0e0e0;
+  outline: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+#macro-search:focus {
+  border-color: #007acc;
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+#macro-close {
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  color: #999;
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+#macro-close:hover {
+  background: #333;
+  color: #fff;
+}
+
+.macro-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.macro-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.macro-list::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.macro-list::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+.macro-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.macro-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px;
+  margin-bottom: 6px;
+  background: #252525;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.macro-item:hover {
+  background: #2a2a2a;
+  border-color: #444;
+}
+
+.macro-item.selected {
+  background: #2d4a68;
+  border-color: #007acc;
+  box-shadow: 0 0 0 1px #007acc;
+}
+
+.macro-icon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.macro-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.macro-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e0e0e0;
+  margin-bottom: 4px;
+}
+
+.macro-description {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 8px;
+}
+
+.macro-commands {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.macro-commands code {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #1a1a1a;
+  color: #4ec9b0;
+  border-radius: 3px;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  margin: 2px 0;
+}
+
+.macro-category {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  background: #333;
+  color: #aaa;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  border-radius: 12px;
+  align-self: flex-start;
+}
+
+.macro-item.selected .macro-category {
+  background: #007acc;
+  color: #fff;
+}
+
+.macro-item-empty {
+  padding: 40px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+.macro-palette-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #252525;
+  border-top: 1px solid #333;
+  font-size: 12px;
+  color: #888;
+}
+
+.macro-count {
+  font-weight: 500;
+  color: #aaa;
+}
+
+.macro-hint {
+  color: #666;
+}
+
+.macro-hint::before {
+  content: "💡 ";
+  margin-right: 4px;
+}
+
+/* Dark mode enhancements */
+@media (prefers-color-scheme: dark) {
+  .macro-palette-content {
+    background: #1a1a1a;
+  }
+  
+  .macro-palette-header {
+    background: #212121;
+  }
+  
+  #macro-search {
+    background: #171717;
+  }
+  
+  .macro-item {
+    background: #212121;
+  }
+  
+  .macro-item:hover {
+    background: #252525;
+  }
+}

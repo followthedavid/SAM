@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+# tests/integration/run_partial_utf8_test.py
+
+import subprocess
+import os
+import sys
+import json
+
+def get_binary_path():
+    release_bin = os.path.join(os.getcwd(), "warp_core", "target", "release", "warp_cli")
+    debug_bin = os.path.join(os.getcwd(), "warp_core", "target", "debug", "warp_cli")
+    if os.path.exists(release_bin):
+        return release_bin
+    elif os.path.exists(debug_bin):
+        return debug_bin
+    return None
+
+def run():
+    bin_path = get_binary_path()
+    if not bin_path:
+        print("ERROR: Build warp_cli first: (cd warp_core && cargo build)")
+        sys.exit(2)
+
+    # Construct a stream with a multi-byte UTF-8 sequence split across writes
+    part1 = b"user@host:~$ printf '\\xe2\\x98'"
+    part2 = b"\\xa2\\n"  # continuation bytes for U+2622 (radioactive)
+    
+    proc = subprocess.Popen([bin_path, "parse-stream", "--json", "--heuristic"],
+                            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        proc.stdin.write(part1)
+        proc.stdin.flush()
+        proc.stdin.write(part2)
+        # proc.stdin.close()
+        out, err = proc.communicate(timeout=10)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        out, err = proc.communicate()
+
+    if err:
+        print(f"STDERR: {err.decode(errors='ignore')}")
+
+    if not out:
+        print("ERROR: No output — parser may have blocked on partial utf8")
+        sys.exit(3)
+
+    try:
+        lines = out.decode().strip().split('\n')
+        arr = [json.loads(line) for line in lines if line.strip()]
+    except Exception as e:
+        print(f"ERROR: Output not JSON: {e}")
+        sys.exit(4)
+
+    print(f"✅ Partial UTF-8 test OK — parsed {len(arr)} blocks")
+
+if __name__ == "__main__":
+    run()

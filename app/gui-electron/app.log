@@ -1,0 +1,87 @@
+
+> warp-open-electron@0.1.2 dev
+> electron .
+
+[40550:1021/002753.476951:WARNING:runtime_features.cc(730)] AttributionReportingCrossAppWeb cannot be enabled in this configuration. Use --enable-features=ConversionMeasurement,AttributionReportingCrossAppWeb in addition.
+[40535:1021/002753.785497:INFO:CONSOLE(136)] "[preload] loaded OK", source:  (136)
+[40535:1021/002753.949526:INFO:CONSOLE(1)] "[renderer] starting...", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1)
+[40535:1021/002753.949954:INFO:CONSOLE(330)] "[renderer] booting, bridge available: true", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (330)
+[40535:1021/002753.949978:INFO:CONSOLE(331)] "[renderer] bridge.startPTY available: true", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (331)
+[40535:1021/002757.393947:INFO:CONSOLE(337)] "[renderer] first tab created: true", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (337)
+[40535:1021/002757.393989:INFO:CONSOLE(338)] "[renderer] boot complete", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (338)
+[40535:1021/040130.579738:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40549:1021/040130.579767:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40535:1021/040259.444820:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40549:1021/040259.444816:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40549:1021/040307.996119:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40535:1021/040307.996676:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40535:1023/222115.251747:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40549:1023/222115.251724:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40549:1023/222126.798849:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40535:1023/222126.799079:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40535:1023/222205.511792:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40549:1023/222205.511770:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40549:1023/222214.725464:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40535:1023/222214.726889:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40549:1023/222215.860079:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40535:1023/222215.860131:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40535:1023/222225.202522:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40549:1023/222225.202535:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40535:1023/222232.082420:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[40549:1023/222232.082610:WARNING:dns_config_service_posix.cc(197)] Failed to read DnsConfig.
+[9664:1024/185533.546200:WARNING:runtime_features.cc(730)] AttributionReportingCrossAppWeb cannot be enabled in this configuration. Use --enable-features=ConversionMeasurement,AttributionReportingCrossAppWeb in addition.
+[40535:1024/185533.818875:WARNING:CONSOLE(2)] "%cElectron Security Warning (Insecure Content-Security-Policy) font-weight: bold; This renderer process has either no Content Security
+  Policy set or a policy with "unsafe-eval" enabled. This exposes users of
+  this app to unnecessary security risks.
+
+For more information and help, consult
+https://electronjs.org/docs/tutorial/security.
+This warning will not show up
+once the app is packaged.", source: node:electron/js2c/sandbox_bundle (2)
+[40535:1024/185533.986375:ERROR:CONSOLE(1)] "Request Autofill.enable failed. {"code":-32601,"message":"'Autofill.enable' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)
+[40535:1024/185616.293304:INFO:CONSOLE(1506)] "[auto-exec] calling with [object Object]", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1506)
+[40535:1024/185616.317235:INFO:CONSOLE(1526)] "[auto-exec:file] wrote: /Users/davidquinton/hello_ai (2).txt", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1526)
+[40548:1024/215055.096176:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1024/215055.113213:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1024/215055.219632:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1024/215055.220343:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1024/215055.223855:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1024/215055.224072:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40535:1026/142033.828131:INFO:CONSOLE(1506)] "[auto-exec] calling with [object Object]", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1506)
+[40535:1026/142033.867561:INFO:CONSOLE(1526)] "[auto-exec:file] wrote: /Users/davidquinton/test_manual.txt", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1526)
+[40535:1026/145000.847449:INFO:CONSOLE(1506)] "[auto-exec] calling with [object Object]", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1506)
+[40535:1026/145000.871337:INFO:CONSOLE(1526)] "[auto-exec:file] wrote: /Users/davidquinton/test_manual (2).txt", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1526)
+[40535:1026/145034.373681:INFO:CONSOLE(1506)] "[auto-exec] calling with [object Object]", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1506)
+[40535:1026/145034.383429:INFO:CONSOLE(1526)] "[auto-exec:file] wrote: /Users/davidquinton/list_txt.sh", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1526)
+[40535:1026/145143.203899:INFO:CONSOLE(1506)] "[auto-exec] calling with [object Object]", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1506)
+[40535:1026/145143.259062:INFO:CONSOLE(1526)] "[auto-exec:file] wrote: /Users/davidquinton/hello_ai (3).txt", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1526)
+[40535:1026/145450.302322:INFO:CONSOLE(1[39395:1027/184619.814551:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[39395:1027/184619.814792:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[39395:1029/185906.180343:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[39395:1029/185906.180362:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+ers/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1506)
+[40535:1026/145536.459140:INFO:CONSOLE(1526)] "[auto-exec:file] wrote: /Users/davidquinton/monitor_test.txt", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1526)
+[40535:1026/145640.687498:INFO:CONSOLE(1506)] "[auto-exec] calling with [object Object]", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1506)
+[40535:1026/145640.719794:INFO:CONSOLE(1526)] "[auto-exec:file] wrote: /Users/davidquinton/monitor_test (2).txt", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1526)
+[40535:1026/150027.576150:INFO:CONSOLE(1506)] "[auto-exec] calling with [object Object]", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1506)
+[40535:1026/150027.582496:INFO:CONSOLE(1526)] "[auto-exec:file] wrote: /Users/davidquinton/audit_log.txt", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1526)
+[40535:1026/150304.753674:INFO:CONSOLE(136)] "[preload] loaded OK", source:  (136)
+[40535:1026/150304.854952:INFO:CONSOLE(1)] "[renderer] starting...", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1)
+[40535:1026/150304.855635:INFO:CONSOLE(330)] "[renderer] booting, bridge available: true", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (330)
+[40535:1026/150304.855670:INFO:CONSOLE(331)] "[renderer] bridge.startPTY available: true", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (331)
+[40535:1026/150305.003435:INFO:CONSOLE(337)] "[renderer] first tab created: true", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (337)
+[40535:1026/150305.004562:INFO:CONSOLE(338)] "[renderer] boot complete", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (338)
+[40535:1026/150542.468434:INFO:CONSOLE(1506)] "[auto-exec] calling with [object Object]", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1506)
+[40535:1026/150542.527857:INFO:CONSOLE(1526)] "[auto-exec:file] wrote: /Users/davidquinton/final_test.txt", source: file:///Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src/renderer.js (1526)
+[40548:1027/184619.824605:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1027/184619.824610:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1027/184619.830279:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1027/184619.830281:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1027/184619.833067:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1027/184619.833131:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1029/185906.181345:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1029/185906.181414:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1029/185906.274533:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1029/185906.300467:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1029/185906.302234:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670
+[40548:1029/185906.302914:ERROR:display_link_mac.cc(228)] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670

@@ -1,0 +1,35 @@
+[package]
+name = "warp_core"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "warp_cli"
+path = "src/bin/warp_cli.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4", "serde"] }
+diffy = "0.4"
+anyhow = "1"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive"] }
+napi = { version = "2", features = ["async"], optional = true }
+napi-derive = { version = "2", optional = true }
+portable-pty = "0.9.0"
+regex = "1"
+
+[features]
+default = []
+napi = ["dep:napi", "dep:napi-derive"]
+
+[dev-dependencies]
+insta = { version = "1.31", features = ["redactions", "json"] }
+assert_cmd = "2.0"
+tempfile = "3.6"
+serde_json = "1.0"

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en" data-theme="warp-dark">
+<head>
+  <meta charset="utf-8"/>
+  <title>Warp_Open — Terminal</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline';"/>
+  <link rel="stylesheet" href="../node_modules/xterm/css/xterm.css"/>
+  <link rel="stylesheet" href="./styles.css"/>
+  <link rel="stylesheet" href="./theme.css"/>
+  <!-- Phase 5 V2 Terminal CSS -->
+  <link rel="stylesheet" href="./terminal/terminal_v2.css"/>
+</head>
+<body>
+  <header id="titlebar">
+    <div class="title">Warp_Open — Terminal</div>
+    <div class="actions">
+      <button id="flushBtn" title="Flush Session">💾 Flush</button>
+      <button id="copy">Copy</button>
+      <button id="clear">Clear</button>
+      <button id="blocks">📋</button>
+      <button id="btn-replay" title="Replay Sessions">🕘</button>
+      <button id="btn-theme" title="Toggle theme">🌗</button>
+    </div>
+  </header>
+
+  <div id="tabsRow">
+    <ul id="tabs">
+      <!-- Initial tab created by renderer.js -->
+      <li id="new-tab"><button>+ New</button></li>
+    </ul>
+  </div>
+
+  <div id="stage"></div>
+  <div id="blocksPanel"></div>
+  
+  <!-- AI Panel (legacy) -->
+  <div id="ai-panel" hidden>
+    <div class="ai-card">
+      <textarea id="ai-input" placeholder="Ask AI about code… (Cmd+Enter to send)"></textarea>
+      <div class="row">
+        <button id="ai-send">Ask</button>
+        <button id="ai-close">Close</button>
+      </div>
+      <pre id="ai-output"></pre>
+    </div>
+  </div>
+
+  <!-- === AI_DOCK_V1_START === -->
+  <div id="ai-dock" style="position:fixed;top:48px;right:0;width:420px;height:calc(100% - 48px);background:#0b0f14;border-left:1px solid #1b2530;display:none;flex-direction:column;z-index:30">
+    <!-- Header with tabs -->
+    <div style="display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid #1b2530">
+      <div style="display:flex;gap:4px;flex:1">
+        <button class="ai-dock-tab active" data-tab="chat" style="background:#132029;color:#cdd6f4;border:1px solid #1b2530;padding:4px 12px;border-radius:4px;cursor:pointer">Chat</button>
+        <button class="ai-dock-tab" data-tab="journal" style="background:transparent;color:#6c7a8a;border:1px solid transparent;padding:4px 12px;border-radius:4px;cursor:pointer">Journal</button>
+        <button class="ai-dock-tab" data-tab="context" style="background:transparent;color:#6c7a8a;border:1px solid transparent;padding:4px 12px;border-radius:4px;cursor:pointer">Context</button>
+        <button class="ai-dock-tab" data-tab="terminal" style="background:transparent;color:#6c7a8a;border:1px solid transparent;padding:4px 12px;border-radius:4px;cursor:pointer">Terminal</button>
+      </div>
+      <button id="ai-close-dock" style="background:#132029;color:#cdd6f4;border:1px solid #1b2530;padding:4px 8px;border-radius:4px;cursor:pointer">✕</button>
+    </div>
+    
+    <!-- Chat Tab -->
+    <div id="ai-dock-chat" class="ai-dock-content" style="display:flex;flex:1;min-height:0">
+      <div style="display:flex;flex:1;min-height:0">
+        <div id="ai-threads" style="width:120px;border-right:1px solid #1b2530;overflow:auto;background:#0b0f14"></div>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-bottom:1px solid #1b2530">
+            <select id="ai-model" style="flex:1;background:#132029;color:#cdd6f4;border:1px solid #1b2530;padding:4px;border-radius:4px;font-size:12px">
+              <option value="llama3.2:3b-instruct-q4_K_M">llama3.2:3b (local)</option>
+            </select>
+            <button id="ai-new-thread" style="background:#132029;color:#cdd6f4;border:1px solid #1b2530;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px">＋</button>
+          </div>
+          <div id="ai-messages" style="flex:1;overflow:auto;padding:8px;white-space:pre-wrap;font-family:ui-monospace, Menlo, monospace;font-size:13px;line-height:1.4;background:#0b0f14;color:#cdd6f4"></div>
+          <div style="border-top:1px solid #1b2530;padding:8px;display:flex;gap:8px;background:#0b0f14">
+            <textarea id="ai-dock-input" rows="3" style="flex:1;resize:vertical;background:#132029;color:#cdd6f4;border:1px solid #1b2530;padding:8px;border-radius:4px;font-family:ui-monospace, Menlo, monospace;font-size:13px" placeholder="Ask AI... (Enter=send, Shift+Enter=newline)"></textarea>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <button id="ai-dock-send" style="background:#4c9aff;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:500">Send ⏎</button>
+              <button id="ai-dock-actions" style="background:#132029;color:#cdd6f4;border:1px solid #1b2530;padding:6px 12px;border-radius:4px;cursor:pointer">⋯</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Journal Tab -->
+    <div id="ai-dock-journal" class="ai-dock-content" style="display:none;flex:1;flex-direction:column;padding:12px;overflow:hidden">
+      <div style="display:flex;justify-between;align-items:center;margin-bottom:12px">
+        <h3 style="color:#cdd6f4;font-size:14px;font-weight:600;margin:0">Action Journal</h3>
+        <button id="journal-undo-btn" style="background:#b91c1c;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px">Undo Last</button>
+      </div>
+      <div id="journal-entries" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px"></div>
+      <div style="margin-top:8px;text-align:center">
+        <button id="journal-refresh-btn" style="background:#132029;color:#cdd6f4;border:1px solid #1b2530;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px">Refresh</button>
+      </div>
+    </div>
+    
+    <!-- Context Tab -->
+    <div id="ai-dock-context" class="ai-dock-content" style="display:none;flex:1;flex-direction:column;padding:12px;overflow:hidden">
+      <div style="display:flex;justify-between;align-items:center;margin-bottom:12px">
+        <h3 style="color:#cdd6f4;font-size:14px;font-weight:600;margin:0">Project Context</h3>
+        <button id="context-refresh-btn" style="background:#132029;color:#cdd6f4;border:1px solid #1b2530;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px">Refresh</button>
+      </div>
+      <div id="context-pack" style="flex:1;overflow-y:auto;font-family:ui-monospace, Menlo, monospace;font-size:12px;color:#cdd6f4"></div>
+    </div>
+    
+    <!-- Terminal Tab (Phase 5 V2) -->
+    <div id="ai-dock-terminal" class="ai-dock-content" style="display:none;flex:1;flex-direction:column;overflow:hidden">
+      <!-- Terminal subtabs -->
+      <div id="terminal-tabs" style="display:flex;gap:4px;padding:4px 8px;border-bottom:1px solid #1b2530;background:#0b0f14;overflow-x:auto"></div>
+      
+      <!-- Blocks container -->
+      <div id="terminal-blocks" style="flex:1;overflow-y:auto;padding:12px;background:#0b0f14"></div>
+      
+      <!-- Input area -->
+      <div style="border-top:1px solid #1b2530;padding:8px;background:#0b0f14">
+        <textarea id="terminal-input" rows="3" spellcheck="false" placeholder="Type a command… (Shift+Enter for newline). Use /ask, /fix, /explain" style="width:100%;resize:vertical;background:#132029;color:#cdd6f4;border:1px solid #1b2530;padding:8px;border-radius:4px;font-family:ui-monospace, Menlo, monospace;font-size:13px"></textarea>
+      </div>
+    </div>
+  </div>
+  <!-- === AI_DOCK_V1_END === -->
+  
+  <!-- Replay Panel -->
+  <div id="replay-panel" class="replay-panel">
+    <div class="replay-left">
+      <h3>Sessions</h3>
+      <input type="text" id="replay-search" placeholder="Search sessions..." class="replay-search" />
+      <div id="replay-sessions" class="replay-list"></div>
+      <div style="display:flex;gap:.5rem;align-items:center;padding:.5rem 1rem 0">
+        <input id="replay-scrub" type="range" min="0" max="100" value="0" style="flex:1">
+        <span id="replay-scrub-val" class="muted">0%</span>
+      </div>
+    </div>
+    <div class="replay-right">
+      <h3>Blocks Timeline</h3>
+      <div id="replay-timeline" class="replay-timeline"></div>
+      <h3>Output</h3>
+      <pre id="replay-output" class="replay-output"></pre>
+    </div>
+  </div>
+
+  <!-- XTerm.js Dependencies -->
+  <script src="../node_modules/xterm/lib/xterm.js"></script>
+  <script src="../node_modules/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+  
+  <script src="./renderer.js"></script>
+  <script src="./replay_ui.js"></script>
+  
+  <!-- Phase 5 V2 Terminal Scripts -->
+  <!-- Note: BlockManagerV2 is embedded in terminal_renderer_v2.js -->
+  <script src="./terminal/terminal_renderer_v2.js"></script>
+  
+  <!-- Palette Overlay -->
+  <div id="palette-overlay" class="palette-overlay" style="display: none;">
+    <div class="palette-container">
+      <input 
+        type="text" 
+        id="palette-input" 
+        class="palette-input" 
+        placeholder="Type to search workflows..."
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <div id="palette-results" class="palette-results"></div>
+      <div class="palette-footer">
+        <span class="palette-key">Enter</span> to run • 
+        <span class="palette-key">Shift+Enter</span> to run in new tab • 
+        <span class="palette-key">Cmd+Enter</span> to open new tab
+      </div>
+    </div>
+  </div>
+  
+  <script src="./palette_ui.js"></script>
+</body>
+</html>

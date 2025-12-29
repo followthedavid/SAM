@@ -1,0 +1,2 @@
+==> [08_smoke_scripts] 08_smoke_scripts
+scripts [ 'dev', 'start', 'pack:mac' ]

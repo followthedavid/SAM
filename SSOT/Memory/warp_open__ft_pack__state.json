@@ -1,0 +1,30 @@
+{
+  "ft_pack_state": {
+    "timestamp": "2025-10-20T21:10:16Z",
+    "app_path": "/Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron",
+    "features": {
+      "session_restore_v2": "installed",
+      "theme_switcher": "installed",
+      "replay_auto_load": "installed"
+    },
+    "markers_present": {
+      "preload_sessions_api": true,
+      "styles_theme_vars": true,
+      "html_theme_button": true,
+      "html_replay_scrubber": true,
+      "html_data_theme": true,
+      "renderer_theme_api": true,
+      "renderer_session_restore": true,
+      "renderer_replay_enh": true,
+      "renderer_theme_shortcut": true
+    },
+    "file_hashes": {},
+    "test_session_count": 54,
+    "changelog": [
+      "Added theme switcher with 🌗 button and Cmd+Shift+T shortcut",
+      "Enhanced session restore v2 with improved tab state management",
+      "Implemented replay auto-load with newest session + scrubber control",
+      "All changes are additive with backup files and marker guards"
+    ]
+  }
+}

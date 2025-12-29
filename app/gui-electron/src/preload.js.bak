@@ -1,0 +1,124 @@
+console.log('[preload] boot');
+console.log('[preload] typeof require =', typeof require);
+console.log('[preload] Node version =', process.versions.node, 'electron =', process.versions.electron);
+
+const { contextBridge, ipcRenderer, clipboard } = require('electron');
+
+// Load xterm in preload context
+let Terminal, FitAddon, WebLinksAddon;
+try {
+  ({ Terminal } = require('xterm'));
+  ({ FitAddon } = require('xterm-addon-fit'));
+  ({ WebLinksAddon } = require('xterm-addon-web-links'));
+  console.log('[preload] xterm loaded successfully');
+} catch (e) {
+  console.error('[preload] xterm load failed:', e.message);
+}
+
+contextBridge.exposeInMainWorld('bridge', {
+  // Sessions
+  startPTY: async (opts) => ipcRenderer.invoke('pty:start', opts),
+  sendInput: (id, data) => ipcRenderer.send('pty:input', { id, data }),
+  resizePTY: (id, cols, rows) => ipcRenderer.send('pty:resize', { id, cols, rows }),
+  killPTY: (id) => ipcRenderer.send('pty:kill', { id }),
+
+  // Streams
+  onPTYData: (cb) => ipcRenderer.on('pty:data', (_e, payload) => cb(payload)),
+  onPTYExit: (cb) => ipcRenderer.on('pty:exit', (_e, payload) => cb(payload)),
+
+  // Utilities
+  copy: (text) => clipboard.writeText(text || ''),
+  openExternal: (href) => ipcRenderer.send('open:external', href),
+  
+  // Terminal factory
+  createTerminal: (container) => {
+    if (!Terminal) throw new Error('xterm not available');
+    
+    const term = new Terminal({
+      fontFamily: 'ui-monospace, Menlo, Monaco, "Cascadia Mono", monospace',
+      fontSize: 13,
+      allowProposedApi: true,
+      theme: {
+        background: '#0b0f14',
+        foreground: '#e6edf3',
+        cursor: '#a6da95',
+        selection: '#204a72'
+      },
+      scrollback: 5000
+    });
+
+    const fit = new FitAddon();
+    const links = new WebLinksAddon((e, uri) => ipcRenderer.send('open:external', uri));
+    term.loadAddon(fit);
+    term.loadAddon(links);
+
+    term.open(container);
+    fit.fit();
+
+    return {
+      write: (d) => term.write(d),
+      onData: (cb) => term.onData(cb),
+      clear: () => term.clear(),
+      fit: () => fit.fit(),
+      dispose: () => term.dispose(),
+      getSelection: () => term.getSelection(),
+      get cols() { return term.cols; },
+      get rows() { return term.rows; }
+    };
+  }
+});
+
+// --- WARP_OPEN_PALETTE_FILES_MARKER ---
+try {
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+
+  function readTextFile(p) {
+    try { return fs.readFileSync(p, 'utf8'); } catch { return null; }
+  }
+  function writeTextFile(p, data) {
+    try {
+      const dir = path.dirname(p);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(p, data, 'utf8'); 
+      return true;
+    } catch { return false; }
+  }
+  function getHomeDir() { return os.homedir(); }
+
+  // New, separate surface (keeps existing bridge unchanged)
+  contextBridge.exposeInMainWorld('files', { readTextFile, writeTextFile, getHomeDir });
+} catch (e) {
+  // Non-fatal; UI will degrade gracefully
+  // console.error('[preload files] failed', e);
+}
+// --- WARP_OPEN_PALETTE_FILES_MARKER ---
+
+// --- tabs/events bridge (append) ---
+contextBridge.exposeInMainWorld('tabs', {
+  new: (initialCmd) => ipcRenderer.invoke('app:new-tab', { initialCmd }),
+  onNew: (cb) => ipcRenderer.on('tabs:new', (_e, payload) => cb && cb(payload || {})),
+});
+
+// --- WARP_OPEN_BLOCKS_API_MARKER ---
+// Blocks API bridge for renderer
+contextBridge.exposeInMainWorld('blocksAPI', {
+  getBlocks: async (limit = 50) => {
+    try {
+      return await ipcRenderer.invoke('blocks:get-all', limit);
+    } catch (e) {
+      console.warn('[preload] blocks:get-all failed:', e.message);
+      return [];
+    }
+  },
+  exportBlock: async (id, format = 'text') => {
+    try {
+      return await ipcRenderer.invoke('blocks:export', id, format);
+    } catch (e) {
+      console.warn('[preload] blocks:export failed:', e.message);
+      return null;
+    }
+  }
+});
+// --- WARP_OPEN_BLOCKS_API_MARKER ---

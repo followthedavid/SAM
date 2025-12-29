@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test-smoke:
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: app/gui-electron
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/gui-electron/package-lock.json
+
+      - name: Install deps
+        run: |
+          npm ci || npm install --no-audit --no-fund --legacy-peer-deps
+          npx electron-rebuild -f -w node-pty
+
+      - name: Lint / Typecheck / Unit tests
+        run: npm run ci
+
+      - name: Run smoke summary (artifact)
+        if: always()
+        run: |
+          mkdir -p artifacts
+          LOG=$(ls -t "$HOME/.warp_open/sessions"/session-*.jsonl 2>/dev/null | head -1 || true)
+          if [ -n "$LOG" ]; then
+            cp "$LOG" artifacts/
+            node ./scripts/validate_smoke.js || true
+          fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-logs
+          path: app/gui-electron/artifacts
+          if-no-files-found: ignore

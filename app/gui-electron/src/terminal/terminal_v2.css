@@ -1,0 +1,358 @@
+/**
+ * terminal_v2.css - Enhanced Phase 5 Terminal Styles
+ * Adds: collapsible blocks, keyboard selection, undo/redo indicators
+ */
+
+/* Import base styles */
+@import './terminal.css';
+
+/* Block Collapse Button */
+.block-collapse-btn {
+  padding: 2px 6px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #c0caf5;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 8px;
+}
+
+.block-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+/* Collapsed Block State */
+.block.collapsed {
+  height: 32px;
+  overflow: hidden;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.block.collapsed:hover {
+  opacity: 0.9;
+}
+
+.block.collapsed .block-actions {
+  display: none !important;
+}
+
+.block.collapsed pre {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Keyboard Selection */
+.block.selected {
+  outline: 2px solid #7aa2f7;
+  outline-offset: 2px;
+  box-shadow: 0 0 12px rgba(122, 162, 247, 0.4);
+}
+
+.block.selected::before {
+  content: '→';
+  position: absolute;
+  left: -16px;
+  color: #7aa2f7;
+  font-weight: bold;
+}
+
+/* Undo/Redo Indicators */
+.undo-indicator,
+.redo-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 16px 32px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.9);
+  color: #7aa2f7;
+  font-size: 18px;
+  font-weight: 600;
+  z-index: 1000;
+  animation: fadeInOut 1s ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0; }
+  20%, 80% { opacity: 1; }
+}
+
+/* Enhanced Block Metadata with Context */
+.block-meta .context-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(187, 154, 247, 0.12);
+  color: #bb9af7;
+  font-size: 10px;
+  margin-left: 8px;
+}
+
+/* AI Block with Collapsible Context Preview */
+.block-ai .context-preview {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  font-size: 11px;
+  color: #565f89;
+  border-left: 2px solid #bb9af7;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.block-ai:hover .context-preview {
+  max-height: 200px;
+}
+
+/* Tab Drag-and-Drop */
+.tab.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.tab.drag-over {
+  border-left: 3px solid #7aa2f7;
+}
+
+/* Multi-level Undo Stack Indicator */
+.undo-stack-indicator {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(122, 162, 247, 0.3);
+  font-size: 11px;
+  color: #7aa2f7;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.undo-stack-indicator.visible {
+  opacity: 1;
+}
+
+/* Enhanced Block Actions with More Options */
+.block-actions .block-action.export {
+  background: rgba(158, 206, 106, 0.12);
+  color: #9ece6a;
+}
+
+.block-actions .block-action.collapse-all {
+  background: rgba(122, 162, 247, 0.12);
+  color: #7aa2f7;
+}
+
+/* Git Status Badge in Context */
+.git-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(158, 206, 106, 0.12);
+  color: #9ece6a;
+  font-size: 10px;
+  font-family: monospace;
+}
+
+.git-status-badge.modified {
+  background: rgba(255, 162, 0, 0.12);
+  color: #ffa20a;
+}
+
+.git-status-badge.untracked {
+  background: rgba(247, 118, 142, 0.12);
+  color: #f7768e;
+}
+
+/* OSC 133 Marker Indicators (for debugging) */
+.block[data-osc-marker]::after {
+  content: attr(data-osc-marker);
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: rgba(122, 162, 247, 0.2);
+  color: #7aa2f7;
+  font-size: 8px;
+  font-family: monospace;
+  opacity: 0.5;
+}
+
+/* Block Export Preview */
+.block-export-preview {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  max-height: 80vh;
+  padding: 24px;
+  border-radius: 12px;
+  background: #1a1b26;
+  border: 1px solid rgba(122, 162, 247, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+  overflow: auto;
+}
+
+.block-export-preview pre {
+  padding: 12px;
+  border-radius: 6px;
+  background: #0b0f14;
+  font-size: 12px;
+  max-height: 400px;
+  overflow: auto;
+}
+
+/* Enhanced Keyboard Shortcuts Help */
+.keyboard-shortcuts-help {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(122, 162, 247, 0.3);
+  font-size: 11px;
+  color: #c0caf5;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  max-width: 300px;
+}
+
+.keyboard-shortcuts-help.visible {
+  opacity: 1;
+}
+
+.keyboard-shortcuts-help .shortcut {
+  display: flex;
+  justify-content: space-between;
+  margin: 4px 0;
+}
+
+.keyboard-shortcuts-help kbd {
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  font-family: monospace;
+  font-size: 10px;
+}
+
+/* Smooth Scroll for Block Navigation */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Block Loading Skeleton */
+.block-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Context Pack Inline Display */
+.block-context-inline {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: rgba(122, 162, 247, 0.08);
+  border-left: 3px solid #7aa2f7;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.block-context-inline .context-item {
+  display: flex;
+  justify-content: space-between;
+  margin: 2px 0;
+}
+
+.block-context-inline .context-label {
+  color: #565f89;
+  font-weight: 600;
+}
+
+.block-context-inline .context-value {
+  color: #c0caf5;
+  font-family: monospace;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .block-collapse-btn {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .keyboard-shortcuts-help {
+    display: none;
+  }
+
+  .undo-stack-indicator {
+    bottom: 8px;
+    right: 8px;
+    font-size: 10px;
+  }
+}
+
+/* Dark Mode Enhancements */
+@media (prefers-color-scheme: dark) {
+  .block.selected {
+    outline-color: #89b4fa;
+    box-shadow: 0 0 16px rgba(137, 180, 250, 0.5);
+  }
+
+  .block-collapse-btn:hover {
+    background: rgba(137, 180, 250, 0.2);
+  }
+}
+
+/* Print Styles (for block export) */
+@media print {
+  .block-actions,
+  .block-collapse-btn,
+  .tab-bar,
+  #terminalInputBar,
+  #statusBar {
+    display: none !important;
+  }
+
+  .block {
+    page-break-inside: avoid;
+    background: white !important;
+    color: black !important;
+    border: 1px solid #ccc;
+  }
+
+  .block.collapsed {
+    height: auto;
+  }
+}

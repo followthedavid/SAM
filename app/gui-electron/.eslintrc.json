@@ -1,0 +1,29 @@
+{
+  "root": true,
+  "env": { "es2021": true, "node": true },
+  "extends": ["eslint:recommended"],
+  "parserOptions": { "ecmaVersion": 2021, "sourceType": "script" },
+  "ignorePatterns": ["dist/", "node_modules/"],
+  "overrides": [
+    {
+      "files": ["src/renderer.js"],
+      "env": { "browser": true },
+      "globals": {
+        "window": "readonly",
+        "document": "readonly",
+        "localStorage": "readonly"
+      },
+      "rules": {
+        "no-unused-vars": ["warn", { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_" }]
+      }
+    },
+    {
+      "files": ["src/preload.js"],
+      "env": { "browser": false, "node": true }
+    },
+    {
+      "files": ["src/main.js"],
+      "env": { "browser": false, "node": true }
+    }
+  ]
+}

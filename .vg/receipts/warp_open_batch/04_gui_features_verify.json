@@ -1,0 +1,10 @@
+{
+  "id": "04_gui_features_verify",
+  "desc": "04_gui_features_verify",
+  "status": "success",
+  "started_at": "2025-10-17T06:57:17Z",
+  "ended_at": "2025-10-17T06:57:17Z",
+  "duration_s": 0,
+  "cwd": "/Users/davidquinton/ReverseLab/Warp_Open/app/gui-electron/src",
+  "log": "/Users/davidquinton/ReverseLab/Warp_Open/.vg/receipts/warp_open_batch/logs/04_gui_features_verify.log"
+}

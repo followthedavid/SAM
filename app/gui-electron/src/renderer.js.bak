@@ -1,0 +1,699 @@
+console.log('[renderer] starting...');
+
+// DOM elements
+const tabsEl = document.getElementById('tabs');
+const stageEl = document.getElementById('stage');
+const copyBtn = document.getElementById('copy');
+const clearBtn = document.getElementById('clear');
+const blocksBtn = document.getElementById('blocks');
+const blocksPanel = document.getElementById('blocksPanel');
+
+// State
+const terms = new Map(); // sessionId -> { term, fit, el }
+const tabSessions = new Map(); // tabBtn -> sessionId
+let activeSessionId = null;
+
+// Create a terminal view for a session id
+function createTerminalView(sessionId) {
+  const wrap = document.createElement('div');
+  wrap.className = 'termwrap';
+  wrap.dataset.sessionId = sessionId;
+  stageEl.appendChild(wrap);
+
+  // Create terminal using preload factory
+  const term = window.bridge.createTerminal(wrap);
+
+  // Send keystrokes to the correct session
+  term.onData(d => window.bridge.sendInput(sessionId, d));
+
+  // Store reference (term object already has fit method)
+  terms.set(sessionId, { term, el: wrap });
+  
+  // Welcome message
+  term.write(`\x1b[38;5;111m[${sessionId}] terminal ready\x1b[0m\r\n`);
+  
+  return { term, el: wrap };
+}
+
+function activateSession(sessionId) {
+  activeSessionId = sessionId;
+  
+  // Show active terminal
+  for (const { el } of terms.values()) {
+    el.classList.remove('active');
+  }
+  
+  const obj = terms.get(sessionId);
+  if (obj) {
+    obj.el.classList.add('active');
+    // Refit after layout change
+    setTimeout(() => {
+      obj.term.fit();
+      window.bridge.resizePTY(sessionId, obj.term.cols, obj.term.rows);
+    }, 0);
+  }
+  
+  // Update tab UI
+  tabsEl.querySelectorAll('.tab[data-kind="tab"]').forEach(btn => {
+    const sid = tabSessions.get(btn);
+    btn.classList.toggle('active', sid === sessionId);
+  });
+}
+
+// Create a new tab+session
+async function newTab({ cwd } = {}) {
+  const res = await window.bridge.startPTY({ cols: 120, rows: 32, cwd });
+  const sessionId = res?.id;
+  if (!sessionId) return;
+
+  // Create tab button (before the + button)
+  const plusBtn = tabsEl.querySelector('.tab.plus');
+  const idx = tabsEl.querySelectorAll('.tab[data-kind="tab"]').length + 1;
+  const btn = document.createElement('button');
+  btn.className = 'tab';
+  btn.dataset.kind = 'tab';
+  btn.textContent = `${idx} • ${cwd ? cwd.split('/').pop() || 'tab' : 'tab'}`;
+  tabsEl.insertBefore(btn, plusBtn);
+
+  tabSessions.set(btn, sessionId);
+  createTerminalView(sessionId);
+  activateSession(sessionId);
+}
+
+// Tab click handling
+tabsEl.addEventListener('click', (ev) => {
+  const btn = ev.target.closest('.tab');
+  if (!btn) return;
+  
+  const kind = btn.dataset.kind;
+  if (kind === 'plus') {
+    return newTab({});
+  }
+  if (kind === 'tab') {
+    const sid = tabSessions.get(btn);
+    if (sid) activateSession(sid);
+  }
+});
+
+// Middle-click to close tab
+tabsEl.addEventListener('auxclick', (ev) => {
+  if (ev.button !== 1) return; // only middle-click
+  const btn = ev.target.closest('.tab[data-kind="tab"]');
+  if (!btn) return;
+  
+  const sid = tabSessions.get(btn);
+  if (!sid) return;
+  
+  // Remove UI + kill pty
+  const obj = terms.get(sid);
+  if (obj) {
+    try { obj.term.dispose(); } catch {}
+    obj.el.remove();
+  }
+  terms.delete(sid);
+  tabSessions.delete(btn);
+  btn.remove();
+  window.bridge.killPTY(sid);
+  
+  // Activate first remaining tab
+  const firstBtn = tabsEl.querySelector('.tab[data-kind="tab"]');
+  if (firstBtn) {
+    const firstSid = tabSessions.get(firstBtn);
+    if (firstSid) activateSession(firstSid);
+  } else {
+    activeSessionId = null;
+  }
+});
+
+// Button handlers
+copyBtn.addEventListener('click', () => {
+  if (!activeSessionId) return;
+  const obj = terms.get(activeSessionId);
+  const sel = obj?.term?.getSelection();
+  if (sel) window.bridge.copy(sel);
+});
+
+clearBtn.addEventListener('click', () => {
+  if (!activeSessionId) return;
+  const obj = terms.get(activeSessionId);
+  obj?.term?.clear();
+});
+
+blocksBtn.addEventListener('click', () => {
+  const isVisible = blocksPanel.style.display === 'block';
+  blocksPanel.style.display = isVisible ? 'none' : 'block';
+  if (!isVisible) {
+    blocksPanel.innerHTML = `
+      <div style="text-align:center;color:var(--muted);margin-top:40px;">
+        <div style="font-size:24px;">📋</div>
+        <p>Blocks Panel</p>
+        <p style="font-size:11px;">Command history will appear here<br/>when blocks are enabled</p>
+      </div>
+    `;
+  }
+});
+
+// PTY data routing
+window.bridge.onPTYData(({ id, data }) => {
+  const obj = terms.get(id);
+  if (obj) obj.term.write(data);
+});
+
+window.bridge.onPTYExit(({ id, exitCode }) => {
+  const obj = terms.get(id);
+  if (obj) {
+    obj.term.write(`\r\n\x1b[31m[process exited ${exitCode ?? ''}]\x1b[0m\r\n`);
+  }
+});
+
+// Layout resize -> refit active
+window.addEventListener('resize', () => {
+  if (!activeSessionId) return;
+  const obj = terms.get(activeSessionId);
+  if (obj) {
+    obj.term.fit();
+    window.bridge.resizePTY(activeSessionId, obj.term.cols, obj.term.rows);
+  }
+});
+
+// Boot: create first tab
+(async function boot() {
+  try {
+    await newTab({});
+    console.log('[renderer] boot complete');
+  } catch (e) {
+    console.error('[renderer] boot failed:', e);
+  }
+})();
+
+// Keyboard shortcuts: Cmd+T new tab, Cmd+W close tab
+window.addEventListener('keydown', (e) => {
+  const isMac = navigator.platform.toLowerCase().includes('mac');
+  const mod = isMac ? e.metaKey : e.ctrlKey;
+  if (!mod) return;
+
+  // Cmd/Ctrl+T: new tab
+  if (e.key.toLowerCase() === 't') {
+    e.preventDefault();
+    newTab({});
+  }
+
+  // Cmd/Ctrl+W: close active tab
+  if (e.key.toLowerCase() === 'w' && activeSessionId) {
+    e.preventDefault();
+    // emulate middle-click close logic
+    const btn = [...tabSessions.keys()].find(b => tabSessions.get(b) === activeSessionId);
+    if (!btn) return;
+    const sid = activeSessionId;
+    const obj = terms.get(sid);
+    if (obj) { try { obj.term.dispose(); } catch {} obj.el.remove(); }
+    terms.delete(sid);
+    tabSessions.delete(btn);
+    btn.remove();
+    window.bridge.killPTY(sid);
+    const firstBtn = document.querySelector('.tab[data-kind="tab"]');
+    if (firstBtn) activateSession(tabSessions.get(firstBtn)); else activeSessionId = null;
+  }
+
+  // Cmd/Ctrl+B: toggle blocks panel
+  if (e.key.toLowerCase() === 'b') {
+    e.preventDefault();
+    if (window.blocks && typeof window.blocks.togglePanel === 'function') {
+      window.blocks.togglePanel();
+    } else if (window.bridge?.blocksToggle) {
+      window.bridge.blocksToggle();
+    } else {
+      // Fallback to direct UI toggle
+      const isVisible = blocksPanel.style.display === 'block';
+      blocksPanel.style.display = isVisible ? 'none' : 'block';
+      if (!isVisible) {
+        blocksPanel.innerHTML = `
+          <div style="text-align:center;color:var(--muted);margin-top:40px;">
+            <div style="font-size:24px;">📋</div>
+            <p>Blocks Panel</p>
+            <p style="font-size:11px;">Command history will appear here<br/>when blocks are enabled</p>
+          </div>
+        `;
+      }
+    }
+  }
+});
+
+// --- SESSION_RESTORE_V1 ---
+(function(){
+  if (!window.newTab || !window.bridge || !window.bridge.sendInput) return;
+  const KEY = 'warp_open:tabs:v1';
+
+  function snapshot() {
+    // expect a global terms map and per-tab cwd tracking; fall back to HOME
+    try {
+      const home = (window.files && window.files.getHomeDir) ? window.files.getHomeDir() : '';
+      const tabs = [];
+      // Assume each Terminal view has data-cwd attr (or derive via last-known cwd)
+      document.querySelectorAll('.tab[data-kind="tab"]').forEach((btn) => {
+        const sid = btn.getAttribute('data-session-id') || '';
+        let cwd = '';
+        try { cwd = btn.getAttribute('data-cwd') || ''; } catch {}
+        if (!cwd) cwd = home || '~';
+        tabs.push({ cwd });
+      });
+      localStorage.setItem(KEY, JSON.stringify({ tabs, ts: Date.now() }));
+    } catch {}
+  }
+
+  function restore() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (!data || !Array.isArray(data.tabs) || !data.tabs.length) return false;
+      // Clear existing default tab if empty
+      // Then recreate each tab
+      let first = true;
+      data.tabs.forEach(({cwd}) => {
+        if (first) { window.newTab({ cwd }); first=false; }
+        else window.newTab({ cwd });
+      });
+      return true;
+    } catch { return false; }
+  }
+
+  // Try restore shortly after boot; if fails, do nothing (default tab stays)
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => { restore(); }, 250);
+  });
+
+  // Periodic + on-exit snapshot
+  setInterval(snapshot, 5000);
+  window.addEventListener('beforeunload', snapshot);
+})();
+ // --- SESSION_RESTORE_V1 ---
+
+// === WARP_OPEN_SHORTCUTS_AND_STATE_MARKER ===
+(function () {
+  // Defensive guards: only add features if core hooks exist.
+  const hasNewTab = typeof window.newTab === 'function';
+  const hasCloseActive = typeof window.closeActiveTab === 'function';
+  const KEY_ACTIVE = 'warp_open:lastActiveTabIndex';
+  const KEY_TABS = 'warp_open:tabs:v1'; // from Session Restore v1
+
+  function isMac() {
+    return navigator.platform.toLowerCase().includes('mac');
+  }
+  function modKey(e) {
+    return isMac() ? e.metaKey : e.ctrlKey;
+  }
+
+  // Find tab buttons; assumes you render them with .tab[data-kind="tab"]
+  function allTabButtons() {
+    return Array.from(document.querySelectorAll('.tab[data-kind="tab"]'));
+  }
+  function activeTabButton() {
+    return document.querySelector('.tab[data-kind="tab"].active') || allTabButtons()[0] || null;
+  }
+  function indexOfActive() {
+    const all = allTabButtons();
+    const a = activeTabButton();
+    return Math.max(0, all.indexOf(a));
+  }
+
+  // Persist last active tab index
+  function saveLastActive() {
+    try { localStorage.setItem(KEY_ACTIVE, String(indexOfActive())); } catch {}
+  }
+  function restoreLastActiveSoon() {
+    // Delay a tick to let initial tabs render
+    setTimeout(() => {
+      try {
+        const raw = localStorage.getItem(KEY_ACTIVE);
+        if (!raw) return;
+        const idx = Math.max(0, parseInt(raw, 10) || 0);
+        const btn = allTabButtons()[idx];
+        if (btn) btn.click();
+      } catch {}
+    }, 300);
+  }
+
+  // When user clicks any tab, remember it immediately
+  function wireTabClicks() {
+    document.addEventListener('click', (e) => {
+      const el = e.target && (e.target.closest ? e.target.closest('.tab[data-kind="tab"]') : null);
+      if (!el) return;
+      // The app's own click handler should toggle .active; we just persist after a tiny delay
+      setTimeout(saveLastActive, 50);
+    });
+  }
+
+  // Keyboard shortcuts: Cmd/Ctrl+T (new tab), Cmd/Ctrl+W (close tab)
+  function wireShortcuts() {
+    window.addEventListener('keydown', (e) => {
+      if (!modKey(e)) return;
+
+      const k = (e.key || '').toLowerCase();
+      if (k === 't' && hasNewTab) {
+        e.preventDefault();
+        // Try to reuse the active tab's cwd if available
+        let cwd = '';
+        const active = activeTabButton();
+        if (active) cwd = active.getAttribute('data-cwd') || '';
+        window.newTab({ cwd });
+        // Give layout a moment, then mark the new tab active in storage
+        setTimeout(saveLastActive, 100);
+      }
+      if (k === 'w' && hasCloseActive) {
+        e.preventDefault();
+        window.closeActiveTab();
+        setTimeout(saveLastActive, 150);
+      }
+    });
+  }
+
+  // Track CWD on each tab:
+  // If your preload/bridge emits cwd updates (e.g. OSC 7 parsed),
+  // attach them here to keep data-cwd current on the active tab button.
+  function wireCwdUpdates() {
+    const bridge = window.bridge || {};
+    const onCwd = bridge.onCwdUpdate || bridge.onCwd || null; // be flexible with names
+    if (typeof onCwd !== 'function') return;
+
+    onCwd(({ cwd, sessionId }) => {
+      try {
+        // Prefer matching by data-session-id if you render it; otherwise fall back to active tab.
+        let btn = null;
+        if (sessionId) {
+          btn = document.querySelector(`.tab[data-kind="tab"][data-session-id="${CSS.escape(sessionId)}"]`);
+        }
+        btn = btn || activeTabButton();
+        if (btn && cwd) {
+          btn.setAttribute('data-cwd', cwd);
+          // Also refresh Session Restore snapshot so it captures the latest cwd
+          // (Session Restore v1 runs its own interval; this is just a safety poke)
+          try {
+            const snapRaw = localStorage.getItem(KEY_TABS);
+            if (snapRaw) {
+              const data = JSON.parse(snapRaw);
+              const idx = indexOfActive();
+              if (data && data.tabs && data.tabs[idx]) {
+                data.tabs[idx].cwd = cwd;
+                localStorage.setItem(KEY_TABS, JSON.stringify(data));
+              }
+            }
+          } catch {}
+        }
+      } catch {}
+    });
+  }
+
+  // Boot
+  window.addEventListener('DOMContentLoaded', () => {
+    wireTabClicks();
+    wireShortcuts();
+    wireCwdUpdates();
+    restoreLastActiveSoon();
+  });
+})();
+ // === WARP_OPEN_SHORTCUTS_AND_STATE_MARKER ===
+
+// === WARP_OPEN_TABS_QOL_MARKER ===
+(function () {
+  const KEY_ACTIVE = 'warp_open:lastActiveTabIndex';
+  const KEY_SCROLL = 'warp_open:scrollback:v1';          // { byTabKey: { key -> {lines: [...], cursor:number} } }
+  const MAX_LINES = 2000;                                 // persisted lines per tab
+  const CLOSED_STACK_KEY = 'warp_open:closedTabsStack';   // LIFO stack for reopen-closed
+  const isMac = () => navigator.platform.toLowerCase().includes('mac');
+  const modKey = (e) => isMac() ? e.metaKey : e.ctrlKey;
+
+  // ---- helpers to address tabs in the DOM ----
+  const tabSelector = '.tab[data-kind="tab"]';
+  const allTabButtons = () => Array.from(document.querySelectorAll(tabSelector));
+  const activeTabButton = () => document.querySelector(`${tabSelector}.active`) || allTabButtons()[0] || null;
+  const indexOfActive = () => {
+    const all = allTabButtons(); const a = activeTabButton();
+    return Math.max(0, all.indexOf(a));
+  };
+  const tabKeyFor = (btn) => {
+    // prefer a stable ID if present; else fall back to index
+    if (!btn) return `idx:${indexOfActive()}`;
+    const sid = btn.getAttribute('data-session-id');
+    if (sid) return `sid:${sid}`;
+    const idx = allTabButtons().indexOf(btn);
+    return `idx:${idx >= 0 ? idx : 0}`;
+  };
+
+  // ---- persist last active tab index (already present from previous patch) ----
+  function saveLastActive() { try { localStorage.setItem(KEY_ACTIVE, String(indexOfActive())); } catch {} }
+  function restoreLastActiveSoon() {
+    setTimeout(() => {
+      try {
+        const raw = localStorage.getItem(KEY_ACTIVE); if (!raw) return;
+        const idx = Math.max(0, parseInt(raw, 10) || 0);
+        const btn = allTabButtons()[idx]; if (btn) btn.click();
+      } catch {}
+    }, 250);
+  }
+
+  // ---- CLOSED TAB STACK (reopen with Cmd+Shift+T) ----
+  function readClosedStack() {
+    try { return JSON.parse(localStorage.getItem(CLOSED_STACK_KEY) || '[]') || []; } catch { return []; }
+  }
+  function writeClosedStack(arr) {
+    try { localStorage.setItem(CLOSED_STACK_KEY, JSON.stringify(arr.slice(-20))); } catch {}
+  }
+  function pushClosedTab(info) {
+    const st = readClosedStack(); st.push(info); writeClosedStack(st);
+  }
+  function popClosedTab() {
+    const st = readClosedStack(); const v = st.pop(); writeClosedStack(st); return v;
+  }
+
+  // Wrap window.closeActiveTab (if present) to capture info before closing
+  (function wrapCloseActive() {
+    const orig = window.closeActiveTab;
+    if (typeof orig !== 'function') return;
+    window.closeActiveTab = function wrappedCloseActiveTab() {
+      try {
+        const btn = activeTabButton();
+        if (btn) {
+          pushClosedTab({
+            title: btn.textContent?.trim() || 'Tab',
+            cwd: btn.getAttribute('data-cwd') || '',
+            // If you have a way to map tab -> shell args/env, add here:
+            ts: Date.now()
+          });
+        }
+      } catch {}
+      return orig.apply(this, arguments);
+    };
+  })();
+
+  // Reopen last closed: tries to create a tab with captured cwd/title
+  window.reopenLastClosedTab = function () {
+    const info = popClosedTab();
+    if (!info) return;
+    // Prefer your app's newTab API if available
+    if (typeof window.newTab === 'function') {
+      window.newTab({ cwd: info.cwd || '' });
+      setTimeout(saveLastActive, 100);
+    }
+  };
+
+  // ---- shortcuts (tabs jump/cycle/reopen) ----
+  function wireMoreShortcuts() {
+    window.addEventListener('keydown', (e) => {
+      if (!modKey(e)) return;
+      const k = (e.key || '').toLowerCase();
+
+      // Cmd/Ctrl+Shift+T => reopen closed
+      if (e.shiftKey && k === 't') {
+        e.preventDefault();
+        window.reopenLastClosedTab && window.reopenLastClosedTab();
+        return;
+      }
+
+      // Cmd/Ctrl+Shift+[ / ] => prev/next tab
+      if (e.shiftKey && (k === '[' || k === ']')) {
+        e.preventDefault();
+        const tabs = allTabButtons(); if (!tabs.length) return;
+        const i = indexOfActive();
+        const j = k === ']' ? (i + 1) % tabs.length : (i - 1 + tabs.length) % tabs.length;
+        tabs[j].click(); setTimeout(saveLastActive, 50);
+        return;
+      }
+
+      // Cmd/Ctrl+1..9 => select tab index (1-based)
+      if (/^[1-9]$/.test(k)) {
+        e.preventDefault();
+        const idx = Math.min(8, parseInt(k, 10) - 1);
+        const btn = allTabButtons()[idx]; if (btn) { btn.click(); setTimeout(saveLastActive, 50); }
+      }
+    });
+  }
+
+  // ---- SCROLLBACK persistence (per tab) ----
+  // We'll capture output lines by listening to PTY data if your preload exposes it,
+  // else (fallback) from xterm instance if your window.terminal provides hooks.
+  const Scroll = {
+    readAll() {
+      try { return JSON.parse(localStorage.getItem(KEY_SCROLL) || '{"byTabKey":{}}'); }
+      catch { return { byTabKey: {} }; }
+    },
+    writeAll(obj) {
+      try { localStorage.setItem(KEY_SCROLL, JSON.stringify(obj)); } catch {}
+    },
+    snapshotFor(key) {
+      const obj = this.readAll(); return obj.byTabKey[key] || { lines: [], cursor: 0 };
+    },
+    putFor(key, snap) {
+      const obj = this.readAll();
+      obj.byTabKey[key] = snap;
+      this.writeAll(obj);
+    },
+    pushLine(key, line) {
+      const snap = this.snapshotFor(key);
+      snap.lines.push(line);
+      if (snap.lines.length > MAX_LINES) snap.lines.splice(0, snap.lines.length - MAX_LINES);
+      this.putFor(key, snap);
+    }
+  };
+
+  // Buffer aggregator: join incoming chunks until newline
+  const accumulators = new Map(); // key -> {buf:string}
+  function appendDataForTab(btn, chunk) {
+    const key = tabKeyFor(btn);
+    const st = (accumulators.get(key) || { buf: '' });
+    st.buf += chunk;
+    // split on newlines and persist complete lines
+    let idx;
+    while ((idx = st.buf.indexOf('\n')) !== -1) {
+      const line = st.buf.slice(0, idx + 1);
+      Scroll.pushLine(key, line);
+      st.buf = st.buf.slice(idx + 1);
+    }
+    accumulators.set(key, st);
+  }
+
+  // Restore scrollback to the active terminal when a tab becomes active
+  function restoreScrollbackToActive() {
+    const btn = activeTabButton(); if (!btn) return;
+    const key = tabKeyFor(btn);
+    const snap = Scroll.snapshotFor(key);
+    // If your renderer exposes a write-to-active-terminal API:
+    const writer = (window.writeToActiveTerminal || window.termWrite || ((s) => {
+      // fallback to bridge if available
+      if (window.bridge && typeof window.bridge.appendToTerminal === 'function') {
+        window.bridge.appendToTerminal(s);
+      } else {
+        // last resort: no-op
+      }
+    }));
+    if (snap.lines && snap.lines.length) {
+      // throttle to avoid blocking UI
+      const chunk = snap.lines.join('');
+      try { writer(chunk); } catch {}
+    }
+  }
+
+  // Wire PTY data → scrollback store (needs a data source)
+  function wireScrollbackCapture() {
+    // Preferred: bridge.onData(id,data) or bridge.onData(data)
+    const b = window.bridge || {};
+    if (typeof b.onData === 'function') {
+      b.onData((payload) => {
+        // payload may be string or {id,data}
+        const data = (payload && typeof payload === 'object') ? payload.data : payload;
+        const btn = activeTabButton(); // heuristic: store against active tab
+        if (btn && typeof data === 'string' && data) appendDataForTab(btn, data);
+      });
+      return;
+    }
+    // Fallback: if an xterm instance is available globally
+    if (window.terminal && typeof window.terminal.onData === 'function') {
+      window.terminal.onData((d) => {
+        const btn = activeTabButton();
+        if (btn && typeof d === 'string' && d) appendDataForTab(btn, d);
+      });
+    }
+  }
+
+  // Restore scrollback when tabs change
+  function wireTabActivationRestore() {
+    document.addEventListener('click', (e) => {
+      const el = e.target && (e.target.closest ? e.target.closest(tabSelector) : null);
+      if (!el) return;
+      // after your app switches terminals internally, repaint with restored content
+      setTimeout(() => { restoreScrollbackToActive(); saveLastActive(); }, 120);
+    });
+  }
+
+  // initial boot
+  window.addEventListener('DOMContentLoaded', () => {
+    wireMoreShortcuts();
+    wireScrollbackCapture();
+    wireTabActivationRestore();
+    // First run restore (after initial terminal attach)
+    setTimeout(restoreScrollbackToActive, 400);
+    // Keep last-active up to date (if you didn't wire in earlier)
+    document.addEventListener('click', (e) => {
+      const el = e.target && (e.target.closest ? e.target.closest(tabSelector) : null);
+      if (!el) return; setTimeout(saveLastActive, 50);
+    });
+    restoreLastActiveSoon();
+  });
+})();
+ // === WARP_OPEN_TABS_QOL_MARKER ===
+
+// ===================== Real tabs: receive "tabs:new" from main =====================
+(function wireTabsNew(){
+  try {
+    if (!window.tabs || !window.tabs.onNew) return;
+    window.tabs.onNew(async ({ initialCmd } = {}) => {
+      // Create new tab and seed command if provided
+      if (window.newTab) {
+        await newTab({}); // Create new tab
+        if (initialCmd && activeSessionId) {
+          // Send command to active session
+          window.bridge.sendInput(activeSessionId, initialCmd);
+        }
+      }
+    });
+  } catch(e) {
+    console.log('[renderer] tabs.onNew setup failed:', e.message);
+  }
+})();
+
+// Update palette to support new tab via Cmd+Enter
+(function updatePaletteNewTab(){
+  try {
+    if (!window.palette) return;
+    
+    // Override the palette's runSelected to support Cmd+Enter
+    const originalRunSelected = window.palette.runSelected;
+    if (originalRunSelected) {
+      window.palette.runSelected = function(newTab, cmdKey) {
+        const arr = window.palette.state?.filtered?.length ? window.palette.state.filtered : window.palette.state?.items?.slice(0, 200) || [];
+        const it = arr[window.palette.state?.sel || 0];
+        if (!it) return;
+        
+        const base = (it.base_cwd || window.files?.getHomeDir() || '~');
+        const cmd = it.command || '';
+        const line = (base ? `cd ${JSON.stringify(base)} && ` : '') + cmd + '\r';
+
+        if (cmdKey && window.tabs) {
+          // Cmd+Enter: new tab
+          window.tabs.new(line);
+        } else if (newTab && window.newTab) {
+          // Shift+Enter: new tab (existing behavior)
+          window.newTab({ cwd: base });
+          setTimeout(() => window.bridge.sendInput(activeSessionId, line), 60);
+        } else {
+          // Enter: current tab
+          if (activeSessionId) window.bridge.sendInput(activeSessionId, line);
+        }
+        
+        window.palette.toggle(false);
+      };
+    }
+  } catch(e) {
+    console.log('[renderer] palette update failed:', e.message);
+  }
+})();

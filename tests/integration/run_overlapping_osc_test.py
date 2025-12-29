@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+# tests/integration/run_overlapping_osc_test.py
+
+import subprocess
+import json
+import os
+import sys
+
+def get_binary_path():
+    release_bin = os.path.join(os.getcwd(), "warp_core", "target", "release", "warp_cli")
+    debug_bin = os.path.join(os.getcwd(), "warp_core", "target", "debug", "warp_cli")
+    if os.path.exists(release_bin):
+        return release_bin
+    elif os.path.exists(debug_bin):
+        return debug_bin
+    return None
+
+def run():
+    bin_path = get_binary_path()
+    if not bin_path:
+        print("ERROR: Build warp_cli first")
+        sys.exit(2)
+    
+    fix_path = os.path.join(os.path.dirname(__file__), "fixtures", "overlapping_osc.raw")
+    with open(fix_path, "rb") as f:
+        data = f.read()
+
+    proc = subprocess.Popen([bin_path, "parse-stream", "--json", "--heuristic"],
+                            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        # proc.stdin.write(data)
+        # proc.stdin.close()
+        out, err = proc.communicate(input=data, timeout=10)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        out, err = proc.communicate()
+
+    if err:
+        print(f"STDERR: {err.decode(errors='ignore')}")
+
+    if not out:
+        print("ERROR: No output")
+        sys.exit(3)
+
+    try:
+        lines = out.decode().strip().split('\n')
+        arr = [json.loads(line) for line in lines if line.strip()]
+    except Exception as e:
+        print(f"ERROR: Failed to parse JSON: {e}")
+        sys.exit(4)
+
+    assert len(arr) >= 1, "Expected parser to recover overlapping OSC"
+    print(f"✅ Overlapping OSC test OK — parsed {len(arr)} blocks")
+
+if __name__ == "__main__":
+    run()

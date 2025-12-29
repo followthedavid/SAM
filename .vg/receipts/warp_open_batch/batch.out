@@ -1,0 +1,13 @@
+==> [00_bootstrap_node] 00_bootstrap_node
+==> [01_gui_electron_prepare] 01_gui_electron_prepare
+==> [02_gui_electron_install_deps] 02_gui_electron_install_deps
+==> [03_gui_electron_verify] 03_gui_electron_verify
+==> [04_gui_features_verify] 04_gui_features_verify
+==> [05_install_packager] 05_install_packager
+==> [06_pack_mac] 06_pack_mac
+==> [07_verify_artifacts] 07_verify_artifacts
+==> [08_smoke_scripts] 08_smoke_scripts
+==> [09_placeholder] 09_placeholder
+==> [10_placeholder] 10_placeholder
+==> [11_placeholder] 11_placeholder
+==> [12_placeholder] 12_placeholder
