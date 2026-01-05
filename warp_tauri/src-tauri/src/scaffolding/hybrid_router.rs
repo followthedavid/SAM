@@ -215,20 +215,23 @@ impl HybridRouter {
         }
     }
 
-    // Check if request is creative or conversational (roleplay, chat, stories)
-    // Used to ensure private creative requests get Conversational path, not MicroModel
+    // Check if request is creative or roleplay (NOT general conversation)
+    // Only triggers for explicit roleplay/creative keywords
     fn is_creative_or_conversational(request: &str) -> bool {
         let creative_patterns = [
-            // Roleplay & creative
-            "roleplay", "role play", "pretend", "imagine", "story",
-            "chat", "talk", "conversation", "discuss", "tell me",
-            // Character/persona
-            "be my", "act as", "you are", "pretend you're",
+            // Explicit roleplay keywords
+            "roleplay", "role play", "role-play",
+            // Imagination/pretend
+            "pretend to be", "pretend you're", "pretend you are",
+            "imagine you're", "imagine you are", "imagine we",
+            // Character/persona requests
+            "be my", "act as", "act like", "play as",
+            "you are a", "you're a",
             // Creative writing
-            "write me", "create a story", "poem", "script",
-            // General conversation
-            "let's", "can we", "would you", "could you",
-            "help me", "i want to", "i need",
+            "write me a story", "create a story", "tell me a story",
+            "write a poem", "creative writing",
+            // Explicit chat mode
+            "let's chat", "just chat", "casual chat",
         ];
 
         creative_patterns.iter().any(|p| request.contains(p))

@@ -506,14 +506,16 @@ async fn handle_conversational(input: &str, _routing_latency: u64) -> Orchestrat
         }
     }
 
-    // Detect if this is a roleplay/creative request
-    let is_roleplay = lower.contains("roleplay") || lower.contains("role play") ||
-                      lower.contains("pretend") || lower.contains("imagine") ||
-                      lower.contains("be my") || lower.contains("act as") ||
+    // Detect if this is an EXPLICIT roleplay/creative request (be restrictive)
+    let is_roleplay = lower.contains("roleplay") || lower.contains("role play") || lower.contains("role-play") ||
+                      lower.contains("pretend to be") || lower.contains("pretend you're") ||
+                      lower.contains("imagine you're") || lower.contains("imagine we") ||
+                      lower.contains("be my") || lower.contains("act as") || lower.contains("act like") ||
                       lower.contains("you are a") || lower.contains("you're a");
 
-    let is_creative = lower.contains("story") || lower.contains("poem") ||
-                      lower.contains("write me") || lower.contains("creative");
+    let is_creative = lower.contains("write me a story") || lower.contains("tell me a story") ||
+                      lower.contains("write a poem") || lower.contains("creative writing") ||
+                      lower.contains("let's chat") || lower.contains("just chat");
 
     // Adjust system prompt and settings based on mode
     // Use qwen2.5-coder:1.5b for all modes to avoid model loading delays (78+ seconds)

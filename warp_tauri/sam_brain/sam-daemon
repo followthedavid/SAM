@@ -1,0 +1,82 @@
+#!/bin/bash
+# SAM Brain Daemon Control Script
+
+DAEMON_PY="/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/autonomous_daemon.py"
+APPROVAL_PY="/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/approval_cli.py"
+SERVICE="com.sam.autonomous-daemon"
+
+case "$1" in
+    start)
+        echo "Starting SAM Brain Daemon..."
+        launchctl load ~/Library/LaunchAgents/$SERVICE.plist 2>/dev/null
+        launchctl start $SERVICE
+        echo "Started"
+        ;;
+    stop)
+        echo "Stopping SAM Brain Daemon..."
+        launchctl stop $SERVICE 2>/dev/null
+        launchctl unload ~/Library/LaunchAgents/$SERVICE.plist 2>/dev/null
+        echo "Stopped"
+        ;;
+    restart)
+        $0 stop
+        sleep 2
+        $0 start
+        ;;
+    status)
+        python3 "$DAEMON_PY" --status
+        ;;
+    once)
+        echo "Running single improvement cycle..."
+        python3 "$DAEMON_PY" --once
+        ;;
+    approvals)
+        python3 "$APPROVAL_PY" list
+        ;;
+    approve)
+        if [ -z "$2" ]; then
+            echo "Usage: sam-daemon approve <project-id>"
+            exit 1
+        fi
+        python3 "$APPROVAL_PY" approve "$2"
+        ;;
+    approve-all)
+        python3 "$APPROVAL_PY" approve-all
+        ;;
+    reject)
+        if [ -z "$2" ]; then
+            echo "Usage: sam-daemon reject <project-id>"
+            exit 1
+        fi
+        python3 "$APPROVAL_PY" reject "$2"
+        ;;
+    reject-all)
+        python3 "$APPROVAL_PY" reject-all
+        ;;
+    logs)
+        tail -50 /Volumes/Plex/SSOT/daemon.log
+        ;;
+    watch)
+        tail -f /Volumes/Plex/SSOT/daemon.log
+        ;;
+    *)
+        echo "SAM Brain Daemon Control"
+        echo "========================"
+        echo ""
+        echo "Usage: sam-daemon <command>"
+        echo ""
+        echo "Commands:"
+        echo "  start       - Start the daemon (runs continuously)"
+        echo "  stop        - Stop the daemon"
+        echo "  restart     - Restart the daemon"
+        echo "  status      - Show project status and disk space"
+        echo "  once        - Run single improvement cycle"
+        echo "  approvals   - List pending approvals"
+        echo "  approve <id>- Approve a pending action"
+        echo "  approve-all - Approve all pending actions"
+        echo "  reject <id> - Reject a pending action"
+        echo "  reject-all  - Reject all pending actions"
+        echo "  logs        - Show recent logs"
+        echo "  watch       - Watch logs in real-time"
+        ;;
+esac
