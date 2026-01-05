@@ -1,0 +1,53 @@
+# XcodeGen Project Specification
+# Install: brew install xcodegen
+# Generate: cd ~/ReverseLab/SAM/apps/karaoke && xcodegen
+
+name: SAMKaraoke
+
+options:
+  bundleIdPrefix: com.sam.karaoke
+  deploymentTarget:
+    iOS: "16.0"
+    tvOS: "16.0"
+
+settings:
+  SWIFT_VERSION: "5.9"
+  DEVELOPMENT_TEAM: ""  # Will use personal team
+
+targets:
+  SAMKaraoke:
+    type: application
+    platform: iOS
+    sources:
+      - path: iOS/SAMKaraoke
+        group: SAMKaraoke
+      - path: Shared
+        group: Shared
+    info:
+      path: iOS/SAMKaraoke/Info.plist
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.sam.karaoke.ios
+      INFOPLIST_KEY_NSMicrophoneUsageDescription: "SAM Karaoke needs microphone access to capture your voice for karaoke"
+      INFOPLIST_KEY_NSLocalNetworkUsageDescription: "SAM Karaoke needs local network access to connect to your Apple TV"
+    entitlements:
+      path: iOS/SAMKaraoke/SAMKaraoke.entitlements
+      properties:
+        com.apple.developer.networking.multicast: true
+
+  SAMKaraokeTV:
+    type: application
+    platform: tvOS
+    sources:
+      - path: tvOS/SAMKaraokeTV
+        group: SAMKaraokeTV
+      - path: Shared
+        group: Shared
+    info:
+      path: tvOS/SAMKaraokeTV/Info.plist
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.sam.karaoke.tvos
+      INFOPLIST_KEY_NSLocalNetworkUsageDescription: "SAM Karaoke needs local network access to receive audio from iPhone microphones"
+    entitlements:
+      path: tvOS/SAMKaraokeTV/SAMKaraokeTV.entitlements
+      properties:
+        com.apple.developer.networking.multicast: true

@@ -17,6 +17,15 @@ const STATE_DIR = path.resolve(__dirname, 'data');
 const STATE_FILE = path.join(STATE_DIR, 'agent_state.json');
 const WHITELIST_FILE = path.join(STATE_DIR, 'command_whitelist.json');
 
+// Bridge queue files (written by Rust orchestrator)
+const CHATGPT_QUEUE = path.join(os.homedir(), '.sam_chatgpt_queue.json');
+const CLAUDE_QUEUE = path.join(os.homedir(), '.sam_claude_queue.json');
+const BRIDGE_RESULTS = path.join(os.homedir(), '.sam_bridge_results.json');
+
+// Bridge scripts
+const CHATGPT_BRIDGE = path.join(__dirname, 'claude_chatgpt_bridge.cjs');
+const CLAUDE_BRIDGE = path.join(__dirname, 'claude_bridge.cjs');
+
 if (!fs.existsSync(STATE_DIR)) fs.mkdirSync(STATE_DIR, { recursive: true });
 
 // default whitelist (safe commands only)
@@ -304,6 +313,62 @@ const server = http.createServer(async (req, res) => {
       return respondJSON(res, 200, { logs: state.logs.slice(-500) });
     }
 
+    // GET /bridge-result/:id -> get result from ChatGPT/Claude bridge
+    if (req.method === 'GET' && pathname.startsWith('/bridge-result/')) {
+      const id = pathname.replace('/bridge-result/', '');
+      loadBridgeResults();
+      if (bridgeResults[id]) {
+        return respondJSON(res, 200, { ok: true, result: bridgeResults[id] });
+      }
+      return respondJSON(res, 404, { error: 'result not found', id });
+    }
+
+    // GET /bridge-results -> get all bridge results
+    if (req.method === 'GET' && pathname === '/bridge-results') {
+      loadBridgeResults();
+      return respondJSON(res, 200, { ok: true, results: bridgeResults });
+    }
+
+    // POST /bridge-request -> manually queue a ChatGPT or Claude request
+    if (req.method === 'POST' && pathname === '/bridge-request') {
+      let body = '';
+      req.on('data', c => body += c);
+      req.on('end', () => {
+        try {
+          const obj = JSON.parse(body || '{}');
+          if (!obj.type || !obj.prompt) {
+            return respondJSON(res, 400, { error: 'type (chatgpt|claude) and prompt required' });
+          }
+
+          const id = `bridge_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+          const item = {
+            id,
+            prompt: obj.prompt,
+            context: obj.context || '',
+            processed: false,
+            timestamp: new Date().toISOString()
+          };
+
+          const queueFile = obj.type === 'claude' ? CLAUDE_QUEUE : CHATGPT_QUEUE;
+          let queue = [];
+          try {
+            if (fs.existsSync(queueFile)) {
+              queue = JSON.parse(fs.readFileSync(queueFile, 'utf8'));
+            }
+          } catch (e) { /* ignore */ }
+
+          queue.push(item);
+          fs.writeFileSync(queueFile, JSON.stringify(queue, null, 2));
+
+          addLog('info', `Queued ${obj.type} request: ${id}`);
+          return respondJSON(res, 200, { ok: true, id, message: 'Request queued. Poll /bridge-result/' + id });
+        } catch (e) {
+          return respondJSON(res, 400, { error: String(e) });
+        }
+      });
+      return;
+    }
+
     // fallback
     respondJSON(res, 404, { error: 'not found' });
 
@@ -316,4 +381,163 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   addLog('info', `AI Agent server started on port ${PORT}`);
   console.log(`AI Agent server running at http://localhost:${PORT}`);
+
+  // Start bridge queue watchers
+  startBridgeQueueWatcher();
 });
+
+// ============================================================================
+// BRIDGE QUEUE PROCESSOR - Watches for ChatGPT/Claude requests from orchestrator
+// ============================================================================
+
+let bridgeResults = {};
+
+function loadBridgeResults() {
+  try {
+    if (fs.existsSync(BRIDGE_RESULTS)) {
+      bridgeResults = JSON.parse(fs.readFileSync(BRIDGE_RESULTS, 'utf8'));
+    }
+  } catch (e) { /* ignore */ }
+}
+
+function saveBridgeResults() {
+  try {
+    fs.writeFileSync(BRIDGE_RESULTS, JSON.stringify(bridgeResults, null, 2));
+  } catch (e) {
+    console.error('Failed to save bridge results:', e);
+  }
+}
+
+async function processChatGPTQueue() {
+  try {
+    if (!fs.existsSync(CHATGPT_QUEUE)) return;
+
+    const content = fs.readFileSync(CHATGPT_QUEUE, 'utf8').trim();
+    if (!content) return;
+
+    const queue = JSON.parse(content);
+    if (!Array.isArray(queue) || queue.length === 0) return;
+
+    // Process first unprocessed item
+    const item = queue.find(q => !q.processed);
+    if (!item) return;
+
+    addLog('info', `Processing ChatGPT request: ${item.id}`);
+
+    // Call the ChatGPT bridge
+    const result = await callBridge(CHATGPT_BRIDGE, item.prompt, item.context);
+
+    // Store result
+    bridgeResults[item.id] = {
+      type: 'chatgpt',
+      response: result,
+      timestamp: new Date().toISOString()
+    };
+    saveBridgeResults();
+
+    // Mark as processed
+    item.processed = true;
+    item.result_id = item.id;
+    fs.writeFileSync(CHATGPT_QUEUE, JSON.stringify(queue, null, 2));
+
+    addLog('info', `ChatGPT request ${item.id} completed`);
+
+  } catch (e) {
+    addLog('error', `ChatGPT queue error: ${e.message}`);
+  }
+}
+
+async function processClaudeQueue() {
+  try {
+    if (!fs.existsSync(CLAUDE_QUEUE)) return;
+
+    const content = fs.readFileSync(CLAUDE_QUEUE, 'utf8').trim();
+    if (!content) return;
+
+    const queue = JSON.parse(content);
+    if (!Array.isArray(queue) || queue.length === 0) return;
+
+    // Process first unprocessed item
+    const item = queue.find(q => !q.processed);
+    if (!item) return;
+
+    addLog('info', `Processing Claude request: ${item.id}`);
+
+    // Call the Claude bridge
+    const result = await callBridge(CLAUDE_BRIDGE, item.prompt, item.context);
+
+    // Store result
+    bridgeResults[item.id] = {
+      type: 'claude',
+      response: result,
+      timestamp: new Date().toISOString()
+    };
+    saveBridgeResults();
+
+    // Mark as processed
+    item.processed = true;
+    item.result_id = item.id;
+    fs.writeFileSync(CLAUDE_QUEUE, JSON.stringify(queue, null, 2));
+
+    addLog('info', `Claude request ${item.id} completed`);
+
+  } catch (e) {
+    addLog('error', `Claude queue error: ${e.message}`);
+  }
+}
+
+function callBridge(bridgePath, prompt, context) {
+  return new Promise((resolve, reject) => {
+    if (!fs.existsSync(bridgePath)) {
+      resolve(`Bridge not found: ${bridgePath}`);
+      return;
+    }
+
+    const args = ['--ask', prompt];
+    if (context) {
+      args.push('--context', context);
+    }
+
+    const proc = spawn('node', [bridgePath, ...args], {
+      cwd: path.dirname(bridgePath),
+      env: process.env
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (d) => { stdout += d.toString(); });
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        resolve(stdout.trim() || 'No response');
+      } else {
+        resolve(`Bridge error (code ${code}): ${stderr || stdout}`);
+      }
+    });
+
+    proc.on('error', (e) => {
+      resolve(`Bridge spawn error: ${e.message}`);
+    });
+
+    // Timeout after 5 minutes
+    setTimeout(() => {
+      proc.kill();
+      resolve('Bridge timeout (5 min)');
+    }, 300000);
+  });
+}
+
+function startBridgeQueueWatcher() {
+  loadBridgeResults();
+
+  // Check queues every 2 seconds
+  setInterval(async () => {
+    await processChatGPTQueue();
+    await processClaudeQueue();
+  }, 2000);
+
+  addLog('info', 'Bridge queue watcher started');
+  console.log('Bridge queue watcher active - monitoring ~/.sam_chatgpt_queue.json and ~/.sam_claude_queue.json');
+}

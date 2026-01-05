@@ -1,12 +1,12 @@
 // src-tauri/tests/full_phase1_6_integration.rs
 // Complete Phase 1-6 integration test
 
-use warp_tauri::conversation::ConversationState;
-use warp_tauri::telemetry::{TelemetryEvent, TelemetryStore};
-use warp_tauri::policy_store::PolicyStore;
-use warp_tauri::agents::AgentCoordinator;
-use warp_tauri::plan_store::{PlanStore, Plan};
-use warp_tauri::monitoring::MonitoringState;
+use sam_terminal::conversation::ConversationState;
+use sam_terminal::telemetry::{TelemetryEvent, TelemetryStore};
+use sam_terminal::policy_store::PolicyStore;
+use sam_terminal::agents::AgentCoordinator;
+use sam_terminal::plan_store::{PlanStore, Plan};
+use sam_terminal::monitoring::MonitoringState;
 use chrono::Utc;
 
 #[test]

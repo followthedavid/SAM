@@ -73,7 +73,7 @@ impl Default for OllamaAgentConfig {
     fn default() -> Self {
         Self {
             ollama_url: "http://localhost:11434".to_string(),
-            default_model: "qwen2.5:7b".to_string(),
+            default_model: "qwen2.5-coder:1.5b".to_string(),  // Fast model for 8GB RAM
             loop_config: LoopConfig::default(),
             context_config: ContextConfig::default(),
             cache_config: CacheConfig::default(),
@@ -87,7 +87,7 @@ impl OllamaAgentConfig {
     pub fn for_slow_models() -> Self {
         Self {
             ollama_url: "http://localhost:11434".to_string(),
-            default_model: "qwen2.5:3b".to_string(),
+            default_model: "qwen2.5-coder:1.5b".to_string(),  // Fast model for 8GB RAM
             loop_config: LoopConfig::thorough(),  // More iterations allowed
             context_config: ContextConfig::default(),
             cache_config: CacheConfig::default(),
@@ -132,6 +132,10 @@ pub struct OllamaAgent {
     router: ModelRouter,
     available_models: Vec<String>,
     self_correction: SelfCorrectionEngine,
+    /// Track successful tool executions for completion verification
+    successful_tool_count: u32,
+    /// Track which tools produced actual results
+    executed_tools: Vec<String>,
 }
 
 impl OllamaAgent {
@@ -150,6 +154,8 @@ impl OllamaAgent {
             router,
             available_models: Vec::new(),
             self_correction,
+            successful_tool_count: 0,
+            executed_tools: Vec::new(),
         }
     }
 
@@ -171,6 +177,8 @@ impl OllamaAgent {
             router,
             available_models: Vec::new(),
             self_correction,
+            successful_tool_count: 0,
+            executed_tools: Vec::new(),
         }
     }
 
@@ -762,7 +770,25 @@ EXAMPLE:
                 let summary = action.args.get("summary")
                     .and_then(|s| s.as_str())
                     .unwrap_or("Task completed");
-                Ok(summary.to_string())
+
+                // Verify actual work was done - prevent hallucinated completion
+                if self.successful_tool_count == 0 {
+                    return (false, "❌ REJECTED: Cannot claim 'done' without executing any successful tools. You must actually complete the task first.".to_string());
+                }
+
+                // Check summary isn't just generic placeholder text
+                let summary_lower = summary.to_lowercase();
+                let generic_patterns = ["task completed", "done", "finished", "complete", "all done"];
+                let is_generic = generic_patterns.iter().any(|p| summary_lower == *p);
+
+                if is_generic && self.successful_tool_count < 3 {
+                    return (false, format!(
+                        "❌ REJECTED: Summary '{}' is too generic. Provide specific findings. You executed {} tool(s): {:?}",
+                        summary, self.successful_tool_count, self.executed_tools
+                    ));
+                }
+
+                Ok(format!("✅ Task completed ({} tools executed). {}", self.successful_tool_count, summary))
             }
             _ => Err(format!("Unknown tool: {}", action.tool)),
         };
@@ -771,6 +797,14 @@ EXAMPLE:
             Ok(output) => (true, output),
             Err(error) => (false, error),
         };
+
+        // Track successful tool executions for completion verification
+        if success && action.tool != "done" {
+            self.successful_tool_count += 1;
+            if !self.executed_tools.contains(&action.tool) {
+                self.executed_tools.push(action.tool.clone());
+            }
+        }
 
         // Cache if appropriate
         if crate::scaffolding::tool_cache::should_cache(&action.tool, success) {
@@ -912,6 +946,12 @@ EXAMPLE:
             .and_then(|c| c.as_str())
             .ok_or("Missing command argument")?;
 
+        // Validate the command isn't conversational text (hallucination prevention)
+        if let Err(reason) = Self::validate_shell_command(command) {
+            eprintln!("[ollama_agent] BLOCKED invalid command: {}", command);
+            return Err(format!("Command validation failed: {}. The model output conversational text instead of a shell command.", reason));
+        }
+
         let output = tokio::process::Command::new("sh")
             .args(["-c", command])
             .output()
@@ -922,42 +962,192 @@ EXAMPLE:
         let stderr = String::from_utf8_lossy(&output.stderr);
 
         if !output.status.success() {
-            return Err(format!("Command failed: {}\n{}", stderr, stdout));
+            // Parse error for recovery hints
+            let hints = Self::parse_error_hints(&stderr, &stdout);
+            let error_msg = if hints.is_empty() {
+                format!("Command failed: {}\n{}", stderr, stdout)
+            } else {
+                format!("Command failed: {}\n{}\n\n🔧 RECOVERY HINT: {}", stderr, stdout, hints)
+            };
+            return Err(error_msg);
         }
 
         Ok(format!("{}{}", stdout, stderr))
     }
 
+    /// Parse error output and provide actionable recovery hints
+    fn parse_error_hints(stderr: &str, stdout: &str) -> String {
+        let combined = format!("{}\n{}", stderr, stdout).to_lowercase();
+        let mut hints = Vec::new();
+
+        // "Did you mean X?" suggestions from brew
+        if combined.contains("did you mean") {
+            if let Some(line) = stderr.lines().chain(stdout.lines())
+                .find(|l| l.to_lowercase().contains("did you mean"))
+            {
+                // Extract the suggestion
+                let suggestion = line.trim();
+                hints.push(format!("Homebrew suggested: {}. Use the suggested package name.", suggestion));
+            }
+        }
+
+        // Command not found - suggest brew install
+        if combined.contains("command not found") || combined.contains("not found") {
+            if let Some(cmd) = combined.split("command not found").next()
+                .and_then(|s| s.split_whitespace().last())
+            {
+                let clean_cmd = cmd.trim_matches(|c: char| !c.is_alphanumeric());
+                if !clean_cmd.is_empty() {
+                    hints.push(format!("Install missing tool: brew install {} (or try: brew search {})", clean_cmd, clean_cmd));
+                }
+            }
+        }
+
+        // Unsupported method (RAR5 format)
+        if combined.contains("unsupported method") {
+            hints.push("For RAR5 archives, use 'unar' instead of '7z': brew install unar && unar -o /tmp/output archive.rar".to_string());
+        }
+
+        // Permission denied
+        if combined.contains("permission denied") {
+            hints.push("Try with sudo, or check file permissions with 'ls -la'".to_string());
+        }
+
+        // No such file or directory
+        if combined.contains("no such file or directory") {
+            hints.push("Verify the file path exists. Use 'ls' to check the directory contents.".to_string());
+        }
+
+        // Package not found in brew
+        if combined.contains("no formulae found") || combined.contains("no cask found") {
+            hints.push("Try 'brew search <name>' to find the correct package name".to_string());
+        }
+
+        // Python externally-managed-environment (macOS Sonoma+)
+        if combined.contains("externally-managed-environment") {
+            hints.push("Python packages require a virtual environment on macOS. Use: python3 -m venv /tmp/venv && source /tmp/venv/bin/activate && pip install <package>. Or try: brew install <package> if available.".to_string());
+        }
+
+        // pip/python module not found
+        if combined.contains("no module named") {
+            if let Some(module) = combined.split("no module named").nth(1) {
+                let module_name = module.trim().trim_matches(|c: char| c == '\'' || c == '"' || c.is_whitespace());
+                hints.push(format!("Install Python module: pip install {} (use venv if needed)", module_name));
+            }
+        }
+
+        // pkgutil file exists error
+        if combined.contains("file exists") && combined.contains("pkgutil") {
+            hints.push("pkgutil requires target directory to not exist. Remove it first: rm -rf /path/to/output".to_string());
+        }
+
+        hints.join(" | ")
+    }
+
+    /// Validate that a string looks like a shell command, not conversational text
+    fn validate_shell_command(command: &str) -> Result<(), String> {
+        let trimmed = command.trim();
+        if trimmed.is_empty() {
+            return Err("Command is empty".to_string());
+        }
+
+        let first_word = trimmed.split_whitespace().next().unwrap_or("").to_lowercase();
+
+        // Words that indicate conversational English (not shell commands)
+        const CONVERSATIONAL_STARTERS: &[&str] = &[
+            "i", "you", "he", "she", "it", "we", "they", "this", "that", "there", "here",
+            "what", "when", "where", "why", "how", "who", "which", "whose", "whom",
+            "would", "could", "should", "might", "must", "will", "shall", "may",
+            "am", "is", "are", "was", "were", "be", "been", "being",
+            "have", "has", "had", "having", "do", "does", "did",
+            "please", "sorry", "thank", "thanks", "okay", "ok", "yes", "no", "yeah", "nope",
+            "the", "a", "an", "my", "your", "his", "her", "its", "our", "their",
+            "said", "told", "asked", "explained", "mentioned", "suggested", "recommended",
+            "wanted", "needed", "tried", "seems", "appeared", "looked", "felt",
+            "actually", "basically", "certainly", "clearly", "definitely", "especially",
+            "generally", "honestly", "hopefully", "indeed", "mostly", "obviously",
+            "perhaps", "probably", "really", "simply", "specifically", "surely",
+            "typically", "usually", "unfortunately", "well", "maybe",
+            "however", "therefore", "thus", "hence", "instead", "otherwise", "meanwhile",
+            "moreover", "furthermore", "nevertheless", "consequently", "accordingly",
+            "let", "let's", "but", "and", "or", "so", "because", "although", "since",
+            "after", "before", "during", "until", "while", "if", "unless", "whether",
+        ];
+
+        if CONVERSATIONAL_STARTERS.contains(&first_word.as_str()) {
+            return Err(format!("Starts with conversational word '{}'", first_word));
+        }
+
+        // Check for sentence patterns (ending with punctuation)
+        if (trimmed.ends_with('.') || trimmed.ends_with('!') || trimmed.ends_with('?'))
+            && !trimmed.starts_with('.') && !trimmed.starts_with('/') && !trimmed.starts_with('~')
+        {
+            return Err("Looks like a sentence (ends with punctuation)".to_string());
+        }
+
+        // Check for very long phrases without shell operators
+        let word_count = trimmed.split_whitespace().count();
+        if word_count > 10
+            && !trimmed.contains('|')
+            && !trimmed.contains("&&")
+            && !trimmed.contains(';')
+            && !trimmed.contains('$')
+            && !trimmed.contains('`')
+        {
+            return Err("Very long phrase without shell operators".to_string());
+        }
+
+        // Check if first word looks like a command
+        let looks_like_command = first_word.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+            || trimmed.starts_with('.')
+            || trimmed.starts_with('/')
+            || trimmed.starts_with('~')
+            || trimmed.starts_with('[');
+
+        if !looks_like_command && word_count > 3 {
+            return Err(format!("First word '{}' doesn't look like a command", first_word));
+        }
+
+        Ok(())
+    }
+
     fn get_system_prompt(&self) -> String {
-        r#"You are an AI assistant with access to tools. You MUST think step-by-step before acting.
+        r#"You are an AUTONOMOUS AI agent. You complete tasks WITHOUT asking for permission.
 
-IMPORTANT: Format your response EXACTLY like this:
+CRITICAL RULES:
+1. NEVER ask "would you like me to..." or "should I..." - JUST DO IT
+2. If a tool/command fails, IMMEDIATELY try alternatives
+3. If a program is missing, INSTALL IT (use: brew install <package>)
+4. Work until the task is FULLY complete
+5. Only use "done" when you have REAL results
 
+SELF-HEALING EXAMPLES:
+- "command not found: unrar" → execute: brew install unar && unar ...
+- "7z: Unsupported Method" → try: unar, or brew install unar first
+- "Permission denied" → try: sudo or change approach
+- Any error → analyze and try alternative approach
+
+FORMAT (required):
 <thinking>
-1. What is the user asking for?
-2. What information do I need?
-3. What tool should I use?
-4. What could go wrong?
+1. Current goal
+2. What I know/learned from last result
+3. Next action and why
 </thinking>
 
 <action>
-{"tool": "tool_name", "args": {"arg1": "value1"}}
+{"tool": "execute_shell", "args": {"command": "your_command"}}
 </action>
 
-Available tools:
+TOOLS:
+- execute_shell: Run ANY shell command (including brew install, sudo, etc.)
 - read_file: Read file contents. Args: path (string)
-- write_file: Write content to file. Args: path (string), content (string)
-- edit_file: Edit file by replacing text. Args: path (string), old_string (string), new_string (string), replace_all (bool, optional)
-- glob_files: Find files by pattern. Args: pattern (string), path (string, optional)
-- grep_files: Search file contents. Args: pattern (string), path (string, optional)
-- execute_shell: Run shell command. Args: command (string)
-- done: Signal task completion. Args: summary (string)
+- write_file: Write to file. Args: path (string), content (string)
+- edit_file: Edit file. Args: path, old_string, new_string
+- glob_files: Find files. Args: pattern (string)
+- grep_files: Search contents. Args: pattern (string)
+- done: ONLY when task complete. Args: summary (string with actual findings)
 
-RULES:
-- ALWAYS include <thinking> with at least 3 numbered points
-- ONE action per response
-- Use <answer> when the task is FULLY complete
-- Be careful with file operations - read before editing
+NEVER give up. NEVER ask permission. Install what you need. Complete the task.
 "#.to_string()
     }
 

@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use warp_tauri::conversation::{ConversationState, BatchEntry, BatchStatus};
+use sam_terminal::conversation::{ConversationState, BatchEntry, BatchStatus};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::thread::sleep;

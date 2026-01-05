@@ -12,7 +12,8 @@
         <label class="model-label" style="margin-left: 16px;">AI Mode:</label>
         <select v-model="aiMode" @change="handleModeChange" class="model-selector mode-selector">
           <option value="local">🏠 Local Only</option>
-          <option value="agent">🤖 Agent (Claude-level)</option>
+          <option value="agent">🤖 Agent Mode</option>
+          <option value="orchestrator">⚡ Orchestrator</option>
           <option value="claude" :disabled="!isClaudeConfigured">☁️ Claude Only</option>
           <option value="auto" :disabled="!isClaudeConfigured">🎯 Auto (Orchestrate)</option>
           <option value="hybrid" :disabled="!isClaudeConfigured">🔄 Hybrid (Escalate)</option>
@@ -142,8 +143,8 @@ const showSettings = ref(false)
 const showDebug = ref(false)  // Hide debug panel by default now
 const showClaudeSettings = ref(false)
 const showPlan = ref(false)
-const selectedModel = ref('qwen2.5-coder:1.5b')
-const aiMode = ref<'local' | 'agent' | 'claude' | 'auto' | 'hybrid'>('local')
+const selectedModel = ref('coder-uncensored:latest')
+const aiMode = ref<'local' | 'agent' | 'claude' | 'auto' | 'hybrid' | 'orchestrator'>('orchestrator')  // Default to orchestrator - auto-routes to best model
 const claudeApiKey = ref('')
 const claudeError = ref('')
 const executionMode = ref(true) // Default to ON so code execution works out of the box
@@ -193,8 +194,16 @@ watch([messages, isThinking], () => {
 }, { deep: true })
 
 async function handleSend(message: string) {
-  console.log('[AIChatTab] handleSend called, executionMode:', executionMode.value)
-  // If execution mode is enabled, check if this is an actionable task
+  console.log('[AIChatTab] handleSend called, aiMode:', aiMode.value, 'executionMode:', executionMode.value)
+
+  // Agent mode handles everything - it has its own tool execution
+  if (aiMode.value === 'agent') {
+    console.log('[AIChatTab] Using Agent Mode for:', message.substring(0, 50))
+    await sendPromptRouted(props.tab.id, message, selectedModel.value)
+    return
+  }
+
+  // For non-agent modes: If execution mode is enabled, check if this is an actionable task
   if (executionMode.value) {
     console.log('[AIChatTab] Parsing task from message:', message)
     const taskDescription = await parseTaskFromMessage(message)
@@ -210,10 +219,10 @@ async function handleSend(message: string) {
         content: message,
       })
 
-      // Create assistant message for execution and get reference to it
+      // Create assistant message for execution
       const assistantMessage = addMessage(props.tab.id, {
         role: 'assistant',
-        content: `Executing: ${taskDescription}`,
+        content: `🔄 Processing task...`,
         isExecuting: true,
       })
 

@@ -15,8 +15,9 @@ fn get_test_dir() -> PathBuf {
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
-        .as_millis();
-    let dir = std::env::temp_dir().join(format!("sam-rust-test-{}", timestamp));
+        .as_nanos();
+    let thread_id = std::thread::current().id();
+    let dir = std::env::temp_dir().join(format!("sam-rust-test-{}-{:?}", timestamp, thread_id));
     fs::create_dir_all(&dir).unwrap();
     dir
 }
@@ -250,19 +251,22 @@ mod disk_management_tests {
         let large_file = test_dir.join("large.txt");
         fs::write(&large_file, "x".repeat(1_000_000)).unwrap();
 
-        // Find files > 50KB
+        // Find .txt files > 50KB (ignores .DS_Store etc)
         let threshold = 50_000;
         let mut large_files = Vec::new();
 
         for entry in fs::read_dir(&test_dir).unwrap() {
             let entry = entry.unwrap();
-            let meta = entry.metadata().unwrap();
-            if meta.len() > threshold {
-                large_files.push((entry.path(), meta.len()));
+            let path = entry.path();
+            if path.extension().map_or(false, |ext| ext == "txt") {
+                let meta = entry.metadata().unwrap();
+                if meta.len() > threshold {
+                    large_files.push((path, meta.len()));
+                }
             }
         }
 
-        assert_eq!(large_files.len(), 2, "Should find 2 files > 50KB");
+        assert_eq!(large_files.len(), 2, "Should find 2 .txt files > 50KB");
         println!("Large files found: {:?}", large_files);
 
         cleanup_test_dir(&test_dir);
@@ -934,25 +938,28 @@ mod stress_tests {
             fs::write(current.join("file.txt"), "content").unwrap();
         }
 
-        // Traverse and count files
-        fn count_files(path: &PathBuf) -> usize {
+        // Traverse and count only .txt files (ignores .DS_Store etc)
+        fn count_txt_files(path: &PathBuf) -> usize {
             let mut count = 0;
             if path.is_file() {
-                return 1;
+                if path.extension().map_or(false, |ext| ext == "txt") {
+                    return 1;
+                }
+                return 0;
             }
             if let Ok(entries) = fs::read_dir(path) {
                 for entry in entries.flatten() {
-                    count += count_files(&entry.path());
+                    count += count_txt_files(&entry.path());
                 }
             }
             count
         }
 
         let start = std::time::Instant::now();
-        let file_count = count_files(&test_dir);
+        let file_count = count_txt_files(&test_dir);
         let elapsed = start.elapsed();
 
-        assert_eq!(file_count, 20);
+        assert_eq!(file_count, 20, "Should find exactly 20 .txt files in deep structure");
         println!("Traversed 20-level deep structure in {:?}", elapsed);
 
         cleanup_test_dir(&test_dir);

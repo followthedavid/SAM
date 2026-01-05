@@ -9,7 +9,7 @@
       <span class="message-time">{{ formattedTime }}</span>
     </div>
     <div class="message-content">
-      <div v-if="isToolCall" class="tool-call-display">
+      <div v-if="isToolCall && toolInfo" class="tool-call-display">
         <div class="tool-name">{{ toolInfo.tool }}</div>
         <pre>{{ JSON.stringify(toolInfo.args, null, 2) }}</pre>
       </div>

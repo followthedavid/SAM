@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import Anthropic from '@anthropic-ai/sdk';
 
-export type AIMode = 'auto' | 'local' | 'claude' | 'hybrid' | 'agent';
+export type AIMode = 'auto' | 'local' | 'claude' | 'hybrid' | 'agent' | 'orchestrator';
 
 export interface ClaudeConfig {
   apiKey: string;
@@ -9,7 +9,7 @@ export interface ClaudeConfig {
 }
 
 const apiKey = ref<string>('');
-const selectedMode = ref<AIMode>('local'); // Default to local only
+const selectedMode = ref<AIMode>('agent'); // Default to agent mode
 const isClaudeAvailable = ref(false);
 
 export function useClaude() {

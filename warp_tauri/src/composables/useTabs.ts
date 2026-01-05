@@ -5,7 +5,7 @@ import { invoke } from '@tauri-apps/api/tauri'
 // -----------------------------
 // Types
 // -----------------------------
-export type TabKind = 'terminal' | 'ai' | 'editor' | 'developer'
+export type TabKind = 'terminal' | 'ai' | 'editor' | 'developer' | 'topics'
 
 export interface ChatMessage {
   id: string
@@ -146,6 +146,20 @@ function createDeveloperTab(name?: string): Tab {
   updateActiveTab()
   scheduleAutoSave()
   console.log('[useTabs] Created developer tab:', tab)
+  return tab
+}
+
+function createTopicGridTab(name?: string): Tab {
+  const tab: Tab = {
+    id: uuidv4(),
+    kind: 'topics',
+    name: name || 'Topic Grid'
+  }
+  state.tabs.push(tab)
+  state.activeTabId = tab.id
+  updateActiveTab()
+  scheduleAutoSave()
+  console.log('[useTabs] Created topics tab:', tab)
   return tab
 }
 
@@ -670,8 +684,8 @@ async function loadSession(): Promise<void> {
     const session = await invoke<SavedSession>('load_session')
 
     if (!session || !session.tabs || session.tabs.length === 0) {
-      console.log('[useTabs] No saved session found, creating default tab')
-      await createTerminalTab()
+      console.log('[useTabs] No saved session found, creating default Topics tab')
+      createTopicGridTab('Projects')
       return
     }
 
@@ -726,6 +740,12 @@ async function loadSession(): Promise<void> {
         }
       } else if (savedTab.kind === 'developer') {
         const tab = createDeveloperTab(savedTab.name)
+        const index = state.tabs.findIndex(t => t.id === tab.id)
+        if (index !== -1) {
+          state.tabs[index].id = savedTab.id
+        }
+      } else if (savedTab.kind === 'topics') {
+        const tab = createTopicGridTab(savedTab.name)
         const index = state.tabs.findIndex(t => t.id === tab.id)
         if (index !== -1) {
           state.tabs[index].id = savedTab.id
@@ -882,6 +902,7 @@ export function useTabs() {
     createAITab,
     createEditorTab,
     createDeveloperTab,
+    createTopicGridTab,
     closeTab,
     setActiveTab,
     renameTab,

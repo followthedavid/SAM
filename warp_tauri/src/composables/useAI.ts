@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useClaude, type AIMode } from './useClaude';
 import type { ExecutionTask } from './useCodeExecution';
 import { useScaffoldedAgent, type AgentEvent, type AgentConfig } from './useScaffoldedAgent';
+import { getOrchestrator } from './useOrchestrator';
 
 // Check if we're running in Tauri
 const isTauri = '__TAURI__' in window;
@@ -46,9 +47,10 @@ export interface AISession {
 
 const sessions = ref<Map<string, AISession>>(new Map());
 const availableModels = ref<string[]>([
+  'dolphin-llama3:8b',
+  'coder-uncensored:latest',
   'qwen2.5-coder:1.5b',
   'tinydolphin:1.1b',
-  'coder-uncensored:latest',
   'stablelm2:1.6b',
 ]);
 
@@ -67,7 +69,7 @@ export function useAI() {
   }
 
   // Create a new AI session
-  function createSession(tabId: string, model = 'qwen2.5-coder:1.5b'): AISession {
+  function createSession(tabId: string, model = 'dolphin-llama3:8b'): AISession {
     const session: AISession = {
       id: tabId,
       messages: [],
@@ -121,6 +123,305 @@ export function useAI() {
     console.log(message);
   }
 
+  // Validate that a string looks like a shell command, not conversational text
+  function isValidShellCommand(command: string): { valid: boolean; reason?: string } {
+    if (!command || typeof command !== 'string') {
+      return { valid: false, reason: 'Command is empty or not a string' };
+    }
+
+    const trimmed = command.trim();
+    if (!trimmed) {
+      return { valid: false, reason: 'Command is empty' };
+    }
+
+    // Get first word (potential command name)
+    const firstWord = trimmed.split(/\s+/)[0].toLowerCase();
+
+    // Words that clearly indicate conversational English (not shell commands)
+    const conversationalStarters = [
+      'i', 'you', 'he', 'she', 'it', 'we', 'they', 'this', 'that', 'there', 'here',
+      'what', 'when', 'where', 'why', 'how', 'who', 'which', 'whose', 'whom',
+      'would', 'could', 'should', 'might', 'must', 'will', 'shall', 'may',
+      'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+      'have', 'has', 'had', 'having', 'do', 'does', 'did',
+      'please', 'sorry', 'thank', 'thanks', 'okay', 'ok', 'yes', 'no', 'yeah', 'nope',
+      'the', 'a', 'an', 'my', 'your', 'his', 'her', 'its', 'our', 'their',
+      'said', 'told', 'asked', 'explained', 'mentioned', 'suggested', 'recommended',
+      'wanted', 'needed', 'tried', 'seems', 'appeared', 'looked', 'felt',
+      'actually', 'basically', 'certainly', 'clearly', 'definitely', 'especially',
+      'generally', 'honestly', 'hopefully', 'indeed', 'mostly', 'obviously',
+      'perhaps', 'probably', 'really', 'simply', 'specifically', 'surely',
+      'typically', 'usually', 'unfortunately', 'well', 'maybe',
+      'however', 'therefore', 'thus', 'hence', 'instead', 'otherwise', 'meanwhile',
+      'moreover', 'furthermore', 'nevertheless', 'consequently', 'accordingly',
+      'let', "let's", 'but', 'and', 'or', 'so', 'because', 'although', 'since',
+      'after', 'before', 'during', 'until', 'while', 'if', 'unless', 'whether',
+    ];
+
+    // Check if first word is a conversational starter
+    if (conversationalStarters.includes(firstWord) || conversationalStarters.includes(firstWord.replace(/['"]/g, ''))) {
+      return { valid: false, reason: `Starts with conversational word "${firstWord}", not a shell command` };
+    }
+
+    // Check for sentence patterns (ending with period, multiple sentences, etc.)
+    if (/[.!?]$/.test(trimmed) && !/^[.\/~]/.test(trimmed)) {
+      return { valid: false, reason: 'Looks like a sentence (ends with punctuation)' };
+    }
+
+    // Check for very long phrases without shell operators
+    const wordCount = trimmed.split(/\s+/).length;
+    if (wordCount > 10 && !trimmed.includes('|') && !trimmed.includes('&&') && !trimmed.includes(';') && !trimmed.includes('$') && !trimmed.includes('`')) {
+      return { valid: false, reason: 'Very long phrase without shell operators - likely conversational text' };
+    }
+
+    // Check if first word looks like a command (alphanumeric, starts with letter, or path)
+    const looksLikeCommand = /^[a-z][a-z0-9_-]*$/.test(firstWord) || /^[.\/~]/.test(firstWord) || /^\[/.test(firstWord);
+    if (!looksLikeCommand && wordCount > 3) {
+      return { valid: false, reason: `First word "${firstWord}" doesn't look like a command name` };
+    }
+
+    return { valid: true };
+  }
+
+  // Parse and execute tool calls from LLM response
+  async function parseAndExecuteToolCalls(
+    tabId: string,
+    assistantMessage: AIMessage,
+    session: AISession,
+    model: string,
+    depth: number = 0
+  ) {
+    // Prevent infinite recursion
+    if (depth > 5) {
+      addDebugLog(tabId, `[TOOL] Max recursion depth reached, stopping`);
+      return;
+    }
+
+    const content = assistantMessage.content;
+
+    // Try to extract JSON objects containing "tool" key
+    // This handles various formats the model might produce
+    const toolCalls: Array<{ tool: string; args: Record<string, unknown> }> = [];
+
+    // Method 1: Try to find standalone JSON objects (including inside markdown code blocks)
+    // First, extract JSON from markdown code blocks
+    const codeBlockMatches = content.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/g);
+    const contentToSearch = codeBlockMatches
+      ? codeBlockMatches.map(block => block.replace(/```(?:json)?\s*\n?/g, '').replace(/\n?```/g, '')).join('\n') + '\n' + content
+      : content;
+
+    const jsonMatches = contentToSearch.match(/\{[^{}]*"tool"[^{}]*"args"[^{}]*\{[^{}]*\}[^{}]*\}/g);
+    if (jsonMatches) {
+      for (const jsonStr of jsonMatches) {
+        try {
+          const parsed = JSON.parse(jsonStr);
+          if (parsed.tool && typeof parsed.tool === 'string') {
+            toolCalls.push({ tool: parsed.tool, args: parsed.args || {} });
+          }
+        } catch (e) {
+          // Try a simpler extraction
+          const toolMatch = jsonStr.match(/"tool"\s*:\s*"(\w+)"/);
+          const argsMatch = jsonStr.match(/"args"\s*:\s*(\{[^}]+\})/);
+          if (toolMatch) {
+            try {
+              const args = argsMatch ? JSON.parse(argsMatch[1]) : {};
+              toolCalls.push({ tool: toolMatch[1], args });
+            } catch (parseErr) {
+              // Skip if args can't be parsed
+            }
+          }
+        }
+      }
+    }
+
+    // Method 2: Line-by-line JSON parsing for clean outputs
+    if (toolCalls.length === 0) {
+      const lines = contentToSearch.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('{') && trimmed.includes('"tool"')) {
+          try {
+            const parsed = JSON.parse(trimmed);
+            if (parsed.tool && typeof parsed.tool === 'string') {
+              toolCalls.push({ tool: parsed.tool, args: parsed.args || {} });
+            }
+          } catch (e) {
+            // Skip unparseable lines
+          }
+        }
+      }
+    }
+
+    // Method 3: Extract shell commands from code blocks if no JSON found
+    if (toolCalls.length === 0 && codeBlockMatches) {
+      for (const block of codeBlockMatches) {
+        const isShell = /```(?:sh|bash|shell|zsh)?\s*\n/i.test(block);
+        if (isShell) {
+          const code = block.replace(/```(?:sh|bash|shell|zsh)?\s*\n?/gi, '').replace(/\n?```/g, '').trim();
+          if (code && !code.includes('\n')) { // Single line command
+            addDebugLog(tabId, `[TOOL] Extracted shell command from code block: ${code.substring(0, 50)}...`);
+            toolCalls.push({ tool: 'execute_shell', args: { command: code } });
+          }
+        }
+      }
+    }
+
+    // Log what we found
+    for (const tc of toolCalls) {
+      addDebugLog(tabId, `[TOOL] Found tool call: ${tc.tool}`);
+    }
+
+    if (toolCalls.length === 0) {
+      addDebugLog(tabId, `[TOOL] No tool calls found in response. Model may need better prompting or try a larger model (8B+).`);
+      // Add a helpful note to the response if the model just talked instead of acting
+      if (content.length > 100 && !content.includes('{"tool"')) {
+        assistantMessage.content += '\n\n⚠️ *SAM explained instead of acting. For better action execution, try using `dolphin-llama3:8b` or a larger model.*';
+      }
+      return;
+    }
+
+    addDebugLog(tabId, `[TOOL] Executing ${toolCalls.length} tool call(s)...`);
+
+    // Execute each tool call
+    for (const toolCall of toolCalls) {
+      const { tool, args } = toolCall;
+      let result = '';
+      let success = false;
+
+      try {
+        if (!invoke) {
+          // Fallback for browser mode - use fetch to local API or show error
+          result = `Error: Tauri invoke not available - tool execution requires desktop app`;
+          addDebugLog(tabId, `[TOOL] ${result}`);
+        } else {
+          addDebugLog(tabId, `[TOOL] Executing: ${tool} with args: ${JSON.stringify(args)}`);
+
+          switch (tool) {
+            case 'execute_shell':
+              const cmdToExecute = args.command as string;
+              const validation = isValidShellCommand(cmdToExecute);
+              if (!validation.valid) {
+                result = `Command validation failed: ${validation.reason}\nThis looks like hallucinated text, not a shell command. The model should output actual commands like 'ls', 'pwd', etc.`;
+                addDebugLog(tabId, `[TOOL] BLOCKED invalid command: ${cmdToExecute.substring(0, 100)}`);
+              } else {
+                result = await invoke<string>('execute_shell', { command: cmdToExecute });
+                success = true;
+              }
+              break;
+            case 'read_file':
+              result = await invoke<string>('read_file', { path: args.path as string });
+              success = true;
+              break;
+            case 'write_file':
+              result = await invoke<string>('write_file', {
+                path: args.path as string,
+                content: args.content as string
+              });
+              success = true;
+              break;
+            case 'web_fetch':
+              result = await invoke<string>('web_fetch', { url: args.url as string });
+              success = true;
+              break;
+            case 'glob_files':
+              const globResults = await invoke<string[]>('glob_files', {
+                pattern: args.pattern as string,
+                basePath: args.basePath as string || '.'
+              });
+              result = globResults.join('\n');
+              success = true;
+              break;
+            case 'grep_files':
+              result = await invoke<string>('grep_files', {
+                pattern: args.pattern as string,
+                path: args.path as string || '.'
+              });
+              success = true;
+              break;
+            case 'get_system_metrics':
+              const metrics = await invoke<Record<string, unknown>>('get_system_metrics', {});
+              result = JSON.stringify(metrics, null, 2);
+              success = true;
+              break;
+            case 'cleanup_caches':
+              const cleanResult = await invoke<Record<string, unknown>>('cleanup_caches', {});
+              result = JSON.stringify(cleanResult, null, 2);
+              success = true;
+              break;
+            case 'empty_trash':
+              const trashResult = await invoke<Record<string, unknown>>('empty_trash', {});
+              result = JSON.stringify(trashResult, null, 2);
+              success = true;
+              break;
+            default:
+              // Try generic execute_agent_tool
+              try {
+                result = await invoke<string>('execute_agent_tool', { tool, args: JSON.stringify(args) });
+                success = true;
+              } catch (e) {
+                result = `Unknown tool: ${tool}. Error: ${e}`;
+              }
+          }
+        }
+      } catch (error) {
+        result = `Tool execution error: ${error}`;
+        addDebugLog(tabId, `[TOOL] Error executing ${tool}: ${error}`);
+      }
+
+      // Update the assistant message to show the result
+      const icon = success ? '✅' : '❌';
+      assistantMessage.content += `\n\n${icon} **Tool Result (${tool}):**\n\`\`\`\n${result.substring(0, 2000)}${result.length > 2000 ? '...' : ''}\n\`\`\``;
+
+      addDebugLog(tabId, `[TOOL] ${tool} result: ${result.substring(0, 100)}...`);
+    }
+
+    // Send tool results back to the model for a follow-up response
+    addDebugLog(tabId, `[TOOL] Sending results back to model for continuation...`);
+
+    // Create a new prompt with the tool results
+    const toolResultPrompt = `Tool execution completed. Here are the results:\n\n${assistantMessage.content}\n\nPlease analyze the results and continue with the next step, or summarize what was accomplished.`;
+
+    // Make a follow-up query (non-recursive to avoid infinite loops)
+    try {
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: model,
+          prompt: toolResultPrompt,
+          stream: false // Non-streaming for follow-up
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.response) {
+          assistantMessage.content += `\n\n---\n${data.response}`;
+          addDebugLog(tabId, `[TOOL] Follow-up response received: ${data.response.substring(0, 100)}...`);
+
+          // Check if the follow-up also contains tool calls (limit recursion depth)
+          const hasMoreTools = /\{"tool"\s*:\s*"(\w+)"/.test(data.response);
+          if (hasMoreTools) {
+            addDebugLog(tabId, `[TOOL] Follow-up contains more tool calls - executing...`);
+            // Create a temp message for the follow-up tools
+            const followUpMsg: AIMessage = {
+              id: uuidv4(),
+              role: 'assistant',
+              content: data.response,
+              timestamp: new Date(),
+              streaming: false,
+            };
+            await parseAndExecuteToolCalls(tabId, followUpMsg, session, model, depth + 1);
+            // Append any additional content from the follow-up
+            assistantMessage.content += followUpMsg.content.replace(data.response, '');
+          }
+        }
+      }
+    } catch (error) {
+      addDebugLog(tabId, `[TOOL] Follow-up query failed: ${error}`);
+    }
+  }
+
   // Send prompt to Ollama with streaming
   async function sendPrompt(tabId: string, prompt: string, model?: string) {
     const session = getSession(tabId);
@@ -166,11 +467,13 @@ export function useAI() {
         });
 
         // Listen for completion
-        unlistenDone = await listen<boolean>(`ollama://stream/${sessionId}/done`, () => {
+        unlistenDone = await listen<boolean>(`ollama://stream/${sessionId}/done`, async () => {
           assistantMessage.streaming = false;
           session.isThinking = false;
           if (unlisten) unlisten();
           if (unlistenDone) unlistenDone();
+          // Parse and execute tool calls after streaming completes
+          await parseAndExecuteToolCalls(tabId, assistantMessage, session, sessionModel);
         });
 
         // Invoke Tauri command
@@ -180,6 +483,48 @@ export function useAI() {
           sessionId,
         });
       } else {
+        // System prompt for tool calling
+        const systemPrompt = `You are SAM, an autonomous AI assistant that can execute actions on the user's system.
+
+You have access to these tools - use them by outputting ONLY a JSON object:
+
+1. execute_shell - Run shell commands
+   {"tool":"execute_shell","args":{"command":"ls -la"}}
+
+2. read_file - Read file contents
+   {"tool":"read_file","args":{"path":"/path/to/file"}}
+
+3. write_file - Create or overwrite files
+   {"tool":"write_file","args":{"path":"/path/to/file","content":"file contents"}}
+
+4. web_fetch - Fetch web content
+   {"tool":"web_fetch","args":{"url":"https://example.com"}}
+
+5. get_system_metrics - Get system CPU, memory, disk info
+   {"tool":"get_system_metrics","args":{}}
+
+6. cleanup_caches - Clean system caches
+   {"tool":"cleanup_caches","args":{}}
+
+7. empty_trash - Empty the trash
+   {"tool":"empty_trash","args":{}}
+
+RULES:
+- When asked to DO something, output ONLY the JSON tool call, nothing else
+- After receiving tool results, explain what happened
+- You can chain multiple tool calls to complete complex tasks
+- Be proactive - if disk is full, clean up; if something fails, try alternatives
+
+EXAMPLES:
+User: "list my files"
+{"tool":"execute_shell","args":{"command":"ls -la"}}
+
+User: "check disk space"
+{"tool":"execute_shell","args":{"command":"df -h"}}
+
+User: "show system status"
+{"tool":"get_system_metrics","args":{}}`;
+
         // Direct HTTP call to Ollama (browser mode)
         const response = await fetch('http://localhost:11434/api/generate', {
           method: 'POST',
@@ -188,6 +533,7 @@ export function useAI() {
           },
           body: JSON.stringify({
             model: sessionModel,
+            system: systemPrompt,
             prompt: prompt,
             stream: true,
           }),
@@ -279,6 +625,9 @@ export function useAI() {
           addDebugLog(tabId, `[COMPLETE] Stream finished, total length: ${assistantMessage.content.length}, total messages: ${session.messages.length}`);
           assistantMessage.streaming = false;
           session.isThinking = false;
+
+          // Parse and execute tool calls from the response
+          await parseAndExecuteToolCalls(tabId, assistantMessage, session, sessionModel);
         }
 
         assistantMessage.streaming = false;
@@ -347,6 +696,10 @@ export function useAI() {
     const session = getSession(tabId);
     const aiMode = session.aiMode || claude.getAIMode();
 
+    // CRITICAL DEBUG - log to backend so we can see in terminal
+    try { await invoke('debug_log', { message: `[ROUTER] sendPromptRouted CALLED!` }); } catch {}
+    try { await invoke('debug_log', { message: `[ROUTER] prompt: ${prompt.substring(0, 50)}` }); } catch {}
+    try { await invoke('debug_log', { message: `[ROUTER] aiMode: ${aiMode}` }); } catch {}
     addDebugLog(tabId, `[ROUTER] Mode: ${aiMode}`);
 
     switch (aiMode) {
@@ -370,13 +723,17 @@ export function useAI() {
         // Use scaffolded agent with Claude-level capabilities
         return await sendPromptAgent(tabId, prompt, model);
 
+      case 'orchestrator':
+        // Use Rust orchestrator for optimal routing
+        return await sendPromptOrchestrator(tabId, prompt);
+
       default:
         return await sendPrompt(tabId, prompt, model);
     }
   }
 
-  // Send prompt to scaffolded agent (Claude-level local capabilities)
-  async function sendPromptAgent(tabId: string, prompt: string, model?: string) {
+  // Send prompt via Rust orchestrator (optimal local routing)
+  async function sendPromptOrchestrator(tabId: string, prompt: string) {
     const session = getSession(tabId);
 
     if (session.isThinking) {
@@ -384,7 +741,71 @@ export function useAI() {
       return;
     }
 
+    addDebugLog(tabId, `[ORCHESTRATOR] Routing through Rust backend`);
+
+    // Add user message
+    addMessage(tabId, { role: 'user', content: prompt });
+
+    // Create assistant message placeholder
+    const assistantMessage: AIMessage = {
+      id: uuidv4(),
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+      streaming: true,
+    };
+    session.messages.push(assistantMessage);
+    session.isThinking = true;
+
+    try {
+      const orchestrator = getOrchestrator();
+      orchestrator.setWorkingDirectory(session.workingDirectory || '.');
+
+      const result = await orchestrator.sendMessage(prompt);
+
+      if (result) {
+        // Update message with result
+        assistantMessage.content = result.content;
+        assistantMessage.streaming = false;
+
+        // Add metadata for display
+        if (result.processingPath) {
+          assistantMessage.content += `\n\n---\n*Path: ${result.processingPath}*`;
+          if (result.latencyMs) {
+            assistantMessage.content += ` *${result.latencyMs}ms*`;
+          }
+        }
+
+        addDebugLog(tabId, `[ORCHESTRATOR] Complete via ${result.processingPath || 'unknown'}`);
+      } else {
+        assistantMessage.content = 'No response from orchestrator';
+        assistantMessage.streaming = false;
+      }
+    } catch (err) {
+      addDebugLog(tabId, `[ORCHESTRATOR] Error: ${err}`);
+      assistantMessage.content = `Error: ${err}`;
+      assistantMessage.streaming = false;
+    } finally {
+      session.isThinking = false;
+    }
+  }
+
+  // Send prompt to scaffolded agent (Claude-level local capabilities)
+  async function sendPromptAgent(tabId: string, prompt: string, model?: string) {
+    try { await invoke('debug_log', { message: '[AGENT] sendPromptAgent called!' }); } catch {}
+    try { await invoke('debug_log', { message: `[AGENT] prompt: ${prompt.substring(0, 100)}` }); } catch {}
+
+    const session = getSession(tabId);
+    try { await invoke('debug_log', { message: `[AGENT] isThinking: ${session.isThinking}` }); } catch {}
+
+    if (session.isThinking) {
+      addDebugLog(tabId, '[BLOCKED] Already processing a request');
+      try { await invoke('debug_log', { message: '[AGENT] BLOCKED' }); } catch {}
+      return;
+    }
+
     addDebugLog(tabId, `[AGENT] Starting scaffolded agent task`);
+    try { await invoke('debug_log', { message: '[AGENT] About to call scaffoldedAgent.startTask' }); } catch {}
 
     // Add user message
     addMessage(tabId, { role: 'user', content: prompt });

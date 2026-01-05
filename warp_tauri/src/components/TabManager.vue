@@ -156,6 +156,8 @@ function kindIcon(kind: Tab['kind']) {
       return '🤖'
     case 'developer':
       return '🛠'
+    case 'topics':
+      return '📊'
     default:
       return '•'
   }
@@ -195,15 +197,23 @@ watch(() => props.tabs.length, () => {
 </script>
 
 <style scoped>
+/* ═══════════════════════════════════════════════════════════
+   Apple-Inspired Premium Tab Bar
+   Inspired by: Safari, Finder, Apple TV
+   ═══════════════════════════════════════════════════════════ */
+
 .tab-bar {
-  background-color: var(--tab-bar-bg);
-  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   display: flex;
   align-items: center;
   flex: 1;
-  height: 36px;
+  height: 44px;
   user-select: none;
   position: relative;
+  padding: 0 8px;
 }
 
 .tabs {
@@ -213,41 +223,62 @@ watch(() => props.tabs.length, () => {
   overflow-x: auto;
   flex: 1;
   scroll-behavior: smooth;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  gap: 4px;
+  padding: 6px 0;
 }
 
 .tabs::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
 }
 
 .tab {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  height: 100%;
-  background-color: var(--bg-color);
-  border-right: 1px solid var(--border-color);
+  gap: 10px;
+  padding: 0 16px;
+  height: 32px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid transparent;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.2s;
-  min-width: 120px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 100px;
   max-width: 200px;
-  color: var(--text-color);
+  color: rgba(255,255,255,0.7);
   flex-shrink: 0;
+  position: relative;
 }
 
 .tab:hover {
-  background-color: color-mix(in srgb, var(--bg-color) 80%, white 20%);
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.9);
+  border-color: rgba(255,255,255,0.1);
 }
 
 .tab.active {
-  background-color: var(--bg-color);
-  border-bottom: 2px solid var(--active-tab-color);
+  background: rgba(10, 132, 255, 0.2);
+  border-color: rgba(10, 132, 255, 0.4);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(10, 132, 255, 0.2);
+}
+
+.tab.active::before {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  background: linear-gradient(90deg, #0a84ff, #5ac8fa);
+  border-radius: 2px;
 }
 
 .tab-kind {
-  font-size: 12px;
+  font-size: 14px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 
 .tab-name {
@@ -256,77 +287,102 @@ watch(() => props.tabs.length, () => {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: #888;
+  color: rgba(255,255,255,0.4);
   cursor: pointer;
   padding: 0;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 3px;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 12px;
   transition: all 0.2s;
+  opacity: 0;
+}
+
+.tab:hover .close-btn {
+  opacity: 1;
 }
 
 .close-btn:hover {
-  background-color: var(--border-color);
-  color: var(--text-color);
+  background: rgba(255, 69, 58, 0.3);
+  color: #ff453a;
 }
 
 .reorder-btn {
   background: none;
   border: none;
-  color: #888;
+  color: rgba(255,255,255,0.3);
   cursor: pointer;
-  padding: 0 4px;
-  width: 20px;
-  height: 16px;
+  padding: 0;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 3px;
-  font-size: 12px;
+  border-radius: 6px;
+  font-size: 11px;
   transition: all 0.2s;
+  opacity: 0;
+}
+
+.tab:hover .reorder-btn {
+  opacity: 1;
 }
 
 .reorder-btn:hover {
-  background-color: var(--border-color);
-  color: var(--text-color);
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.8);
 }
 
 .new-tab-btn {
-  background: none;
-  border: none;
-  color: #888;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.5);
   cursor: pointer;
-  padding: 0 12px;
-  height: 100%;
+  padding: 0;
+  width: 32px;
+  height: 32px;
   font-size: 18px;
-  transition: all 0.2s;
+  font-weight: 300;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
 }
 
 .new-tab-btn:hover {
-  background-color: color-mix(in srgb, var(--bg-color) 80%, white 20%);
-  color: var(--text-color);
+  background: rgba(10, 132, 255, 0.2);
+  border-color: rgba(10, 132, 255, 0.4);
+  color: #0a84ff;
+  transform: scale(1.05);
+}
+
+.new-tab-btn:active {
+  transform: scale(0.95);
 }
 
 /* Scroll buttons */
 .scroll-btn {
-  background: linear-gradient(to right, var(--tab-bar-bg), transparent);
+  background: linear-gradient(to right, rgba(10,10,15,0.95), transparent);
   border: none;
-  color: #94a3b8;
+  color: rgba(255,255,255,0.5);
   cursor: pointer;
-  padding: 0 8px;
+  padding: 0 12px;
   height: 100%;
-  font-size: 20px;
-  font-weight: bold;
+  font-size: 18px;
+  font-weight: 500;
   transition: all 0.2s;
   z-index: 10;
   display: flex;
@@ -335,24 +391,27 @@ watch(() => props.tabs.length, () => {
 }
 
 .scroll-btn.scroll-left {
-  background: linear-gradient(to right, var(--tab-bar-bg) 60%, transparent);
+  background: linear-gradient(to right, rgba(10,10,15,0.98) 40%, transparent);
 }
 
 .scroll-btn.scroll-right {
-  background: linear-gradient(to left, var(--tab-bar-bg) 60%, transparent);
+  background: linear-gradient(to left, rgba(10,10,15,0.98) 40%, transparent);
 }
 
 .scroll-btn:hover {
-  color: var(--text-color);
-  background: var(--tab-bar-bg);
+  color: #0a84ff;
 }
 
 /* Tab count indicator */
 .tab-count {
-  padding: 0 12px;
+  padding: 4px 10px;
   font-size: 11px;
-  color: #64748b;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
   white-space: nowrap;
   flex-shrink: 0;
+  margin-left: 8px;
 }
 </style>

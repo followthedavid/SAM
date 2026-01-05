@@ -1,7 +1,7 @@
 #![cfg(test)]
 
-use warp_tauri::{create_test_state, test_runner::run_phase3_batch_inproc};
-use warp_tauri::conversation::{BatchEntry, BatchStatus, AutonomySettings};
+use sam_terminal::{create_test_state, test_runner::run_phase3_batch_inproc};
+use sam_terminal::conversation::{BatchEntry, BatchStatus, AutonomySettings};
 
 #[test]
 fn test_phase3_inproc_runner() {

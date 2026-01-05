@@ -20,22 +20,23 @@ pub enum ModelType {
 
 impl ModelType {
     /// Get the Ollama model name for this type
+    /// Updated to use installed models: dolphin-llama3:8b, qwen2.5-coder:1.5b
     pub fn model_name(&self) -> &'static str {
         match self {
-            Self::Fast => "qwen2.5:3b",
-            Self::Balanced => "qwen2.5:7b",
-            Self::Powerful => "qwen2.5:14b",
-            Self::Code => "qwen2.5-coder:7b",
+            Self::Fast => "qwen2.5-coder:1.5b",
+            Self::Balanced => "dolphin-llama3:8b",
+            Self::Powerful => "dolphin-llama3:8b",
+            Self::Code => "qwen2.5-coder:1.5b",
         }
     }
 
     /// Get fallback model if primary not available
     pub fn fallback(&self) -> &'static str {
         match self {
-            Self::Fast => "qwen2.5:7b",
-            Self::Balanced => "qwen2.5:3b",
-            Self::Powerful => "qwen2.5:7b",
-            Self::Code => "qwen2.5:7b",
+            Self::Fast => "dolphin-llama3:8b",
+            Self::Balanced => "qwen2.5-coder:1.5b",
+            Self::Powerful => "dolphin-llama3:8b",
+            Self::Code => "dolphin-llama3:8b",
         }
     }
 }
@@ -417,15 +418,15 @@ mod tests {
 
     #[test]
     fn test_model_names() {
-        assert_eq!(ModelType::Fast.model_name(), "qwen2.5:3b");
-        assert_eq!(ModelType::Balanced.model_name(), "qwen2.5:7b");
-        assert_eq!(ModelType::Powerful.model_name(), "qwen2.5:14b");
-        assert_eq!(ModelType::Code.model_name(), "qwen2.5-coder:7b");
+        assert_eq!(ModelType::Fast.model_name(), "qwen2.5-coder:1.5b");
+        assert_eq!(ModelType::Balanced.model_name(), "dolphin-llama3:8b");
+        assert_eq!(ModelType::Powerful.model_name(), "dolphin-llama3:8b");
+        assert_eq!(ModelType::Code.model_name(), "qwen2.5-coder:1.5b");
     }
 
     #[test]
     fn test_fallback_models() {
-        assert_eq!(ModelType::Fast.fallback(), "qwen2.5:7b");
-        assert_eq!(ModelType::Powerful.fallback(), "qwen2.5:7b");
+        assert_eq!(ModelType::Fast.fallback(), "dolphin-llama3:8b");
+        assert_eq!(ModelType::Powerful.fallback(), "dolphin-llama3:8b");
     }
 }

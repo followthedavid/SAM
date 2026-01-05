@@ -1,1168 +1,597 @@
 <template>
   <div id="app" class="app-shell">
-    <header class="topbar">
-      <div class="project-meta">
-        <button class="sidebar-toggle" @click="showSidebar = !showSidebar" title="Toggle Sidebar (⌘B)">
-          ☰
-        </button>
-        <strong>{{ projectName }}</strong>
-        <small v-if="projectRoot">{{ projectRoot }}</small>
-        <span v-if="appVersion" class="version-badge" :title="`Build: ${appVersion.build}`">
-          v{{ appVersion.version }}
-        </span>
-      </div>
-      <div class="topbar-actions">
-        <!-- AI Status Indicator -->
-        <button
-          class="ai-status-btn"
-          :class="{ enabled: aiEnabled, disabled: !aiEnabled }"
-          @click="toggleAI"
-          :title="aiEnabled ? 'AI Enabled (click to disable)' : 'AI Disabled (Air-Gapped Mode)'"
-        >
-          {{ aiEnabled ? '🤖 AI' : '🔒 Air-Gap' }}
-        </button>
-        <button class="cmd-palette-btn" @click="showCommandPalette = true" title="Command Palette (⌘⇧P)">
-          ⌘⇧P
-        </button>
-        <button data-testid="open-folder-button" @click="handleOpenFolder">Open Folder</button>
-        <button data-testid="new-file-button" @click="createEditorTab()">New File</button>
-        <button data-testid="new-terminal-button" @click="createTerminalTab()">New Terminal</button>
-        <button v-if="aiEnabled" data-testid="new-ai-button" @click="createAITab()">AI Panel</button>
-        <button data-testid="new-developer-button" @click="createDeveloperTab()">Developer</button>
-        <button class="snapshots-btn" @click="showSnapshots = true" title="Workspace Snapshots">
-          📷
-        </button>
-        <!-- Personal Automation Intelligence Controls -->
-        <button
-          class="daemon-btn"
-          :class="{ active: daemon?.status?.value?.running }"
-          @click="showDaemonPanel = true"
-          :title="daemon?.status?.value?.running ? 'Daemon Running (click to view)' : 'Daemon Stopped'"
-        >
-          {{ daemon?.status?.value?.running ? '🤖' : '💤' }}
-        </button>
-        <button
-          v-if="daemon?.pendingApprovals?.value?.length > 0"
-          class="approvals-btn"
-          @click="showApprovalQueue = true"
-          :title="`${daemon?.pendingApprovals?.value?.length || 0} pending approvals`"
-        >
-          🔔 {{ daemon?.pendingApprovals?.value?.length || 0 }}
-        </button>
-        <VoiceInputButton
-          v-if="aiEnabled"
-          :isListening="isVoiceListening"
-          @toggle="isVoiceListening = !isVoiceListening"
-          @transcript="handleVoiceTranscript"
-        />
-      </div>
+    <!-- Minimal drag region for window controls -->
+    <header class="topbar minimal" data-tauri-drag-region>
+      <div class="traffic-light-spacer"></div>
     </header>
 
-    <main class="workspace">
-      <aside class="sidebar" :class="{ hidden: !showSidebar }">
-        <ProjectTree
-          :tree="projectTree"
-          :projectRoot="projectRoot"
-          :isLoading="isTreeLoading"
-          @open-file="handleOpenFile"
-          @refresh="refreshProjectTree"
-        />
-      </aside>
+    <!-- 24h Progress Panel (collapsible) -->
+    <Transition name="slide">
+      <div v-if="showProgress" class="progress-panel">
+        <ActivityLog :entries="activityEntries" :summary="activitySummary" />
+      </div>
+    </Transition>
 
-      <section class="main-pane">
-        <TabManager
-          :tabs="tabs"
-          :activeTabId="activeTab?.id || null"
-          @new-tab="createEditorTab"
-          @close-tab="handleCloseTab"
-          @switch-tab="handleSwitchTab"
-          @rename-tab="handleRenameTab"
-          @reorder-tab="handleReorderTabs"
-        />
-        <div class="pane-content">
-          <EditorPane
-            v-if="activeTab?.kind === 'editor'"
-            :tab="activeTab"
-            @run="runActiveEditor"
-          />
-          <SplitPaneContainer
-            v-else-if="activeTab?.kind === 'terminal' && activeTab.layout"
-            :layout="activeTab.layout"
-            :activePaneId="activeTab.activePaneId"
-            :tabId="activeTab.id"
-            @pane-focus="handlePaneFocus"
-            @cwd-change="handlePaneCwdChange"
-            @title-change="handlePaneTitleChange"
-            @output-change="handlePaneOutputChange"
-            @command-executed="handleCommandExecuted"
-            @resize="handlePaneResize"
-          />
-          <!-- Fallback for tabs without layout (legacy) -->
-          <TerminalWindow
-            v-else-if="activeTab?.kind === 'terminal'"
-            :ptyId="activeTab.ptyId"
-            :tabId="activeTab.id"
-            @cwd-change="handleCwdChange"
-            @title-change="handleTitleChange"
-          />
-          <AIChatTab v-else-if="activeTab?.kind === 'ai'" :tab="activeTab" />
-          <DeveloperDashboard v-else-if="activeTab?.kind === 'developer'" />
-          <div v-else class="empty-state">Select or create a tab to get started.</div>
-        </div>
-      </section>
+    <!-- Main Content: Full-Screen Gallery with unified Project/Chat modes -->
+    <main class="gallery-container">
+      <TopicGrid
+        :searchQuery="searchQuery"
+        :expandedProjectId="expandedProjectId"
+        :viewMode="viewMode"
+        @expand-project="handleExpandProject"
+        @collapse-project="expandedProjectId = null"
+        @approve-task="handleApproveTask"
+        @approve-all="handleApproveAllTasks"
+        @open-chat="handleOpenProjectChat"
+        @search="handleSearchFromGrid"
+        @add-project="handleAddProject"
+        @delete-project="handleDeleteProject"
+      />
     </main>
 
-    <!-- Command Palette -->
+    <!-- Morning Brief Modal -->
+    <Teleport to="body">
+      <div v-if="showMorningBrief" class="modal-overlay" @click.self="showMorningBrief = false">
+        <div class="morning-brief-modal">
+          <div class="modal-header">
+            <h2>☀️ Good {{ timeOfDay }}, David</h2>
+            <button @click="showMorningBrief = false">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="brief-section">
+              <h3>Overnight Summary</h3>
+              <p>{{ overnightSummary }}</p>
+            </div>
+            <div class="brief-section">
+              <h3>Today's Suggestions</h3>
+              <ul class="suggestions-list">
+                <li v-for="suggestion in todaySuggestions" :key="suggestion.id">
+                  <span class="suggestion-project">{{ suggestion.project }}</span>
+                  <span class="suggestion-task">{{ suggestion.description }}</span>
+                  <button class="approve-btn" @click="handleApproveTask(suggestion)">Approve</button>
+                </li>
+              </ul>
+            </div>
+            <button class="approve-all-btn" @click="handleApproveAllSuggestions">
+              Approve All Suggestions ({{ todaySuggestions.length }})
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Command Palette (⌘K) -->
     <CommandPalette
       :isVisible="showCommandPalette"
       @close="showCommandPalette = false"
-      @new-terminal="createTerminalTab()"
-      @new-editor="createEditorTab()"
-      @new-ai="createAITab()"
-      @close-tab="activeTab && closeTab(activeTab.id)"
-      @split-vertical="activeTab?.kind === 'terminal' && splitPane(activeTab.id, 'vertical')"
-      @split-horizontal="activeTab?.kind === 'terminal' && splitPane(activeTab.id, 'horizontal')"
-      @next-tab="switchToNextTab()"
-      @prev-tab="switchToPreviousTab()"
-      @toggle-sidebar="showSidebar = !showSidebar"
-      @show-shortcuts="showKeyboardShortcuts = true"
-      @open-folder="handleOpenFolder()"
-      @global-search="showGlobalSearch = true"
-    />
-
-    <!-- Keyboard Shortcuts Help -->
-    <KeyboardShortcuts
-      :isVisible="showKeyboardShortcuts"
-      @close="showKeyboardShortcuts = false"
-    />
-
-    <!-- Snapshots Panel -->
-    <SnapshotsPanel
-      :isVisible="showSnapshots"
-      @close="showSnapshots = false"
-      @save="handleSaveSnapshot"
-      @restore="handleRestoreSnapshot"
-    />
-
-    <!-- Global Search -->
-    <GlobalSearch
-      :isVisible="showGlobalSearch"
-      :tabs="tabs"
-      :paneCwds="paneCwds"
-      :paneOutputs="paneOutputs"
-      @close="showGlobalSearch = false"
-      @jump-to-tab="handleJumpToTab"
-      @jump-to-pane="handleJumpToPane"
-    />
-
-    <!-- Status Bar -->
-    <StatusBar
-      :currentDirectory="currentCwd"
-      :gitBranch="currentGitBranch"
-      :gitDirty="isGitDirty"
-      :aiEnabled="aiEnabled"
-      :modelName="currentModelName"
-      :isRecording="isRecording"
-      :isPaused="isPaused"
+      @command="handleCommand"
     />
 
     <!-- Toast Notifications -->
     <ToastContainer />
 
-    <!-- Analytics Dashboard -->
-    <AnalyticsDashboard
-      :isVisible="showAnalytics"
-      @close="showAnalytics = false"
-    />
-
-    <!-- Session Recovery Modal -->
-    <SessionRecovery
-      :isVisible="showSessionRecovery"
-      @recover="handleSessionRecover"
-      @dismiss="handleSessionDismiss"
-    />
-
-    <!-- Claude Code Features -->
-
-    <!-- Todo Panel (side panel) -->
+    <!-- Add Project Modal -->
     <Teleport to="body">
-      <div v-if="showTodoPanel" class="claude-panel todo-panel-container">
-        <div class="panel-header">
-          <span>Task Progress</span>
-          <button @click="showTodoPanel = false">×</button>
+      <div v-if="showAddProject" class="modal-overlay" @click.self="showAddProject = false">
+        <div class="add-project-modal">
+          <div class="modal-header">
+            <h2>Add New Project</h2>
+            <button @click="showAddProject = false">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Project Name</label>
+              <input
+                v-model="newProjectName"
+                type="text"
+                class="form-input"
+                placeholder="My Project"
+                @keydown.enter="confirmAddProject"
+                autofocus
+              />
+            </div>
+            <div class="form-group">
+              <label>Icon (emoji) - click to select or type your own</label>
+              <div class="icon-picker">
+                <input
+                  v-model="newProjectIcon"
+                  type="text"
+                  class="form-input icon-input"
+                  placeholder="📁"
+                />
+                <div class="emoji-categories">
+                  <button
+                    v-for="cat in emojiCategories"
+                    :key="cat.name"
+                    class="category-btn"
+                    :class="{ active: selectedEmojiCategory === cat.name }"
+                    @click="selectedEmojiCategory = cat.name"
+                  >
+                    {{ cat.icon }}
+                  </button>
+                </div>
+                <div class="emoji-grid">
+                  <button
+                    v-for="emoji in currentCategoryEmojis"
+                    :key="emoji"
+                    @click="newProjectIcon = emoji"
+                    class="emoji-btn"
+                    :class="{ selected: newProjectIcon === emoji }"
+                  >
+                    {{ emoji }}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <button class="create-btn" @click="confirmAddProject">
+              Create Project
+            </button>
+          </div>
         </div>
-        <TodoPanel :todos="todos" />
       </div>
     </Teleport>
 
-    <!-- Agent Status Bar (bottom of screen, replaces regular status bar when agent is running) -->
-    <AgentStatusBar
-      v-if="agentStatus.isRunning"
-      :currentTask="agentStatus.currentTask"
-      :progress="agentStatus.progress"
-      :isRunning="agentStatus.isRunning"
-      :tokensUsed="agentStatus.tokensUsed"
-      :model="agentStatus.model"
-      :connectionStatus="agentStatus.connectionStatus"
+    <!-- Global Chat Panel -->
+    <ChatPanel
+      v-if="showChat"
+      :projectId="chatProjectId"
+      :projectName="chatProjectName"
+      @close="showChat = false"
     />
-
-    <!-- Tool Approval Dialog -->
-    <ToolApprovalDialog
-      v-if="pendingToolApproval"
-      :visible="pendingToolApproval.visible"
-      :toolName="pendingToolApproval.toolName"
-      :description="pendingToolApproval.description"
-      :params="pendingToolApproval.params"
-      :preview="pendingToolApproval.preview"
-      :warnings="pendingToolApproval.warnings"
-      :riskLevel="pendingToolApproval.riskLevel"
-      @decide="handleToolApprovalDecision"
-    />
-
-    <!-- Ask User Question Dialog -->
-    <AskUserQuestion
-      v-if="pendingQuestion"
-      :questions="pendingQuestion.questions"
-      @submit="handleQuestionAnswer"
-    />
-
-    <!-- Test Runner Panel -->
-    <Teleport to="body">
-      <div v-if="showTestRunner" class="claude-panel test-runner-container">
-        <div class="panel-header">
-          <span>Test Runner</span>
-          <button @click="showTestRunner = false">×</button>
-        </div>
-        <TestRunnerPanel
-          :cwd="currentCwd"
-          @openFile="handleTestFileOpen"
-        />
-      </div>
-    </Teleport>
-
-    <!-- Daemon Status Panel -->
-    <Teleport to="body">
-      <DaemonStatusPanel
-        v-if="showDaemonPanel"
-        :status="daemon.status.value"
-        :tasks="daemon.tasks.value"
-        :nextTask="daemon.nextTask.value"
-        @close="showDaemonPanel = false"
-        @start="daemon.start()"
-        @stop="daemon.stop()"
-        @trigger-task="daemon.triggerTask($event)"
-        @toggle-task="daemon.setTaskEnabled($event.id, $event.enabled)"
-      />
-    </Teleport>
-
-    <!-- Approval Queue Panel -->
-    <Teleport to="body">
-      <ApprovalQueuePanel
-        v-if="showApprovalQueue"
-        :approvals="daemon.pendingApprovals.value"
-        @close="showApprovalQueue = false"
-        @approve="daemon.approve($event)"
-        @reject="daemon.reject($event)"
-      />
-    </Teleport>
-
-    <!-- Screen Analyzer -->
-    <Teleport to="body">
-      <ScreenAnalyzer
-        v-if="showScreenAnalyzer"
-        @close="showScreenAnalyzer = false"
-        @analyzed="handleScreenAnalysis"
-      />
-    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, defineAsyncComponent, Teleport } from 'vue'
+import { ref, computed, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { invoke } from '@tauri-apps/api/tauri'
 
-// Core components - always loaded
-import TabManager from './components/TabManager.vue'
-import SplitPaneContainer from './components/SplitPaneContainer.vue'
-import ProjectTree from './components/ProjectTree.vue'
+// Core components
 import ToastContainer from './components/ToastContainer.vue'
 
-// Lazy-loaded components - loaded on demand for better initial bundle size
-const TerminalWindow = defineAsyncComponent(() => import('./components/TerminalWindow.vue'))
-const EditorPane = defineAsyncComponent(() => import('./components/EditorPane.vue'))
-const AIChatTab = defineAsyncComponent(() => import('./components/AIChatTab.vue'))
-const DeveloperDashboard = defineAsyncComponent(() => import('./components/DeveloperDashboard.vue'))
+// Lazy-loaded components
+const TopicGrid = defineAsyncComponent(() => import('./components/TopicGrid.vue'))
 const CommandPalette = defineAsyncComponent(() => import('./components/CommandPalette.vue'))
-const KeyboardShortcuts = defineAsyncComponent(() => import('./components/KeyboardShortcuts.vue'))
-const SnapshotsPanel = defineAsyncComponent(() => import('./components/SnapshotsPanel.vue'))
-const GlobalSearch = defineAsyncComponent(() => import('./components/GlobalSearch.vue'))
-const AnalyticsDashboard = defineAsyncComponent(() => import('./components/AnalyticsDashboard.vue'))
-const SessionRecovery = defineAsyncComponent(() => import('./components/SessionRecovery.vue'))
-const StatusBar = defineAsyncComponent(() => import('./components/StatusBar.vue'))
+const ActivityLog = defineAsyncComponent(() => import('./components/ActivityLog.vue'))
+const ChatPanel = defineAsyncComponent(() => import('./components/ChatPanel.vue'))
 
-// Claude Code Feature Components
-const TodoPanel = defineAsyncComponent(() => import('./components/TodoPanel.vue'))
-const AgentStatusBar = defineAsyncComponent(() => import('./components/AgentStatusBar.vue'))
-const AskUserQuestion = defineAsyncComponent(() => import('./components/AskUserQuestion.vue'))
-const ToolApprovalDialog = defineAsyncComponent(() => import('./components/ToolApprovalDialog.vue'))
-const TestRunnerPanel = defineAsyncComponent(() => import('./components/TestRunnerPanel.vue'))
-const InlineAISuggestion = defineAsyncComponent(() => import('./components/InlineAISuggestion.vue'))
-
-// Personal Automation Intelligence Components
-const DaemonStatusPanel = defineAsyncComponent(() => import('./components/DaemonStatusPanel.vue'))
-const ApprovalQueuePanel = defineAsyncComponent(() => import('./components/ApprovalQueuePanel.vue'))
-const VoiceInputButton = defineAsyncComponent(() => import('./components/VoiceInputButton.vue'))
-const ScreenAnalyzer = defineAsyncComponent(() => import('./components/ScreenAnalyzer.vue'))
-
-import { useTabs } from './composables/useTabs'
-import { useProject } from './composables/useProject'
-import { enableTestMode } from './composables/useTestMode'
-import { useSecuritySettings } from './composables/useSecuritySettings'
-import { useSnapshots, type Snapshot } from './composables/useSnapshots'
-import { useSessionStore, type PersistedSession } from './composables/useSessionStore'
+// Composables
 import { useToast } from './composables/useToast'
-import { useAnalytics } from './composables/useAnalytics'
-import { useRecording } from './composables/useRecording'
+import { useActivityLog } from './composables/useActivityLog'
+import { useProjectStore } from './stores/projectStore'
 
-// Claude Code Feature Composables
-import { useTodoList } from './composables/useTodoList'
-import { useMarkdown } from './composables/useMarkdown'
-import { useDirectoryJump } from './composables/useDirectoryJump'
-import { useTools } from './composables/useTools'
-
-// Personal Automation Intelligence Composables
-import { useDaemonOrchestrator } from './composables/useDaemonOrchestrator'
-
-const {
-  tabs,
-  activeTab,
-  createTerminalTab,
-  createAITab,
-  createEditorTab,
-  createDeveloperTab,
-  closeTab,
-  setActiveTab,
-  renameTab,
-  reorderTabs,
-  sendMessage,
-  addAIMessage,
-  addSystemMessage,
-  openTabForFile,
-  setEditorInitialContent,
-  loadSession,
-  // Split pane operations
-  splitPane,
-  setActivePane,
-  navigatePane,
-  resizeActivePane,
-  // OSC handlers
-  updatePaneCwd,
-  // Split ratio updates
-  updateSplitRatio,
-  // PTY cleanup
-  cleanupAllPtys,
-  getPtyCount,
-  // Snapshot restore
-  restoreFromSnapshot,
-} = useTabs()
-
-const {
-  projectRoot,
-  projectTree,
-  projectName,
-  isLoadingTree,
-  pickProjectFolder,
-  refreshProjectTree,
-  readFile,
-} = useProject()
-
-const isTreeLoading = isLoadingTree
-
-// Security settings
-const { settings: securitySettings, toggleAI, isAIEnabled } = useSecuritySettings()
-const aiEnabled = computed(() => securitySettings.value.aiEnabled)
-
-// Snapshots
-const { createSnapshot, createAutoSnapshot, getSnapshot } = useSnapshots()
-
-// Session recovery
-const sessionStore = useSessionStore()
-
-// Toast notifications
 const toast = useToast()
-
-// Analytics
-const { trackCommand, trackPaneFocus } = useAnalytics()
-
-// Recording
-const {
-  startRecording,
-  stopRecording,
-  pauseRecording,
-  resumeRecording,
-  isRecording,
-  isPaused
-} = useRecording()
-
-// Claude Code Features
-const { todos, addTodo, updateTodo, removeTodo, clearCompleted } = useTodoList()
-const { renderMarkdown } = useMarkdown()
-const directoryJump = useDirectoryJump()
-const tools = useTools()
-
-// Personal Automation Intelligence (Daemon)
-const daemon = useDaemonOrchestrator()
-
-// Claude Code UI State
-const showTodoPanel = ref(false)
-const showTestRunner = ref(false)
-
-// Personal Automation Intelligence UI State
-const showDaemonPanel = ref(false)
-const showApprovalQueue = ref(false)
-const showScreenAnalyzer = ref(false)
-const isVoiceListening = ref(false)
-const pendingToolApproval = ref<{
-  visible: boolean
-  toolName: string
-  description: string
-  params: Record<string, unknown>
-  preview: string
-  warnings: string[]
-  riskLevel: 'low' | 'medium' | 'high'
-  resolve: (decision: 'allow' | 'deny' | 'allow_always') => void
-} | null>(null)
-const pendingQuestion = ref<{
-  visible: boolean
-  questions: Array<{
-    question: string
-    header: string
-    options: Array<{ label: string; description: string }>
-    multiSelect: boolean
-  }>
-  resolve: (answers: Record<string, string | string[]>) => void
-} | null>(null)
-
-// Agent status for status bar
-const agentStatus = ref({
-  currentTask: '',
-  progress: 0,
-  isRunning: false,
-  tokensUsed: 0,
-  model: 'qwen2.5-coder:1.5b',
-  connectionStatus: 'connected' as 'connected' | 'disconnected' | 'error'
-})
+const { entries: activityEntries, summary: activitySummary, logActivity } = useActivityLog()
+const projectStore = useProjectStore()
 
 // UI State
+const searchQuery = ref('')
+const searchInput = ref<HTMLInputElement | null>(null)
+const showProgress = ref(false)
+const showMorningBrief = ref(false)
 const showCommandPalette = ref(false)
-const showKeyboardShortcuts = ref(false)
-const showSidebar = ref(true)
-const showSnapshots = ref(false)
-const showGlobalSearch = ref(false)
-const showAnalytics = ref(false)
-const showSessionRecovery = ref(false)
+const expandedProjectId = ref<string | null>(null)
+const showChat = ref(false)
+const chatProjectId = ref<string | null>(null)
+const chatProjectName = ref<string | null>(null)
+const showAddProject = ref(false)
+const viewMode = ref<'projects' | 'chats'>('projects')
+const newProjectName = ref('')
+const newProjectIcon = ref('📁')
+const selectedEmojiCategory = ref('objects')
 
-// App version info
-const appVersion = ref<{ version: string; build: string } | null>(null)
+// Full emoji set organized by category
+const emojiCategories = [
+  { name: 'objects', icon: '📁', emojis: ['📁', '📂', '📄', '📋', '📌', '📎', '🔗', '📦', '📫', '📬', '📭', '📮', '📯', '📰', '📱', '📲', '💻', '🖥️', '🖨️', '⌨️', '🖱️', '💾', '💿', '📀', '🎥', '📹', '📷', '📸', '🔍', '🔎', '🔬', '🔭', '📡', '💡', '🔦', '🏮', '📔', '📕', '📖', '📗', '📘', '📙', '📚', '📓', '📒', '📃', '📜', '📄', '📰', '🗞️', '📑', '🔖', '🏷️', '💰', '💴', '💵', '💶', '💷', '💸', '💳', '🧾', '💹'] },
+  { name: 'tech', icon: '🤖', emojis: ['🤖', '👾', '🎮', '🕹️', '🎰', '🔌', '🔋', '💻', '🖥️', '⌨️', '🖱️', '🖲️', '💾', '💿', '📀', '📱', '📟', '📠', '🔧', '🔩', '⚙️', '🛠️', '⛏️', '🔨', '⚒️', '🛡️', '🗡️', '⚔️', '🔫', '🏹', '🛸', '🚀', '✈️', '🛩️', '🛰️', '📡', '🧲', '🔬', '🔭', '💉', '🩺', '🩹', '🧬', '🦠', '🧪', '🧫', '🧯', '🔥', '💧', '🌊'] },
+  { name: 'media', icon: '🎵', emojis: ['🎵', '🎶', '🎼', '🎹', '🥁', '🎷', '🎺', '🎸', '🪕', '🎻', '🎤', '🎧', '📻', '🎬', '🎥', '📹', '📺', '📷', '📸', '🖼️', '🎨', '🖌️', '🖍️', '✏️', '✒️', '🖊️', '🖋️', '📝', '🎭', '🎪', '🎟️', '🎫', '🎗️', '🏅', '🥇', '🥈', '🥉', '🏆', '⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸', '🥊'] },
+  { name: 'nature', icon: '🌿', emojis: ['🌿', '🍀', '🌱', '🌲', '🌳', '🌴', '🌵', '🌾', '🌷', '🌸', '🌹', '🌺', '🌻', '🌼', '🪻', '🪷', '💐', '🍁', '🍂', '🍃', '🪹', '🪺', '🐚', '🌍', '🌎', '🌏', '🌐', '🗺️', '🧭', '🏔️', '⛰️', '🌋', '🗻', '🏕️', '🏖️', '🏜️', '🏝️', '☀️', '🌤️', '⛅', '🌥️', '☁️', '🌦️', '🌧️', '⛈️', '🌩️', '🌨️', '❄️', '☃️', '⛄', '🌬️'] },
+  { name: 'animals', icon: '🐱', emojis: ['🐱', '🐶', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀'] },
+  { name: 'food', icon: '🍕', emojis: ['🍕', '🍔', '🍟', '🌭', '🥪', '🌮', '🌯', '🫔', '🥙', '🧆', '🥚', '🍳', '🥘', '🍲', '🫕', '🥣', '🥗', '🍿', '🧈', '🧂', '🥫', '🍝', '🍜', '🍛', '🍣', '🍱', '🥟', '🦪', '🍤', '🍙', '🍚', '🍘', '🍥', '🥠', '🥮', '🍢', '🍡', '🍧', '🍨', '🍦', '🥧', '🧁', '🍰', '🎂', '🍮', '🍭', '🍬', '🍫', '🍩', '🍪', '☕'] },
+  { name: 'travel', icon: '✈️', emojis: ['✈️', '🛫', '🛬', '🛩️', '💺', '🚀', '🛸', '🚁', '🛶', '⛵', '🚤', '🛥️', '🛳️', '⛴️', '🚢', '🚂', '🚃', '🚄', '🚅', '🚆', '🚇', '🚈', '🚉', '🚊', '🚝', '🚞', '🚋', '🚌', '🚍', '🚎', '🚐', '🚑', '🚒', '🚓', '🚔', '🚕', '🚖', '🚗', '🚘', '🚙', '🛻', '🚚', '🚛', '🚜', '🏎️', '🏍️', '🛵', '🦽', '🦼', '🛺', '🚲'] },
+  { name: 'symbols', icon: '💎', emojis: ['💎', '💍', '👑', '💫', '✨', '⭐', '🌟', '💥', '💢', '💦', '💨', '🕳️', '💣', '💬', '👁️‍🗨️', '🗨️', '🗯️', '💭', '💤', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❤️‍🔥', '❤️‍🩹', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎'] },
+  { name: 'flags', icon: '🏳️', emojis: ['🏳️', '🏴', '🏁', '🚩', '🎌', '🏴‍☠️', '🇺🇸', '🇬🇧', '🇨🇦', '🇦🇺', '🇯🇵', '🇰🇷', '🇨🇳', '🇮🇳', '🇧🇷', '🇲🇽', '🇫🇷', '🇩🇪', '🇮🇹', '🇪🇸', '🇷🇺', '🇳🇱', '🇧🇪', '🇨🇭', '🇦🇹', '🇵🇱', '🇸🇪', '🇳🇴', '🇩🇰', '🇫🇮', '🇮🇪', '🇵🇹', '🇬🇷', '🇹🇷', '🇮🇱', '🇸🇦', '🇦🇪', '🇿🇦', '🇪🇬', '🇳🇬', '🇰🇪', '🇹🇭', '🇻🇳', '🇮🇩', '🇵🇭', '🇲🇾', '🇸🇬', '🇳🇿', '🇦🇷', '🇨🇴'] },
+  { name: 'smileys', icon: '😀', emojis: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '☺️', '😚', '😙', '🥲', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕'] },
+]
 
-// Pane CWDs for snapshots
-const paneCwds = new Map<string, string>()
-
-// Pane outputs for global search (last 50 lines per pane)
-const paneOutputs = new Map<string, string>()
-
-// Status bar state
-const currentCwd = computed(() => {
-  if (activeTab.value?.activePaneId) {
-    return paneCwds.get(activeTab.value.activePaneId) || projectRoot.value || '~'
-  }
-  return projectRoot.value || '~'
+const currentCategoryEmojis = computed(() => {
+  const cat = emojiCategories.find(c => c.name === selectedEmojiCategory.value)
+  return cat?.emojis || []
 })
 
-const currentGitBranch = ref<string | null>(null)
-const isGitDirty = ref(false)
-const currentModelName = ref('qwen2.5-coder:1.5b')
+// Computed - note: projectStore.projects is a ComputedRef, need .value
+const totalIssues = computed(() => {
+  const projects = projectStore.projects.value || []
+  return projects.reduce((sum, p) => sum + (p.issues?.length || 0), 0)
+})
 
-async function handleOpenFolder() {
-  await pickProjectFolder()
+const overallHealth = computed(() => {
+  const projects = projectStore.projects.value || []
+  if (projects.some(p => p.status === 'error')) return 'error'
+  if (projects.some(p => p.status === 'warning')) return 'warning'
+  return 'healthy'
+})
+
+const healthSummary = computed(() => {
+  const projects = projectStore.projects.value || []
+  const healthy = projects.filter(p => p.status === 'healthy').length
+  const total = projects.length
+  if (totalIssues.value > 0) {
+    return `${totalIssues.value} issues`
+  }
+  return `${healthy}/${total} healthy`
+})
+
+const timeOfDay = computed(() => {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'morning'
+  if (hour < 17) return 'afternoon'
+  return 'evening'
+})
+
+const overnightSummary = computed(() => {
+  const completed = activitySummary.value?.totalTasks || 0
+  const hours = activitySummary.value?.totalHours || 0
+  return `${completed} tasks completed (${hours.toFixed(1)}h of work)`
+})
+
+const todaySuggestions = computed(() => {
+  // Aggregate suggestions from all projects
+  const projects = projectStore.projects.value || []
+  return projects.flatMap(p =>
+    (p.suggestedTasks || []).slice(0, 2).map(t => ({
+      ...t,
+      project: p.name,
+      projectId: p.id
+    }))
+  ).slice(0, 10)
+})
+
+// Handlers
+function handleSearchSubmit() {
+  if (!searchQuery.value.trim()) return
+
+  // Check if it's a command
+  if (searchQuery.value.startsWith('/')) {
+    handleCommand(searchQuery.value.slice(1))
+  } else {
+    // Natural language - send to AI router
+    handleNaturalLanguage(searchQuery.value)
+  }
+  searchQuery.value = ''
 }
 
-async function handleOpenFile(path: string) {
-  const tab = openTabForFile(path)
-  if (!tab) return
-  setActiveTab(tab.id)
-  if (!tab.content) {
-    const content = await readFile(path)
-    setEditorInitialContent(tab.id, content)
+function handleSearchFromGrid(query: string) {
+  searchQuery.value = query
+  handleSearchSubmit()
+}
+
+async function handleNaturalLanguage(query: string) {
+  // Open chat panel and let ChatPanel handle the message
+  showChat.value = true
+  chatProjectId.value = expandedProjectId.value
+
+  // Find project name if we have an expanded project
+  if (expandedProjectId.value) {
+    const projects = projectStore.projects.value || []
+    const project = projects.find(p => p.id === expandedProjectId.value)
+    chatProjectName.value = project?.name || null
+  } else {
+    chatProjectName.value = null
+  }
+
+  // The ChatPanel will handle the actual message sending
+  // We just need to pass the initial query - but ChatPanel needs to receive it
+  // For now, just open the chat - user can re-type or we enhance later
+  toast.info('Opening chat - type your message there')
+}
+
+function handleCommand(command: string) {
+  console.log('[App] Command:', command)
+
+  switch (command.toLowerCase()) {
+    case 'fix all':
+      handleFixAll()
+      break
+    case 'morning brief':
+    case 'brief':
+      showMorningBrief.value = true
+      break
+    case 'progress':
+    case '24h':
+      showProgress.value = !showProgress.value
+      break
+    default:
+      handleNaturalLanguage(command)
   }
 }
 
-function handleCloseTab(tabId: string) {
-  closeTab(tabId)
+function handleExpandProject(projectId: string) {
+  expandedProjectId.value = projectId
 }
 
-function handleSwitchTab(tabId: string) {
-  setActiveTab(tabId)
+function handleOpenProjectChat(projectId: string, projectName: string) {
+  chatProjectId.value = projectId
+  chatProjectName.value = projectName
+  showChat.value = true
 }
 
-function handleRenameTab(tabId: string, newName: string) {
-  renameTab(tabId, newName)
-}
-
-function handleReorderTabs(fromIndex: number, toIndex: number) {
-  reorderTabs(fromIndex, toIndex)
-}
-
-// Handle terminal cwd changes (OSC 7)
-function handleCwdChange(payload: { tabId: string, cwd: string }) {
-  const { tabId, cwd } = payload
-  // Update tab name to show current directory (last component)
-  const dirName = cwd.split('/').filter(Boolean).pop() || cwd
-  const tab = tabs.value.find(t => t.id === tabId)
-  if (tab && tab.kind === 'terminal') {
-    // Format: ~dirname or dirname for non-home paths
-    const homeDir = '/Users/' // Simplified; could detect from env
-    const displayName = cwd.startsWith(homeDir)
-      ? '~' + cwd.substring(homeDir.length).split('/').slice(1).join('/')
-      : dirName
-    renameTab(tabId, displayName || 'Terminal')
-  }
-}
-
-// Handle terminal title changes (OSC 0/2)
-function handleTitleChange(payload: { tabId: string, title: string }) {
-  const { tabId, title } = payload
-  if (title) {
-    renameTab(tabId, title)
-  }
-}
-
-// Handle pane focus (for split panes)
-function handlePaneFocus(paneId: string) {
-  if (activeTab.value?.id) {
-    setActivePane(activeTab.value.id, paneId)
-    // Track pane focus for analytics
-    trackPaneFocus(paneId, activeTab.value.id)
-  }
-}
-
-// Handle pane cwd change (for split panes)
-function handlePaneCwdChange(payload: { paneId: string, cwd: string }) {
-  if (!activeTab.value?.id) return
-
-  // Store cwd in pane state
-  updatePaneCwd(activeTab.value.id, payload.paneId, payload.cwd)
-
-  // Track for snapshots
-  paneCwds.set(payload.paneId, payload.cwd)
-
-  // Only update tab title if this is the active pane
-  if (activeTab.value.activePaneId === payload.paneId) {
-    const cwd = payload.cwd
-    const homeDir = '/Users/'
-    const displayName = cwd.startsWith(homeDir)
-      ? '~' + cwd.substring(homeDir.length).split('/').slice(1).join('/')
-      : cwd.split('/').filter(Boolean).pop() || cwd
-    renameTab(activeTab.value.id, displayName || 'Terminal')
-  }
-}
-
-// Snapshot handlers
-function handleSaveSnapshot(name: string) {
-  createSnapshot(name, tabs.value, activeTab.value?.id || null, paneCwds)
-  console.log('[App] Saved snapshot:', name)
-  toast.success(`Saved snapshot "${name}"`)
-}
-
-async function handleRestoreSnapshot(snapshot: Snapshot) {
-  console.log('[App] Restoring snapshot:', snapshot.name)
-  const success = await restoreFromSnapshot(snapshot)
+function handleDeleteProject(projectId: string) {
+  const success = projectStore.deleteProject(projectId)
   if (success) {
-    console.log('[App] Snapshot restored successfully')
-    toast.success(`Restored snapshot "${snapshot.name}"`)
-  } else {
-    console.error('[App] Failed to restore snapshot')
-    toast.error('Failed to restore snapshot', {
-      title: 'Snapshot Error',
-      duration: 6000
+    expandedProjectId.value = null
+    toast.success('Project deleted')
+    logActivity({
+      project: projectId,
+      action: 'Project deleted',
+      status: 'success'
     })
-  }
-}
-
-// Handle pane title change (for split panes)
-function handlePaneTitleChange(payload: { paneId: string, title: string }) {
-  // Only update tab title if this is the active pane
-  if (activeTab.value?.activePaneId === payload.paneId && payload.title) {
-    if (activeTab.value?.id) {
-      renameTab(activeTab.value.id, payload.title)
-    }
-  }
-}
-
-// Handle pane resize (drag divider)
-function handlePaneResize(payload: { tabId: string, nodeId: string, ratio: number }) {
-  updateSplitRatio(payload.tabId, payload.nodeId, payload.ratio)
-}
-
-// Handle pane output change (for global search)
-function handlePaneOutputChange(payload: { paneId: string, output: string }) {
-  paneOutputs.set(payload.paneId, payload.output)
-}
-
-// Handle command execution (for analytics)
-function handleCommandExecuted(payload: { paneId: string, tabId: string, command: string }) {
-  trackCommand(payload.command, payload.paneId, payload.tabId)
-}
-
-// Global search handlers
-function handleJumpToTab(tabId: string) {
-  setActiveTab(tabId)
-}
-
-function handleJumpToPane(payload: { tabId: string, paneId: string }) {
-  setActiveTab(payload.tabId)
-  // Small delay to ensure tab is active before setting pane
-  setTimeout(() => {
-    setActivePane(payload.tabId, payload.paneId)
-  }, 50)
-}
-
-// Session recovery handlers
-async function handleSessionRecover(session: PersistedSession) {
-  console.log('[App] Recovering session from:', new Date(session.timestamp).toLocaleString())
-  showSessionRecovery.value = false
-
-  // TODO: Implement actual session restoration from persisted state
-  // For now, just clear the session after acknowledging recovery
-  // Full implementation would create tabs and restore CWDs
-  toast.success(`Session recovery initiated - ${session.tabs.length} tabs`)
-  sessionStore.clearSession()
-}
-
-function handleSessionDismiss() {
-  showSessionRecovery.value = false
-  console.log('[App] User dismissed session recovery')
-}
-
-// Update session store when tabs change
-function updateSessionState() {
-  sessionStore.updateSession(tabs.value, activeTab.value?.id || null, paneCwds)
-}
-
-// Recording handlers
-function handleToggleRecording() {
-  if (!activeTab.value?.activePaneId) {
-    toast.warning('Select a terminal pane to record')
-    return
-  }
-
-  const paneId = activeTab.value.activePaneId
-  if (isRecording.value) {
-    stopRecording(paneId)
-    toast.success('Recording stopped')
   } else {
-    startRecording(paneId)
-    toast.info('Recording started')
+    toast.error('Failed to delete project')
   }
 }
 
-function handlePauseResumeRecording() {
-  if (!activeTab.value?.activePaneId) {
-    toast.warning('Select a terminal pane')
+function handleAddProject() {
+  // Open the add project modal
+  newProjectName.value = ''
+  newProjectIcon.value = '📁'
+  showAddProject.value = true
+}
+
+function confirmAddProject() {
+  if (!newProjectName.value.trim()) {
+    toast.error('Project name is required')
     return
   }
 
-  const paneId = activeTab.value.activePaneId
-  if (!isRecording.value) {
-    toast.warning('No active recording')
-    return
+  // Create a new project
+  const newProject = {
+    id: `project-${Date.now()}`,
+    name: newProjectName.value.trim(),
+    icon: newProjectIcon.value || '📁',
+    description: '',
+    status: 'idle' as const,
+    metrics: { linesOfCode: 0, filesModified: 0, lastActivity: null },
+    goals: [],
+    suggestedTasks: [],
+    runningTasks: [],
+    tags: []
   }
 
-  if (isPaused.value) {
-    resumeRecording(paneId)
-    toast.info('Recording resumed')
-  } else {
-    pauseRecording(paneId)
-    toast.info('Recording paused')
+  // Add to store (directly mutating the reactive array)
+  const projects = projectStore.projects.value || []
+  projects.push(newProject)
+
+  toast.success(`Created project: ${newProject.name}`)
+  logActivity({
+    project: newProject.name,
+    action: 'Project created',
+    status: 'success'
+  })
+
+  showAddProject.value = false
+}
+
+async function handleApproveTask(task: any) {
+  const projectId = task.projectId
+  const taskId = task.id
+
+  // Remove from suggestions and get task details
+  const approvedTask = projectStore.approveTask(projectId, taskId)
+
+  if (!approvedTask) {
+    // Task might already be approved or not exist
+    console.warn('[App] Task not found in suggestions:', taskId)
+  }
+
+  // Add to running tasks immediately for visual feedback
+  const runningTask = {
+    id: `running-${Date.now()}`,
+    description: task.description,
+    command: task.command,
+    progress: 0,
+    eta: `~${task.estimatedHours || 1}h`,
+    startedAt: new Date()
+  }
+  projectStore.addRunningTask(projectId, runningTask)
+
+  toast.success(`▶ Started: ${task.description}`)
+
+  // Log the activity
+  logActivity({
+    project: task.project || projectId,
+    action: `Started task: ${task.description}`,
+    status: 'success'
+  })
+
+  // Simulate task progress (in reality, backend would send updates)
+  simulateTaskProgress(projectId, runningTask.id, task.estimatedHours || 1)
+
+  // Try to queue in backend (may not exist yet)
+  try {
+    await invoke('queue_background_task', {
+      projectId: projectId,
+      taskId: taskId,
+      command: task.command
+    })
+  } catch (e) {
+    console.log('[App] Backend task queue not available, simulating locally')
   }
 }
 
-async function runActiveEditor() {
-  const editorTab = activeTab.value
-  if (!editorTab || editorTab.kind !== 'editor') {
-    return
-  }
+// Simulate task progress for visual feedback
+function simulateTaskProgress(projectId: string, taskId: string, hours: number) {
+  const totalMs = Math.min(hours * 60000, 300000) // Cap at 5 mins for demo
+  const startTime = Date.now()
 
-  const input = editorTab.content ?? ''
-  if (!input.trim()) {
-    console.warn('[App] No editor content to run')
-    return
-  }
+  const interval = setInterval(() => {
+    const elapsed = Date.now() - startTime
+    const progress = Math.min(Math.round((elapsed / totalMs) * 100), 100)
+    const remainingMs = totalMs - elapsed
+    const eta = remainingMs > 0 ? `${Math.ceil(remainingMs / 1000)}s` : 'Done'
 
-  let runTerminalTab = editorTab.runTerminalTabId
-    ? tabs.value.find(t => t.id === editorTab.runTerminalTabId && t.kind === 'terminal') || null
-    : null
+    projectStore.updateTaskProgress(projectId, taskId, progress, eta)
 
-  if (!runTerminalTab) {
-    const created = await createTerminalTab(`Run: ${editorTab.name}`)
-    if (!created) {
-      console.error('[App] Failed to create terminal tab for run output')
-      return
+    if (progress >= 100) {
+      clearInterval(interval)
+      setTimeout(() => {
+        projectStore.completeTask(projectId, taskId)
+        toast.success(`Task completed!`)
+        logActivity({
+          project: projectId,
+          action: `Completed task`,
+          status: 'success',
+          duration: Math.round(totalMs / 1000)
+        })
+      }, 1000)
     }
-    editorTab.runTerminalTabId = created.id
-    runTerminalTab = created
-  }
+  }, 1000)
+}
 
-  if (!runTerminalTab.ptyId) {
-    console.error('[App] Terminal tab missing PTY id')
-    return
-  }
+function handleApproveAllTasks(projectId: string) {
+  const projects = projectStore.projects.value || []
+  const project = projects.find(p => p.id === projectId)
+  if (!project) return
+
+  project.suggestedTasks?.forEach(task => {
+    handleApproveTask({ ...task, projectId })
+  })
+
+  toast.success(`Approved all tasks for ${project.name}`)
+}
+
+function handleApproveAllSuggestions() {
+  todaySuggestions.value.forEach(handleApproveTask)
+  showMorningBrief.value = false
+  toast.success(`Approved ${todaySuggestions.value.length} tasks`)
+}
+
+async function handleFixAll() {
+  toast.info('Auto-fixing all issues...')
 
   try {
-    await invoke('send_input', { id: runTerminalTab.ptyId, input: `${input}\n` })
-    setActiveTab(runTerminalTab.id)
-  } catch (error) {
-    console.error('[App] Failed to send editor content to PTY', error)
-  }
-}
-
-// Claude Code Feature Handlers
-function handleToolApprovalDecision(decision: 'allow' | 'deny' | 'allow_always', remember: boolean) {
-  if (pendingToolApproval.value?.resolve) {
-    pendingToolApproval.value.resolve(decision)
-    if (remember && decision !== 'deny') {
-      // Store remembered approvals in localStorage
-      const remembered = JSON.parse(localStorage.getItem('warp_tool_approvals') || '{}')
-      remembered[pendingToolApproval.value.toolName] = decision
-      localStorage.setItem('warp_tool_approvals', JSON.stringify(remembered))
-    }
-  }
-  pendingToolApproval.value = null
-}
-
-function handleQuestionAnswer(answers: Record<string, string | string[]>) {
-  if (pendingQuestion.value?.resolve) {
-    pendingQuestion.value.resolve(answers)
-  }
-  pendingQuestion.value = null
-}
-
-function handleTestFileOpen(file: string, line?: number) {
-  // Open the file in an editor tab at the specified line
-  handleOpenFile(file).then(() => {
-    // If line is specified, we could scroll to it in Monaco
-    if (line && activeTab.value?.kind === 'editor') {
-      console.log(`[App] Opening ${file} at line ${line}`)
-    }
-  })
-}
-
-// Personal Automation Intelligence Handlers
-function handleVoiceTranscript(transcript: string) {
-  console.log('[App] Voice transcript:', transcript)
-  // Send to active AI tab or create one
-  if (activeTab.value?.kind === 'ai') {
-    sendMessage(activeTab.value.id, transcript)
-  } else {
-    // Create AI tab and send message
-    createAITab().then(tab => {
-      if (tab) {
-        setActiveTab(tab.id)
-        sendMessage(tab.id, transcript)
-      }
+    await invoke('auto_fix_all_issues')
+    toast.success('All issues fixed!')
+    logActivity({
+      project: 'System',
+      action: `Auto-fixed ${totalIssues.value} issues`,
+      status: 'success'
     })
+  } catch (e) {
+    console.error('[App] Fix all failed:', e)
+    toast.error('Some issues could not be auto-fixed')
   }
-  isVoiceListening.value = false
 }
 
-function handleScreenAnalysis(analysis: { screenshot: string; description: string }) {
-  console.log('[App] Screen analysis:', analysis.description)
-  // Send to AI with the analysis context
-  if (activeTab.value?.kind === 'ai') {
-    sendMessage(activeTab.value.id, `[Screen Analysis]\n${analysis.description}`)
-  }
-  showScreenAnalyzer.value = false
-}
-
-// Keyboard shortcut handler
+// Keyboard shortcuts
 function handleKeyDown(event: KeyboardEvent) {
   const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
   const cmdOrCtrl = isMac ? event.metaKey : event.ctrlKey
 
-  // Command Palette always responds, even in inputs
-  // Cmd/Ctrl + Shift + P: Toggle Command Palette
-  if (cmdOrCtrl && event.shiftKey && event.key === 'p') {
+  // ⌘K: Focus search / Command palette
+  if (cmdOrCtrl && event.key === 'k') {
     event.preventDefault()
-    showCommandPalette.value = !showCommandPalette.value
-    return
-  }
-
-  // Cmd/Ctrl + Shift + F: Toggle Global Search
-  if (cmdOrCtrl && event.shiftKey && event.key === 'f') {
-    event.preventDefault()
-    showGlobalSearch.value = !showGlobalSearch.value
-    return
-  }
-
-  // Cmd/Ctrl + Shift + A: Toggle Analytics Dashboard
-  if (cmdOrCtrl && event.shiftKey && event.key === 'a') {
-    event.preventDefault()
-    showAnalytics.value = !showAnalytics.value
-    return
-  }
-
-  // Cmd/Ctrl + Shift + R: Toggle Recording (Start/Stop)
-  if (cmdOrCtrl && event.shiftKey && event.key === 'r') {
-    event.preventDefault()
-    handleToggleRecording()
-    return
-  }
-
-  // Cmd/Ctrl + Shift + U: Pause/Resume Recording
-  if (cmdOrCtrl && event.shiftKey && event.key === 'u') {
-    event.preventDefault()
-    handlePauseResumeRecording()
-    return
-  }
-
-  // Cmd/Ctrl + Shift + T: Toggle Todo Panel
-  if (cmdOrCtrl && event.shiftKey && event.key === 't') {
-    event.preventDefault()
-    showTodoPanel.value = !showTodoPanel.value
-    return
-  }
-
-  // Cmd/Ctrl + Shift + Y: Toggle Test Runner
-  if (cmdOrCtrl && event.shiftKey && event.key === 'y') {
-    event.preventDefault()
-    showTestRunner.value = !showTestRunner.value
-    return
-  }
-
-  // Cmd/Ctrl + Option + 1: Toggle Daemon Panel (PAI)
-  if (cmdOrCtrl && event.altKey && event.key === '1') {
-    event.preventDefault()
-    showDaemonPanel.value = !showDaemonPanel.value
-    return
-  }
-
-  // Cmd/Ctrl + Option + A: Toggle Approval Queue
-  if (cmdOrCtrl && event.altKey && event.key.toLowerCase() === 'a') {
-    event.preventDefault()
-    showApprovalQueue.value = !showApprovalQueue.value
-    return
-  }
-
-  // Cmd/Ctrl + Option + V: Toggle Voice Input
-  if (cmdOrCtrl && event.altKey && event.key.toLowerCase() === 'v') {
-    event.preventDefault()
-    if (aiEnabled.value) {
-      isVoiceListening.value = !isVoiceListening.value
+    if (document.activeElement === searchInput.value) {
+      showCommandPalette.value = true
+    } else {
+      searchInput.value?.focus()
     }
     return
   }
 
-  // Cmd/Ctrl + Option + X: Toggle Screen Analyzer
-  if (cmdOrCtrl && event.altKey && event.key.toLowerCase() === 'x') {
-    event.preventDefault()
-    showScreenAnalyzer.value = !showScreenAnalyzer.value
-    return
-  }
-
-  // Escape: Close modals
-  if (event.key === 'Escape') {
-    if (pendingToolApproval.value) {
-      handleToolApprovalDecision('deny', false)
-      return
-    }
-    if (pendingQuestion.value) {
-      // Can't dismiss questions without answering - they're required
-      return
-    }
-    if (showTodoPanel.value) {
-      showTodoPanel.value = false
-      return
-    }
-    if (showTestRunner.value) {
-      showTestRunner.value = false
-      return
-    }
-    if (showDaemonPanel.value) {
-      showDaemonPanel.value = false
-      return
-    }
-    if (showApprovalQueue.value) {
-      showApprovalQueue.value = false
-      return
-    }
-    if (showScreenAnalyzer.value) {
-      showScreenAnalyzer.value = false
-      return
-    }
-    if (isVoiceListening.value) {
-      isVoiceListening.value = false
-      return
-    }
-    if (showAnalytics.value) {
-      showAnalytics.value = false
-      return
-    }
-    if (showGlobalSearch.value) {
-      showGlobalSearch.value = false
-      return
-    }
-    if (showCommandPalette.value) {
-      showCommandPalette.value = false
-      return
-    }
-    if (showKeyboardShortcuts.value) {
-      showKeyboardShortcuts.value = false
-      return
-    }
-  }
-
-  // Ignore other shortcuts when typing in input fields
-  const target = event.target as HTMLElement
-  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-    return
-  }
-
-  // Cmd/Ctrl + /: Show keyboard shortcuts
-  if (cmdOrCtrl && event.key === '/') {
-    event.preventDefault()
-    showKeyboardShortcuts.value = !showKeyboardShortcuts.value
-    return
-  }
-
-  // Cmd/Ctrl + B: Toggle sidebar
-  if (cmdOrCtrl && event.key === 'b') {
-    event.preventDefault()
-    showSidebar.value = !showSidebar.value
-    return
-  }
-
-  // Cmd/Ctrl + ,: Open preferences (placeholder)
-  if (cmdOrCtrl && event.key === ',') {
-    event.preventDefault()
-    console.log('[App] Open preferences')
-    return
-  }
-
-  // Cmd/Ctrl + O: Open folder
-  if (cmdOrCtrl && event.key === 'o') {
-    event.preventDefault()
-    handleOpenFolder()
-    return
-  }
-
-  // Cmd/Ctrl + T: New terminal tab
-  if (cmdOrCtrl && event.key === 't') {
-    event.preventDefault()
-    createTerminalTab()
-    return
-  }
-
-  // Cmd/Ctrl + W: Close current tab
-  if (cmdOrCtrl && event.key === 'w') {
-    event.preventDefault()
-    if (activeTab.value) {
-      closeTab(activeTab.value.id)
-    }
-    return
-  }
-
-  // Cmd/Ctrl + Shift + [ : Previous tab
-  if (cmdOrCtrl && event.shiftKey && event.key === '[') {
-    event.preventDefault()
-    switchToPreviousTab()
-    return
-  }
-
-  // Cmd/Ctrl + Shift + ] : Next tab
-  if (cmdOrCtrl && event.shiftKey && event.key === ']') {
-    event.preventDefault()
-    switchToNextTab()
-    return
-  }
-
-  // Cmd/Ctrl + 1-9: Jump to tab by index
+  // ⌘1-9: Jump to project by index
   if (cmdOrCtrl && event.key >= '1' && event.key <= '9') {
     event.preventDefault()
     const index = parseInt(event.key, 10) - 1
-    if (index < tabs.value.length) {
-      setActiveTab(tabs.value[index].id)
+    const projects = projectStore.projects.value || []
+    if (index < projects.length) {
+      expandedProjectId.value = projects[index].id
     }
     return
   }
 
-  // Cmd/Ctrl + Shift + D: Vertical split
-  if (cmdOrCtrl && event.shiftKey && event.key === 'd') {
+  // Space: Expand/collapse selected project (when not in input or textarea)
+  if (event.key === ' ' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
     event.preventDefault()
-    if (activeTab.value?.kind === 'terminal' && activeTab.value.id) {
-      splitPane(activeTab.value.id, 'vertical')
+    if (expandedProjectId.value) {
+      expandedProjectId.value = null
     }
     return
   }
 
-  // Cmd/Ctrl + Shift + E: Horizontal split
-  if (cmdOrCtrl && event.shiftKey && event.key === 'e') {
+  // A: Approve all (when project expanded)
+  if (event.key === 'a' && !event.metaKey && !event.ctrlKey && expandedProjectId.value) {
+    if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+      event.preventDefault()
+      handleApproveAllTasks(expandedProjectId.value)
+    }
+    return
+  }
+
+  // Escape: Close expanded project or modals, or return to projects view
+  if (event.key === 'Escape') {
+    if (showCommandPalette.value) {
+      showCommandPalette.value = false
+    } else if (showMorningBrief.value) {
+      showMorningBrief.value = false
+    } else if (showChat.value) {
+      showChat.value = false
+    } else if (showProgress.value) {
+      showProgress.value = false
+    } else if (viewMode.value === 'chats') {
+      viewMode.value = 'projects'
+    } else if (expandedProjectId.value) {
+      expandedProjectId.value = null
+    }
+    return
+  }
+
+  // ⌘G: Toggle chat grid view
+  if (cmdOrCtrl && event.key === 'g') {
     event.preventDefault()
-    if (activeTab.value?.kind === 'terminal' && activeTab.value.id) {
-      splitPane(activeTab.value.id, 'horizontal')
-    }
+    viewMode.value = viewMode.value === 'projects' ? 'chats' : 'projects'
     return
   }
-
-  // Alt/Option + Arrow keys: Navigate between panes
-  if (event.altKey && !cmdOrCtrl && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-    event.preventDefault()
-    if (activeTab.value?.kind === 'terminal' && activeTab.value.id) {
-      const direction = event.key.replace('Arrow', '').toLowerCase() as 'up' | 'down' | 'left' | 'right'
-      navigatePane(activeTab.value.id, direction)
-    }
-    return
-  }
-
-  // Cmd/Ctrl + Option + Arrow keys: Resize active pane
-  if (cmdOrCtrl && event.altKey && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-    event.preventDefault()
-    if (activeTab.value?.kind === 'terminal' && activeTab.value.id) {
-      const direction = event.key.replace('Arrow', '').toLowerCase() as 'up' | 'down' | 'left' | 'right'
-      resizeActivePane(activeTab.value.id, direction)
-    }
-    return
-  }
-}
-
-function switchToPreviousTab() {
-  if (tabs.value.length <= 1) return
-  const currentIndex = tabs.value.findIndex(t => t.id === activeTab.value?.id)
-  const prevIndex = currentIndex <= 0 ? tabs.value.length - 1 : currentIndex - 1
-  setActiveTab(tabs.value[prevIndex].id)
-}
-
-function switchToNextTab() {
-  if (tabs.value.length <= 1) return
-  const currentIndex = tabs.value.findIndex(t => t.id === activeTab.value?.id)
-  const nextIndex = currentIndex >= tabs.value.length - 1 ? 0 : currentIndex + 1
-  setActiveTab(tabs.value[nextIndex].id)
 }
 
 onMounted(async () => {
-  enableTestMode()
-  await refreshProjectTree()
-
-
-  // Load app version
-  try {
-    appVersion.value = await invoke('get_app_version')
-    console.log('[App] Version:', appVersion.value)
-  } catch (e) {
-    console.warn('[App] Failed to get version:', e)
-  }
-
-  // Register keyboard shortcuts
   window.addEventListener('keydown', handleKeyDown)
 
-  // Register cleanup handler for app shutdown
-  window.addEventListener('beforeunload', handleBeforeUnload)
+  // Load projects from SSOT
+  await projectStore.loadProjects()
 
-  // Check for recoverable session before loading fresh session
-  const autoRecover = localStorage.getItem('warp_auto_recover') === 'true'
-  if (sessionStore.hasRecoverableSession()) {
-    if (autoRecover) {
-      // Auto-recover silently
-      console.log('[App] Auto-recovering session...')
-      const session = sessionStore.getPersistedSession()
-      if (session) {
-        toast.info(`Auto-recovered ${session.tabs.length} tabs from previous session`)
-        sessionStore.clearSession()
-      }
-    } else {
-      // Show recovery dialog
-      showSessionRecovery.value = true
-    }
+  // Check for morning brief (first open of the day)
+  const lastBrief = localStorage.getItem('sam_last_brief')
+  const today = new Date().toDateString()
+  if (lastBrief !== today) {
+    showMorningBrief.value = true
+    localStorage.setItem('sam_last_brief', today)
   }
 
-  // Start session auto-save (every 30 seconds)
-  sessionStore.startAutoSave()
-
-  // Restore session (tabs, active tab) from disk
-  console.log('[App] Loading saved session...')
-  await loadSession()
-  console.log('[App] Session loaded, tabs:', tabs.value.length)
-
-  // Initial session state update
-  updateSessionState()
-
-  const { listen } = await import('@tauri-apps/api/event')
-  interface ToolExecutedPayload {
-    tabId: string
-    toolCall: string
-    result: { Ok?: string; Err?: string } | string
-  }
-  await listen<ToolExecutedPayload>('tool_executed', (event) => {
-    const { tabId, toolCall, result } = event.payload
-    const tab = tabs.value.find(t => t.id === tabId && t.kind === 'ai')
-    if (tab) {
-      try {
-        const toolJson = JSON.parse(toolCall)
-        addAIMessage(tabId, `${toolJson.tool}\n${JSON.stringify(toolJson.args, null, 2)}`)
-        const resultStr = typeof result === 'string' ? result : (result.Ok || result.Err || JSON.stringify(result))
-        addSystemMessage(tabId, `${toolJson.tool}\n${resultStr}`)
-      } catch (error) {
-        console.error('[App] Error parsing tool call:', error)
-      }
-    }
-  })
-
-  await listen<string>('test_send_message', (event) => {
-    if (activeTab.value?.kind === 'ai') {
-      sendMessage(activeTab.value.id, event.payload)
-    }
-  })
+  // Start activity log sync
+  // activityLog.startSync()
 })
-
-// Handle app shutdown - cleanup PTYs, auto-snapshot, and save session
-async function handleBeforeUnload() {
-  console.log('[App] beforeunload triggered...')
-
-  // Save session state for crash recovery
-  try {
-    updateSessionState()
-    sessionStore.forceSave()
-    console.log('[App] Session state saved')
-  } catch (e) {
-    console.error('[App] Failed to save session state:', e)
-  }
-
-  // Create auto-snapshot on exit (if enabled and tabs exist)
-  if (tabs.value.length > 0) {
-    try {
-      const snapshot = createAutoSnapshot(tabs.value, activeTab.value?.id || null, paneCwds)
-      if (snapshot) {
-        console.log('[App] Created auto-snapshot:', snapshot.name)
-      }
-    } catch (e) {
-      console.error('[App] Failed to create auto-snapshot:', e)
-    }
-  }
-
-  // Cleanup PTYs
-  console.log('[App] Active PTY count:', getPtyCount())
-  await cleanupAllPtys()
-}
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
-  window.removeEventListener('beforeunload', handleBeforeUnload)
-  sessionStore.stopAutoSave()
 })
 </script>
 
+<!-- Global styles - transparent window -->
+<style>
+html, body, #app {
+  background: transparent !important;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+</style>
+
 <style scoped>
 /* ==========================================================================
-   WARP-INSPIRED APP SHELL
+   SAM DASHBOARD - Apple Design System
+   Clean, opaque design that works on all Apple devices
    ========================================================================== */
 
 .app-shell {
@@ -1170,372 +599,691 @@ onUnmounted(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--warp-bg-base);
-  color: var(--warp-text-primary);
-  font-family: var(--warp-font-ui);
+  /* Native macOS: let vibrancy show through, no colored tint */
+  background: transparent;
+  /* System primary text color */
+  color: rgba(255, 255, 255, 0.88);
+  /* Native SF Pro font stack */
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.08px;
 }
 
 /* ==========================================================================
-   TOPBAR - Minimal Warp-style Header
+   TOP BAR - Search & Actions
    ========================================================================== */
 
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 38px;
-  padding: 0 var(--warp-space-3);
-  background: var(--warp-bg-base);
-  border-bottom: 1px solid var(--warp-border-subtle);
-  -webkit-app-region: drag; /* Draggable title bar on macOS */
+  padding: 12px 24px;
+  padding-top: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 16px;
+  -webkit-app-region: drag;
 }
 
-.project-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--warp-space-3);
+/* Minimal topbar - just drag region for window controls */
+.topbar.minimal {
+  padding: 6px 16px;
+  background: transparent;
+  border-bottom: none;
+  justify-content: flex-start;
+}
+
+/* Space for macOS traffic light buttons */
+.traffic-light-spacer {
+  width: 70px;
+  height: 20px;
+  flex-shrink: 0;
   -webkit-app-region: no-drag;
 }
 
-.project-meta strong {
-  font-size: var(--warp-text-sm);
-  font-weight: var(--warp-weight-medium);
-  color: var(--warp-text-primary);
-}
-
-.project-meta small {
-  font-size: var(--warp-text-xs);
-  color: var(--warp-text-tertiary);
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sidebar-toggle {
+/* Search/Chat Bar */
+/* === SEARCH BAR - Clean Apple Style === */
+.search-chat-bar {
+  flex: 1;
+  max-width: 800px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
+  background: #2c2c2e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0 16px;
+  height: 44px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  -webkit-app-region: no-drag;
+}
+
+.search-chat-bar:focus-within {
+  background: #3a3a3c;
+  border-color: #E35205;
+  box-shadow: 0 0 0 3px rgba(227, 82, 5, 0.2);
+}
+
+.search-icon {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-right: 12px;
+}
+
+.search-input {
+  flex: 1;
   background: transparent;
   border: none;
-  color: var(--warp-text-tertiary);
-  cursor: pointer;
-  border-radius: var(--warp-radius-md);
-  transition: all var(--warp-transition-normal);
+  outline: none;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 400;
 }
 
-.sidebar-toggle:hover {
-  background: var(--warp-bg-hover);
-  color: var(--warp-text-primary);
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
 }
 
+.search-hints {
+  display: flex;
+  gap: 8px;
+}
+
+.hint {
+  font-size: 11px;
+  font-family: 'SF Mono', monospace;
+  color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* Top Bar Actions */
 .topbar-actions {
   display: flex;
   align-items: center;
-  gap: var(--warp-space-1);
+  gap: 16px;
   -webkit-app-region: no-drag;
 }
 
-.topbar-actions button {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--warp-space-1);
-  padding: var(--warp-space-1) var(--warp-space-2);
-  font-family: var(--warp-font-ui);
-  font-size: var(--warp-text-xs);
-  font-weight: var(--warp-weight-medium);
-  color: var(--warp-text-secondary);
-  background: transparent;
+/* === SEGMENTED CONTROL (Apple-style) === */
+.segmented-control {
+  display: flex;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.segment {
+  width: 36px;
+  height: 32px;
   border: none;
-  border-radius: var(--warp-radius-md);
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
-  transition: all var(--warp-transition-normal);
-}
-
-.topbar-actions button:hover {
-  background: var(--warp-bg-hover);
-  color: var(--warp-text-primary);
-}
-
-/* Command Palette Button */
-.cmd-palette-btn {
-  font-family: var(--warp-font-mono) !important;
-  font-size: var(--warp-text-xs) !important;
-  padding: var(--warp-space-1) var(--warp-space-2) !important;
-  background: var(--warp-bg-elevated) !important;
-  border: 1px solid var(--warp-border) !important;
-  color: var(--warp-text-tertiary) !important;
-}
-
-.cmd-palette-btn:hover {
-  border-color: var(--warp-accent-primary) !important;
-  color: var(--warp-text-secondary) !important;
-}
-
-/* Snapshots Button */
-.snapshots-btn {
-  font-size: var(--warp-text-base) !important;
-  padding: var(--warp-space-1) !important;
-}
-
-/* ==========================================================================
-   WORKSPACE LAYOUT
-   ========================================================================== */
-
-.workspace {
-  flex: 1;
   display: flex;
-  min-height: 0;
-  background: var(--warp-bg-base);
-}
-
-/* ==========================================================================
-   SIDEBAR - File Tree Panel
-   ========================================================================== */
-
-.sidebar {
-  width: 260px;
-  background: var(--warp-bg-surface);
-  border-right: 1px solid var(--warp-border-subtle);
-  overflow: hidden;
-  transition: width var(--warp-transition-slow),
-              opacity var(--warp-transition-slow),
-              transform var(--warp-transition-slow);
-}
-
-.sidebar.hidden {
-  width: 0;
-  opacity: 0;
-  transform: translateX(-10px);
-  border-right: none;
-}
-
-/* ==========================================================================
-   MAIN PANE - Terminal/Editor Content Area
-   ========================================================================== */
-
-.main-pane {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  background: var(--warp-bg-base);
-}
-
-.pane-content {
-  flex: 1;
-  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
-/* ==========================================================================
-   EMPTY STATE
-   ========================================================================== */
+.segment svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 
-.empty-state {
+.segment:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.segment:hover svg {
+  transform: scale(1.1);
+}
+
+.segment.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.segment.active svg {
+  transform: scale(1.05);
+}
+
+/* === ICON BUTTON GROUP === */
+.icon-btn-group {
   display: flex;
-  flex-direction: column;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  color: var(--warp-text-tertiary);
-  font-size: var(--warp-text-sm);
-  gap: var(--warp-space-4);
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.empty-state::before {
-  content: '';
-  display: block;
-  width: 48px;
-  height: 48px;
-  background: var(--warp-accent-gradient);
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M4 17l6-6-6-6M12 19h8'/%3E%3C/svg%3E") center/contain no-repeat;
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M4 17l6-6-6-6M12 19h8'/%3E%3C/svg%3E") center/contain no-repeat;
-  opacity: 0.5;
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ==========================================================================
-   VERSION BADGE
-   ========================================================================== */
-
-.version-badge {
-  font-size: var(--warp-text-xs);
-  font-family: var(--warp-font-mono);
-  color: var(--warp-text-tertiary);
-  background: var(--warp-bg-elevated);
-  padding: 2px var(--warp-space-2);
-  border-radius: var(--warp-radius-full);
-  border: 1px solid var(--warp-border-subtle);
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 
-/* ==========================================================================
-   AI STATUS BUTTON
-   ========================================================================== */
-
-.ai-status-btn {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: var(--warp-space-1) !important;
-  font-size: var(--warp-text-xs) !important;
-  padding: var(--warp-space-1) var(--warp-space-2) !important;
-  border-radius: var(--warp-radius-full) !important;
-  transition: all var(--warp-transition-normal) !important;
-  font-weight: var(--warp-weight-medium) !important;
+.icon-btn:hover svg {
+  transform: scale(1.15);
 }
 
-.ai-status-btn.enabled {
-  background: var(--warp-success-bg) !important;
-  border: 1px solid var(--warp-success) !important;
-  color: var(--warp-success) !important;
+.icon-btn:active svg {
+  transform: scale(0.9);
 }
 
-.ai-status-btn.enabled:hover {
-  background: rgba(34, 197, 94, 0.25) !important;
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
+.icon-btn.active {
+  background: rgba(227, 82, 5, 0.2);
+  color: #E35205;
 }
 
-.ai-status-btn.disabled {
-  background: var(--warp-warning-bg) !important;
-  border: 1px solid var(--warp-warning) !important;
-  color: var(--warp-warning) !important;
+.icon-btn.attention {
+  color: #ff9500;
+  animation: attention-pulse 2s ease-in-out infinite;
 }
 
-.ai-status-btn.disabled:hover {
-  background: rgba(245, 158, 11, 0.25) !important;
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+@keyframes attention-pulse {
+  0%, 100% { background: transparent; }
+  50% { background: rgba(255, 149, 0, 0.15); }
 }
 
-/* ==========================================================================
-   FOCUS VISIBLE OVERRIDES
-   ========================================================================== */
-
-button:focus-visible {
-  outline: 2px solid var(--warp-accent-primary);
-  outline-offset: 2px;
-}
-
-/* ==========================================================================
-   SMOOTH TRANSITIONS FOR STATE CHANGES
-   ========================================================================== */
-
-* {
-  transition-property: background-color, border-color, color, opacity;
-  transition-duration: var(--warp-transition-fast);
-  transition-timing-function: ease;
-}
-
-/* Reset transition for elements that should have specific transitions */
-.sidebar,
-.topbar-actions button,
-.ai-status-btn {
-  transition: all var(--warp-transition-normal);
-}
-
-/* ==========================================================================
-   CLAUDE CODE FEATURE PANELS
-   ========================================================================== */
-
-.claude-panel {
-  position: fixed;
-  background: var(--warp-bg-surface);
-  border: 1px solid var(--warp-border);
-  border-radius: var(--warp-radius-lg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  z-index: 100;
-  overflow: hidden;
+.icon-btn .badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: #ff3b30;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-.claude-panel .panel-header {
+/* === STATUS PILL (Header) === */
+.status-pill-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  position: relative;
+  overflow: hidden;
+}
+
+.status-pill-header .pulse-ring {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #34c759;
+  position: relative;
+}
+
+.status-pill-header .pulse-ring::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid #34c759;
+  animation: ring-pulse 2s ease-out infinite;
+}
+
+@keyframes ring-pulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.status-pill-header.warning .pulse-ring,
+.status-pill-header.warning .pulse-ring::before {
+  background: #ff9500;
+  border-color: #ff9500;
+}
+
+.status-pill-header.error .pulse-ring,
+.status-pill-header.error .pulse-ring::before {
+  background: #ff3b30;
+  border-color: #ff3b30;
+}
+
+.status-pill-header .status-label {
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   PROGRESS PANEL (24h)
+   ========================================================================== */
+
+.progress-panel {
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 20px 24px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  max-height: 0;
+  padding: 0 24px;
+  opacity: 0;
+}
+
+/* ==========================================================================
+   GALLERY CONTAINER
+   ========================================================================== */
+
+.gallery-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* ==========================================================================
+   MORNING BRIEF MODAL
+   ========================================================================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.morning-brief-modal {
+  background: linear-gradient(180deg, #1c1c24 0%, #16161e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--warp-space-2) var(--warp-space-3);
-  background: var(--warp-bg-elevated);
-  border-bottom: 1px solid var(--warp-border-subtle);
-  font-weight: var(--warp-weight-medium);
-  font-size: var(--warp-text-sm);
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.claude-panel .panel-header button {
+.modal-header h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-header button {
   background: transparent;
   border: none;
-  color: var(--warp-text-tertiary);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.modal-header button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(80vh - 80px);
+}
+
+.brief-section {
+  margin-bottom: 24px;
+}
+
+.brief-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px 0;
+}
+
+.brief-section p {
+  font-size: 18px;
+  color: #ffffff;
+  margin: 0;
+}
+
+.suggestions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.suggestions-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.suggestion-project {
+  font-size: 12px;
+  font-weight: 600;
+  color: #E35205;
+  background: rgba(227, 82, 5, 0.15);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.suggestion-task {
+  flex: 1;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.approve-btn {
+  padding: 6px 14px;
+  background: rgba(52, 199, 89, 0.15);
+  border: 1px solid rgba(52, 199, 89, 0.3);
+  border-radius: 8px;
+  color: #34c759;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.approve-btn:hover {
+  background: rgba(52, 199, 89, 0.25);
+}
+
+.approve-all-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #E35205 0%, #C9A962 100%);
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 16px;
+}
+
+.approve-all-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(227, 82, 5, 0.4);
+}
+
+/* Floating Chat Button */
+/* === FLOATING CHAT BUTTON - Clean Apple Style === */
+.chat-fab {
+  position: fixed;
+  bottom: 100px;
+  right: 28px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #E35205 0%, #C9A962 100%);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(227, 82, 5, 0.4);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.chat-fab .fab-icon {
+  width: 28px;
+  height: 28px;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  z-index: 2;
+}
+
+.chat-fab .fab-dot {
+  opacity: 0.7;
+  animation: fab-dot-pulse 1.5s ease-in-out infinite;
+}
+
+.chat-fab .fab-dot:nth-child(2) { animation-delay: 0.15s; }
+.chat-fab .fab-dot:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes fab-dot-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.chat-fab .fab-ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.3) 0%, transparent 70%);
+  transform: scale(0);
+  transition: transform 0.5s ease;
+}
+
+.chat-fab:hover {
+  transform: scale(1.12) translateY(-6px);
+  box-shadow:
+    0 16px 48px rgba(227, 82, 5, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+    0 1px 0 rgba(255, 255, 255, 0.3) inset;
+}
+
+.chat-fab:hover .fab-icon {
+  transform: scale(1.1);
+}
+
+.chat-fab:hover .fab-ripple {
+  transform: scale(1.5);
+}
+
+.chat-fab:active {
+  transform: scale(0.92);
+  transition-duration: 0.1s;
+}
+
+/* FAB morph animation */
+.fab-morph-enter-active {
+  animation: fab-enter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fab-morph-leave-active {
+  animation: fab-leave 0.3s ease-out;
+}
+
+@keyframes fab-enter {
+  0% { opacity: 0; transform: scale(0) rotate(-180deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes fab-leave {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0) rotate(90deg); }
+}
+
+/* Add Project Modal */
+.add-project-modal {
+  background: linear-gradient(180deg, #1c1c24 0%, #16161e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 400px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  border-color: rgba(227, 82, 5, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.icon-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.icon-input {
+  width: 80px;
+  text-align: center;
+  font-size: 32px;
+  padding: 16px;
+}
+
+.emoji-categories {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.category-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
   font-size: 18px;
   cursor: pointer;
-  padding: 2px 6px;
-  border-radius: var(--warp-radius-sm);
+  transition: all 0.2s ease;
 }
 
-.claude-panel .panel-header button:hover {
-  background: var(--warp-bg-hover);
-  color: var(--warp-text-primary);
+.category-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
-/* Todo Panel - positioned on right side */
-.todo-panel-container {
-  right: var(--warp-space-4);
-  top: 60px;
-  width: 320px;
-  max-height: calc(100vh - 120px);
+.category-btn.active {
+  background: rgba(227, 82, 5, 0.2);
+  box-shadow: 0 0 0 2px rgba(227, 82, 5, 0.4);
 }
 
-/* Test Runner Panel - positioned bottom right */
-.test-runner-container {
-  right: var(--warp-space-4);
-  bottom: 60px;
-  width: 400px;
-  max-height: 50vh;
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 4px;
 }
 
-/* ==========================================================================
-   PERSONAL AUTOMATION INTELLIGENCE STYLES
-   ========================================================================== */
-
-/* Daemon Status Button */
-.daemon-btn {
-  font-size: var(--warp-text-base) !important;
-  padding: var(--warp-space-1) !important;
-  transition: all var(--warp-transition-normal) !important;
+.emoji-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.daemon-btn.active {
-  animation: pulse-glow 2s ease-in-out infinite;
+.emoji-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(1.15);
 }
 
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 4px rgba(34, 197, 94, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 12px rgba(34, 197, 94, 0.6);
-  }
+.emoji-btn.selected {
+  background: rgba(227, 82, 5, 0.3);
+  box-shadow: 0 0 0 2px #E35205;
 }
 
-/* Approvals Button */
-.approvals-btn {
-  font-size: var(--warp-text-xs) !important;
-  background: var(--warp-warning-bg) !important;
-  border: 1px solid var(--warp-warning) !important;
-  color: var(--warp-warning) !important;
-  border-radius: var(--warp-radius-full) !important;
-  padding: var(--warp-space-1) var(--warp-space-2) !important;
-  animation: bounce-subtle 1s ease-in-out infinite;
+.create-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #E35205 0%, #C9A962 100%);
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-@keyframes bounce-subtle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-2px);
-  }
-}
-
-.approvals-btn:hover {
-  background: rgba(245, 158, 11, 0.25) !important;
+.create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(227, 82, 5, 0.4);
 }
 </style>

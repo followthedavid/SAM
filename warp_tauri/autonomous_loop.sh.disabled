@@ -1,0 +1,271 @@
+#!/bin/bash
+# SAM Autonomous Improvement Loop - Self-Healing & Self-Improving
+SAM_DIR="/Users/davidquinton/ReverseLab/SAM/warp_tauri"
+cd "$SAM_DIR"
+
+LOG="/tmp/sam_autonomous.log"
+ISSUE_LOG="/tmp/sam_issues.log"
+IMPROVEMENT_QUEUE="/tmp/sam_improvements.json"
+
+# Initialize logs
+> "$LOG"
+echo "[]" > "$IMPROVEMENT_QUEUE"
+
+log() { echo "$(date +%H:%M:%S) $1" >> "$LOG"; }
+log_issue() { echo "$(date +%H:%M:%S) $1" >> "$ISSUE_LOG"; }
+
+# Test Ollama with better pattern matching
+test_ollama() {
+    local prompt="$1"
+    local pattern="$2"
+    local timeout="${3:-30}"
+
+    # Use jq to properly escape the prompt for JSON
+    local json_body=$(jq -n --arg prompt "$prompt" '{
+        model: "qwen2.5-coder:1.5b",
+        prompt: $prompt,
+        stream: false,
+        options: {num_predict: 150}
+    }')
+
+    local resp=$(curl -s --max-time "$timeout" http://localhost:11434/api/generate \
+        -d "$json_body" | jq -r '.response // empty')
+
+    if [ -z "$resp" ]; then
+        echo "TIMEOUT"
+    elif echo "$resp" | grep -qE "$pattern"; then
+        echo "PASS"
+    else
+        echo "FAIL:${resp:0:80}"
+    fi
+}
+
+# Test SAM via Tauri IPC (simulates real user input)
+test_sam_ipc() {
+    local input="$1"
+    local expect="$2"
+
+    # Use osascript to type into SAM window
+    if ! pgrep -q "SAM"; then
+        echo "NOT_RUNNING"
+        return
+    fi
+
+    # For now, just check SAM is responsive
+    echo "OK"
+}
+
+# Verify SAM window exists
+check_sam() {
+    osascript -e 'tell app "System Events" to exists process "SAM"' 2>/dev/null
+}
+
+# Restart SAM if needed
+restart_sam() {
+    log "  [RESTART] Killing existing SAM..."
+    pkill -f "SAM" 2>/dev/null
+    sleep 2
+    log "  [RESTART] Starting fresh..."
+    open "$SAM_DIR/src-tauri/target/release/bundle/macos/SAM.app" 2>/dev/null
+    sleep 3
+}
+
+# Check if Ollama is healthy
+check_ollama() {
+    curl -s --max-time 5 http://localhost:11434/api/tags > /dev/null 2>&1
+}
+
+# Queue an improvement for Claude to handle
+queue_improvement() {
+    local issue="$1"
+    local severity="$2"  # low, medium, high
+    local file="$3"
+
+    local entry=$(jq -n \
+        --arg issue "$issue" \
+        --arg severity "$severity" \
+        --arg file "$file" \
+        --arg time "$(date +%Y-%m-%dT%H:%M:%S)" \
+        '{issue: $issue, severity: $severity, file: $file, time: $time}')
+
+    local queue=$(cat "$IMPROVEMENT_QUEUE")
+    echo "$queue" | jq ". + [$entry]" > "$IMPROVEMENT_QUEUE"
+    log_issue "QUEUED: $severity - $issue"
+}
+
+# Run comprehensive test suite
+run_tests() {
+    local passed=0
+    local failed=0
+    local tests=()
+
+    # Test 1: Chat response
+    log "  [TEST] Chat response..."
+    r1=$(test_ollama "You are SAM, a helpful AI assistant. User says: hello" "[Hh]ello|[Hh]i|[Hh]ow")
+    if [[ "$r1" == "PASS" ]]; then
+        ((passed++))
+        tests+=("Chat:PASS")
+    else
+        ((failed++))
+        tests+=("Chat:$r1")
+        if [[ "$r1" == "TIMEOUT" ]]; then
+            queue_improvement "Ollama timeout on chat" "high" "ollama"
+        fi
+    fi
+
+    # Test 2: Tool JSON output
+    log "  [TEST] Tool JSON format..."
+    r2=$(test_ollama "Output ONLY this JSON, nothing else: {\"tool\":\"test\"}" "tool")
+    if [[ "$r2" == "PASS" ]]; then
+        ((passed++))
+        tests+=("Tool:PASS")
+    else
+        ((failed++))
+        tests+=("Tool:$r2")
+    fi
+
+    # Test 3: Code understanding
+    log "  [TEST] Code analysis..."
+    r3=$(test_ollama "What language is this code: fn main() { println!(\"hello\"); }" "[Rr]ust")
+    if [[ "$r3" == "PASS" ]]; then
+        ((passed++))
+        tests+=("Code:PASS")
+    else
+        ((failed++))
+        tests+=("Code:$r3")
+    fi
+
+    # Test 4: SAM window
+    log "  [TEST] SAM window..."
+    if [ "$(check_sam)" = "true" ]; then
+        ((passed++))
+        tests+=("Window:PASS")
+    else
+        ((failed++))
+        tests+=("Window:NOT_RUNNING")
+        restart_sam
+    fi
+
+    # Test 5: Ollama health
+    log "  [TEST] Ollama health..."
+    if check_ollama; then
+        ((passed++))
+        tests+=("Ollama:PASS")
+    else
+        ((failed++))
+        tests+=("Ollama:DOWN")
+        queue_improvement "Ollama service down" "high" "ollama"
+    fi
+
+    # Report results
+    log "  Results: $passed passed, $failed failed"
+    for t in "${tests[@]}"; do
+        log "    - $t"
+    done
+
+    echo "$passed:$failed"
+}
+
+# Check for pending improvements
+process_improvements() {
+    local count=$(cat "$IMPROVEMENT_QUEUE" | jq 'length')
+    if [ "$count" -gt 0 ]; then
+        log "  [IMPROVE] $count improvements queued"
+
+        # For high-severity issues, could trigger Claude bridge here
+        local high_count=$(cat "$IMPROVEMENT_QUEUE" | jq '[.[] | select(.severity=="high")] | length')
+        if [ "$high_count" -gt 0 ]; then
+            log "  [IMPROVE] $high_count HIGH severity issues need attention"
+            # TODO: Route to Claude via bridge
+        fi
+    fi
+}
+
+# Self-healing: attempt automatic fixes
+attempt_self_heal() {
+    local issue="$1"
+
+    case "$issue" in
+        *"Ollama"*"timeout"*)
+            log "  [HEAL] Restarting Ollama..."
+            pkill -f "ollama" 2>/dev/null
+            sleep 2
+            nohup ollama serve > /dev/null 2>&1 &
+            sleep 5
+            ;;
+        *"SAM"*"not running"*)
+            restart_sam
+            ;;
+    esac
+}
+
+# Warmup Ollama model before starting tests
+warmup_ollama() {
+    log "[WARMUP] Loading model into memory..."
+    curl -s --max-time 60 http://localhost:11434/api/generate \
+        -d '{"model":"qwen2.5-coder:1.5b","prompt":"ready","stream":false,"options":{"num_predict":5}}' \
+        > /dev/null 2>&1
+    log "[WARMUP] Model ready"
+}
+
+# Main autonomous loop
+log "=== SAM Autonomous Improvement Loop ==="
+log "Goal: Endless self-improvement cycle"
+log ""
+
+# Warmup first
+warmup_ollama
+
+ITER=0
+CONSECUTIVE_PASSES=0
+CONSECUTIVE_FAILS=0
+
+while true; do
+    ((ITER++))
+    log "[ITERATION $ITER]"
+
+    # Run test suite
+    result=$(run_tests)
+    passed=${result%:*}
+    failed=${result#*:}
+
+    # Track streaks
+    if [ "$failed" -eq 0 ]; then
+        ((CONSECUTIVE_PASSES++))
+        CONSECUTIVE_FAILS=0
+        echo "$(date +%H:%M:%S)   Status: ALL PASS ✓ (streak: $CONSECUTIVE_PASSES)" >> "$LOG"
+
+        # After 10 consecutive passes, extend interval
+        if [ "$CONSECUTIVE_PASSES" -ge 10 ]; then
+            echo "$(date +%H:%M:%S)   [STABLE] System stable, extending check interval" >> "$LOG"
+        fi
+    else
+        ((CONSECUTIVE_FAILS++))
+        CONSECUTIVE_PASSES=0
+        echo "$(date +%H:%M:%S)   Status: $failed FAILURES (streak: $CONSECUTIVE_FAILS)" >> "$LOG"
+
+        # After 3 consecutive failures, attempt self-heal
+        if [ "$CONSECUTIVE_FAILS" -ge 3 ]; then
+            echo "$(date +%H:%M:%S)   [ALERT] Multiple failures, attempting self-heal..." >> "$LOG"
+            # Get first queued issue
+            first_issue=$(cat "$IMPROVEMENT_QUEUE" | jq -r '.[0].issue // empty')
+            if [ -n "$first_issue" ]; then
+                attempt_self_heal "$first_issue"
+            fi
+        fi
+    fi
+
+    # Process improvement queue
+    process_improvements
+
+    log ""
+
+    # Adaptive sleep: longer when stable, shorter when fixing issues
+    if [ "$CONSECUTIVE_PASSES" -ge 10 ]; then
+        sleep 60  # Stable: check every minute
+    elif [ "$CONSECUTIVE_FAILS" -gt 0 ]; then
+        sleep 15  # Failing: check more frequently
+    else
+        sleep 30  # Normal: every 30 seconds
+    fi
+done

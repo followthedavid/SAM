@@ -1,4 +1,4 @@
-use warp_tauri::conversation::{ConversationState, BatchEntry, BatchStatus};
+use sam_terminal::conversation::{ConversationState, BatchEntry, BatchStatus};
 use serde_json::json;
 
 #[test]

@@ -1,8 +1,8 @@
 // tests/phase5_integration.rs
 // Phase 5 Integration Tests: Policy Learning & Multi-Agent Coordination
 
-use warp_tauri::policy_store::{PolicyStore, PolicyDiff, PolicyDiffAdd};
-use warp_tauri::agents::AgentCoordinator;
+use sam_terminal::policy_store::{PolicyStore, PolicyDiff, PolicyDiffAdd};
+use sam_terminal::agents::AgentCoordinator;
 use std::fs;
 
 #[test]

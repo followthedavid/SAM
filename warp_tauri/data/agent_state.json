@@ -48,6 +48,46 @@
       "ts": "2025-11-30T23:42:29.902Z",
       "level": "info",
       "message": "Command cmd_1764546143367_1206 approved=true"
+    },
+    {
+      "ts": "2026-01-02T01:23:43.854Z",
+      "level": "info",
+      "message": "AI Agent server started on port 4005"
+    },
+    {
+      "ts": "2026-01-02T01:23:43.863Z",
+      "level": "info",
+      "message": "Bridge queue watcher started"
+    },
+    {
+      "ts": "2026-01-03T00:16:26.033Z",
+      "level": "info",
+      "message": "Processing ChatGPT request: test-routing-001"
+    },
+    {
+      "ts": "2026-01-03T00:16:26.619Z",
+      "level": "info",
+      "message": "ChatGPT request test-routing-001 completed"
+    },
+    {
+      "ts": "2026-01-03T04:14:21.028Z",
+      "level": "info",
+      "message": "Processing ChatGPT request: auto-test-001"
+    },
+    {
+      "ts": "2026-01-03T04:14:21.513Z",
+      "level": "info",
+      "message": "ChatGPT request auto-test-001 completed"
+    },
+    {
+      "ts": "2026-01-03T04:16:21.115Z",
+      "level": "info",
+      "message": "Processing ChatGPT request: live-test-001"
+    },
+    {
+      "ts": "2026-01-03T04:16:22.402Z",
+      "level": "info",
+      "message": "ChatGPT request live-test-001 completed"
     }
   ],
   "results": {}
