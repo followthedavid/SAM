@@ -24,6 +24,7 @@ pub enum TaskType {
     ServiceStop { service: String },
     ProjectScan { path: Option<String> },
     Refresh,
+    ModeExit,  // Exit roleplay/creative mode
     Custom { action: String, params: serde_json::Value },
 }
 
@@ -91,6 +92,11 @@ impl TaskExecutor {
             return Some(TaskType::ServiceStop { service });
         }
 
+        // Mode exit commands
+        if lower == "exit roleplay" || lower == "exit creative mode" || lower == "exit creative" {
+            return Some(TaskType::ModeExit);
+        }
+
         // Special commands
         if lower == "refresh" || lower == "scan projects" {
             return Some(TaskType::Refresh);
@@ -143,6 +149,16 @@ impl TaskExecutor {
             }
             TaskType::FileCreate { path, content } => {
                 self.execute_file_create(&path, &content).await
+            }
+            TaskType::ModeExit => {
+                TaskResult {
+                    success: true,
+                    task_type: "mode_exit".to_string(),
+                    output: "Exited mode. Back to normal assistant mode.".to_string(),
+                    error: None,
+                    duration_ms: 0,
+                    changes_made: vec![],
+                }
             }
             TaskType::Custom { action, params } => {
                 self.execute_custom(&action, params).await

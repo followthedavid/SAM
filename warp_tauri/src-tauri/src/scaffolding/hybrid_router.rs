@@ -257,6 +257,9 @@ impl HybridRouter {
             "status update", "what's pending", "summary", "overview",
             "what did i accomplish", "what have i done", "my projects",
             "priorities", "what should i focus",
+            // Roleplay/Creative - handle locally, no tools
+            "roleplay", "role play", "pretend", "imagine",
+            "can we", "let's chat", "just chat", "talk to me",
         ];
 
         // Check if the request matches conversational patterns
@@ -319,19 +322,20 @@ impl HybridRouter {
     }
 
     // Check if request requires ChatGPT (creative, conversational, brainstorming)
+    // NOTE: "roleplay" removed - handled locally in conversational mode
     fn requires_chatgpt(request: &str) -> bool {
         let chatgpt_indicators = [
             // Creative tasks
-            "write a story", "creative", "brainstorm",
-            "come up with ideas", "imagine", "roleplay",
+            "write a story", "brainstorm",
+            "come up with ideas",
             // Conversational
             "let's discuss", "what do you think", "your opinion",
             "help me understand", "explain like",
             // Content creation
             "write an email", "draft a message", "compose",
             "marketing copy", "blog post", "social media",
-            // General knowledge
-            "what is", "who is", "history of", "tell me about",
+            // General knowledge (complex)
+            "history of",
         ];
 
         chatgpt_indicators.iter().any(|ind| request.contains(ind))

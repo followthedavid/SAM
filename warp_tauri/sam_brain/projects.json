@@ -1,0 +1,645 @@
+{
+  "projects": [
+    {
+      "name": "rvc-webui",
+      "path": "/Users/davidquinton/Projects/RVC/rvc-webui",
+      "type": "python",
+      "description": "<div align=\"center\"> <h1>Retrieval-based-Voice-Conversion-WebUI</h1> \u4e00\u4e2a\u57fa\u4e8eVITS\u7684\u7b80\u5355\u6613\u7528\u7684\u53d8\u58f0\u6846\u67b6<br><br> [![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=ora",
+      "keywords": [
+        "python",
+        "rvc-webui",
+        "docker",
+        "git",
+        "unity",
+        "rvc",
+        "projects"
+      ]
+    },
+    {
+      "name": "rvc",
+      "path": "/Users/davidquinton/Projects/SAM/voice/rvc",
+      "type": "unity",
+      "description": "<div align=\"center\"> An easy-to-use voice conversion framework based on VITS. [![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange",
+      "keywords": [
+        "docker",
+        "sam",
+        "git",
+        "unity",
+        "voice",
+        "rvc"
+      ]
+    },
+    {
+      "name": "DECA",
+      "path": "/Users/davidquinton/Projects/character-pipeline/DECA",
+      "type": "python",
+      "description": "<p align=\"center\"> <img src=\"TestSamples/teaser/results/teaser.gif\"> </p> <p align=\"center\">input image, aligned reconstruction, animation with various poses & expressions<p align=\"center\">",
+      "keywords": [
+        "python",
+        "docker",
+        "deca",
+        "git",
+        "character-pipeline",
+        "projects"
+      ]
+    },
+    {
+      "name": "flare-bypasser",
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media-backup/flare-bypasser",
+      "type": "python",
+      "description": "FlareBypasser is a service to bypass Cloudflare and DDoS-GUARD protection, work to solve the challenge after October 20, 2024.",
+      "keywords": [
+        "python",
+        "docker",
+        "flare-bypasser",
+        "git",
+        "docker-media-backup",
+        "archives_and_backups"
+      ]
+    },
+    {
+      "name": "flare-bypasser",
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media/flare-bypasser",
+      "type": "python",
+      "description": "FlareBypasser is a service to bypass Cloudflare and DDoS-GUARD protection, work to solve the challenge after October 20, 2024.",
+      "keywords": [
+        "python",
+        "docker",
+        "flare-bypasser",
+        "git",
+        "docker-media",
+        "archives_and_backups"
+      ]
+    },
+    {
+      "name": "flare-bypasser-arm",
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media/flare-bypasser-arm",
+      "type": "python",
+      "description": "FlareBypasser is a service to bypass Cloudflare and DDoS-GUARD protection, work to solve the challenge after October 20, 2024.",
+      "keywords": [
+        "python",
+        "docker",
+        "flare-bypasser-arm",
+        "git",
+        "docker-media",
+        "archives_and_backups"
+      ]
+    },
+    {
+      "name": "flare-bypasser",
+      "path": "/Volumes/Plex/DevSymlinks/docker-media/flare-bypasser",
+      "type": "python",
+      "description": "FlareBypasser is a service to bypass Cloudflare and DDoS-GUARD protection, work to solve the challenge after October 20, 2024.",
+      "keywords": [
+        "python",
+        "docker",
+        "flare-bypasser",
+        "git",
+        "docker-media",
+        "devsymlinks"
+      ]
+    },
+    {
+      "name": "flare-bypasser-arm",
+      "path": "/Volumes/Plex/DevSymlinks/docker-media/flare-bypasser-arm",
+      "type": "python",
+      "description": "FlareBypasser is a service to bypass Cloudflare and DDoS-GUARD protection, work to solve the challenge after October 20, 2024.",
+      "keywords": [
+        "python",
+        "docker",
+        "flare-bypasser-arm",
+        "git",
+        "docker-media",
+        "devsymlinks"
+      ]
+    },
+    {
+      "name": "Apple-Music-Animated-Artwork-Fetcher",
+      "path": "/Users/davidquinton/Projects/Apple-Music-Animated-Artwork-Fetcher",
+      "type": "python",
+      "description": "![fetcher](https://github.com/bunnykek/Apple-Music-Animated-Artwork-Fetcher/blob/main/assets/logo.svg \"fetcher\")",
+      "keywords": [
+        "python",
+        "git",
+        "davidquinton",
+        "unity",
+        "apple-music-animated-artwork-fetcher",
+        "projects"
+      ]
+    },
+    {
+      "name": "RIFE",
+      "path": "/Users/davidquinton/Projects/motion-pipeline/models/RIFE",
+      "type": "python",
+      "description": "**[V4.0 Anime Demo Video](https://www.bilibili.com/video/BV1J3411t7qT?p=1&share_medium=iphone&share_plat=ios&share_session_id=7AE3DA72-D05C-43A0-9838-E2A80885BD4E&share_source=QQ&share_tag=s_i&timesta",
+      "keywords": [
+        "python",
+        "git",
+        "models",
+        "motion-pipeline",
+        "rife"
+      ]
+    },
+    {
+      "name": "gridplayer",
+      "path": "/Users/davidquinton/ReverseLab/gridplayer",
+      "type": "python",
+      "description": "![GridPlayer](https://raw.githubusercontent.com/vzhd1701/gridplayer/master/resources/public/logo.svg)",
+      "keywords": [
+        "python",
+        "reverselab",
+        "git",
+        "davidquinton",
+        "gridplayer"
+      ]
+    },
+    {
+      "name": "ComfyUI",
+      "path": "/Users/davidquinton/ai-studio/ComfyUI",
+      "type": "python",
+      "description": "<div align=\"center\"> **The most powerful and modular visual AI engine and application.** [![Website][website-shield]][website-url]",
+      "keywords": [
+        "python",
+        "comfyui",
+        "ai-studio",
+        "git",
+        "davidquinton"
+      ]
+    },
+    {
+      "name": "gallery-dl",
+      "path": "/Volumes/# 2/Stash/external/gallery-dl",
+      "type": "python",
+      "description": "gallery-dl project",
+      "keywords": [
+        "python",
+        "docker",
+        "stash",
+        "git",
+        "external",
+        "gallery-dl"
+      ]
+    },
+    {
+      "name": "warp_hardening_starter_v1",
+      "path": "/Volumes/#1/AI_Projects/AI_MASTER_CONTROL/memory/warp_hardening_starter_v1",
+      "type": "node",
+      "description": "A comprehensive security-focused development toolkit with shell hardening utilities, configured with ESLint, Prettier,",
+      "keywords": [
+        "node",
+        "warp_hardening_starter_v1",
+        "git",
+        "ai_master_control",
+        "memory"
+      ]
+    },
+    {
+      "name": "jsonh",
+      "path": "/Volumes/David External/_Downloads/Graphic Design/Scripts/formcraft-2/jsonh",
+      "type": "node",
+      "description": "[JSONH](http://webreflection.blogspot.com/2011/08/last-version-of-json-hpack.html) - JSON Homogeneous Collections Compressor",
+      "keywords": [
+        "node",
+        "jsonh",
+        "scripts",
+        "git",
+        "formcraft-2"
+      ]
+    },
+    {
+      "name": "jsonh",
+      "path": "/Volumes/David External/_Downloads/Graphic Design/Scripts/formcraft-3/jsonh",
+      "type": "node",
+      "description": "[JSONH](http://webreflection.blogspot.com/2011/08/last-version-of-json-hpack.html) - JSON Homogeneous Collections Compressor",
+      "keywords": [
+        "node",
+        "jsonh",
+        "scripts",
+        "git",
+        "formcraft-3"
+      ]
+    },
+    {
+      "name": "jsonh",
+      "path": "/Volumes/David External/_Downloads/Graphic Design/Scripts/formcraft/jsonh",
+      "type": "node",
+      "description": "[JSONH](http://webreflection.blogspot.com/2011/08/last-version-of-json-hpack.html) - JSON Homogeneous Collections Compressor",
+      "keywords": [
+        "node",
+        "jsonh",
+        "scripts",
+        "formcraft",
+        "git"
+      ]
+    },
+    {
+      "name": "RIFE",
+      "path": "/Volumes/Plex/DevSymlinks/motion_pipeline_models/RIFE",
+      "type": "python",
+      "description": "**[V4.0 Anime Demo Video](https://www.bilibili.com/video/BV1J3411t7qT?p=1&share_medium=iphone&share_plat=ios&share_session_id=7AE3DA72-D05C-43A0-9838-E2A80885BD4E&share_source=QQ&share_tag=s_i&timesta",
+      "keywords": [
+        "python",
+        "motion_pipeline_models",
+        "git",
+        "devsymlinks",
+        "rife"
+      ]
+    },
+    {
+      "name": "src-tauri",
+      "path": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/src-tauri",
+      "type": "rust",
+      "description": "SAM - Sentient Assistant Module. Your personal AI companion terminal.",
+      "keywords": [
+        "tauri",
+        "sam",
+        "warp_tauri",
+        "rust",
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "MICA",
+      "path": "/Users/davidquinton/Projects/character-pipeline/MICA",
+      "type": "git",
+      "description": "<h2 align=\"center\"><b>MICA - Towards Metrical Reconstruction of Human Faces</b></h2> <h4 align=\"center\"><b><a href=\"https://zielon.github.io/\" target=\"_blank\">Wojciech Zielonka</a>, <a href=\"https://s",
+      "keywords": [
+        "character-pipeline",
+        "mica",
+        "projects",
+        "git"
+      ]
+    },
+    {
+      "name": "SAM",
+      "path": "/Users/davidquinton/ReverseLab/SAM",
+      "type": "git",
+      "description": "A comprehensive terminal replacement and media management system. SAM combines a clean-room Warp-like terminal UX with powerful media management capabilities for music libraries.",
+      "keywords": [
+        "sam",
+        "git",
+        "davidquinton",
+        "reverselab"
+      ]
+    },
+    {
+      "name": "diaphora",
+      "path": "/Users/davidquinton/ReverseLab/tools/diaphora",
+      "type": "git",
+      "description": "<p align='center'> <img src=\"https://github.com/joxeankoret/diaphora/assets/2945834/3f1e9cf4-98d7-4d9a-b7d3-0a7354053b4e\" width=\"10%\">",
+      "keywords": [
+        "tools",
+        "git",
+        "diaphora",
+        "reverselab"
+      ]
+    },
+    {
+      "name": "warp_auto",
+      "path": "/Users/davidquinton/ReverseLab/warp_auto",
+      "type": "git",
+      "description": "**IMPORTANT**: This project is for internal modeling and research purposes only. - **DO NOT** distribute any proprietary Warp code",
+      "keywords": [
+        "warp_auto",
+        "git",
+        "davidquinton",
+        "reverselab"
+      ]
+    },
+    {
+      "name": "adult_scraper",
+      "path": "/Volumes/# 2/Stash/adult_scraper",
+      "type": "python",
+      "description": "A robust, distributed content scraping system with advanced anti-detection and monitoring capabilities.",
+      "keywords": [
+        "python",
+        "docker",
+        "stash",
+        "# 2",
+        "adult_scraper"
+      ]
+    },
+    {
+      "name": "docker-media",
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media",
+      "type": "python",
+      "description": "A comprehensive system for managing API keys and Docker containers for Sonarr, Radarr, Prowlarr, Lidarr, Bazarr, and related services using macOS Keychain for secure storage.",
+      "keywords": [
+        "python",
+        "docker-media",
+        "docker",
+        "archives_and_backups"
+      ]
+    },
+    {
+      "name": "flare-bypasser-0.1.52",
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media-backup/flare-bypasser-arm/flare-bypasser-0.1.52",
+      "type": "python",
+      "description": "FlareBypasser is a service to bypass Cloudflare and DDoS-GUARD protection, work to solve the challenge after October 20, 2024.",
+      "keywords": [
+        "python",
+        "docker",
+        "flare-bypasser-arm",
+        "docker-media-backup",
+        "flare-bypasser-0.1.52"
+      ]
+    },
+    {
+      "name": "flare_bypasser",
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media-backup/flare-bypasser-arm/flare_bypasser",
+      "type": "python",
+      "description": "FlareBypasser is a service to bypass Cloudflare and DDoS-GUARD protection, work to solve the challenge after October 20, 2024.",
+      "keywords": [
+        "python",
+        "docker",
+        "flare-bypasser-arm",
+        "docker-media-backup",
+        "flare_bypasser"
+      ]
+    },
+    {
+      "name": "docker-media",
+      "path": "/Volumes/Plex/DevSymlinks/docker-media",
+      "type": "python",
+      "description": "A comprehensive system for managing API keys and Docker containers for Sonarr, Radarr, Prowlarr, Lidarr, Bazarr, and related services using macOS Keychain for secure storage.",
+      "keywords": [
+        "python",
+        "docker",
+        "plex",
+        "docker-media",
+        "devsymlinks"
+      ]
+    },
+    {
+      "name": "CommunityScrapers",
+      "path": "/Volumes/# 2/Stash/external/CommunityScrapers",
+      "type": "git",
+      "description": "This is a public repository containing scrapers created by the Stash Community. **:exclamation: Make sure to read ALL of the instructions here before requesting any help in the Discord channel. For a ",
+      "keywords": [
+        "communityscrapers",
+        "git",
+        "external",
+        "stash"
+      ]
+    },
+    {
+      "name": "config-templates",
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media-backup/config/recyclarr/repositories/config-templates",
+      "type": "git",
+      "description": "This repository provides ready-to-use configuration templates for the [Recyclarr] command line tool. These templates serve as starting points that users can adopt and customize according to their",
+      "keywords": [
+        "recyclarr",
+        "config-templates",
+        "git",
+        "repositories"
+      ]
+    },
+    {
+      "name": "trash-guides",
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media-backup/config/recyclarr/repositories/trash-guides",
+      "type": "git",
+      "description": "The guide can be found at the following location [trash-guides.info](https://trash-guides.info/) If you have any questions about the guide or need assistance, please join our [Discord](https://trash-g",
+      "keywords": [
+        "recyclarr",
+        "git",
+        "trash-guides",
+        "repositories"
+      ]
+    },
+    {
+      "name": "config-templates",
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media/config/recyclarr/repositories/config-templates",
+      "type": "git",
+      "description": "This repository provides ready-to-use configuration templates for the [Recyclarr] command line tool. These templates serve as starting points that users can adopt and customize according to their",
+      "keywords": [
+        "recyclarr",
+        "config-templates",
+        "git",
+        "repositories"
+      ]
+    },
+    {
+      "name": "trash-guides",
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media/config/recyclarr/repositories/trash-guides",
+      "type": "git",
+      "description": "The guide can be found at the following location [trash-guides.info](https://trash-guides.info/) If you have any questions about the guide or need assistance, please join our [Discord](https://trash-g",
+      "keywords": [
+        "recyclarr",
+        "git",
+        "trash-guides",
+        "repositories"
+      ]
+    },
+    {
+      "name": "aweber",
+      "path": "/Volumes/David External/_Downloads/Graphic Design/Scripts/formcraft/aweber",
+      "type": "git",
+      "description": "AWeber API PHP Library [![Build Status](https://secure.travis-ci.org/aweber/AWeber-API-PHP-Library.png?branch=master)](http://travis-ci.org/aweber/AWeber-API-PHP-Library)",
+      "keywords": [
+        "formcraft",
+        "scripts",
+        "git",
+        "aweber"
+      ]
+    },
+    {
+      "name": "lang",
+      "path": "/Volumes/Games/retropie-mount/BIOS/PPSSPP/lang",
+      "type": "git",
+      "description": "PPSSPP language ini repository * Simply copy *en_US.ini* file to a new ini file with your language code, or use it to update an existing file with that name.",
+      "keywords": [
+        "ppsspp",
+        "lang",
+        "git",
+        "bios"
+      ]
+    },
+    {
+      "name": "retropie-extra",
+      "path": "/Volumes/Games/retropie-mount/splashscreens/retropie-extra",
+      "type": "git",
+      "description": "This repository contains all of the user-created splashscreens for the RetroPie Project. In order to maintain consistency these are the criteria for acceptance into the repository:",
+      "keywords": [
+        "retropie-extra",
+        "git",
+        "splashscreens",
+        "retropie-mount"
+      ]
+    },
+    {
+      "name": "config-templates",
+      "path": "/Volumes/Plex/DevSymlinks/docker-media/config/recyclarr/repositories/config-templates",
+      "type": "git",
+      "description": "This repository provides ready-to-use configuration templates for the [Recyclarr] command line tool. These templates serve as starting points that users can adopt and customize according to their",
+      "keywords": [
+        "recyclarr",
+        "config-templates",
+        "git",
+        "repositories"
+      ]
+    },
+    {
+      "name": "trash-guides",
+      "path": "/Volumes/Plex/DevSymlinks/docker-media/config/recyclarr/repositories/trash-guides",
+      "type": "git",
+      "description": "The guide can be found at the following location [trash-guides.info](https://trash-guides.info/) If you have any questions about the guide or need assistance, please join our [Discord](https://trash-g",
+      "keywords": [
+        "recyclarr",
+        "git",
+        "trash-guides",
+        "repositories"
+      ]
+    },
+    {
+      "name": "gui-electron",
+      "path": "/Users/davidquinton/ReverseLab/SAM/app/gui-electron",
+      "type": "node",
+      "description": "A modern terminal emulator built with Electron and xterm.js, featuring tabs, panes, session management, and extensive customization.",
+      "keywords": [
+        "node",
+        "app",
+        "sam",
+        "unity",
+        "gui-electron"
+      ]
+    },
+    {
+      "name": "warp_core",
+      "path": "/Users/davidquinton/ReverseLab/SAM/warp_core",
+      "type": "rust",
+      "description": "Drop-in Rust replacement for Warp_Open Phase 4 Node.js backend modules. `warp_core` provides high-performance, type-safe implementations of:",
+      "keywords": [
+        "sam",
+        "reverselab",
+        "warp_core",
+        "rust"
+      ]
+    },
+    {
+      "name": "Warp_Local",
+      "path": "/Users/davidquinton/ReverseLab/Warp_Local",
+      "type": "git",
+      "description": "Warp_Local project",
+      "keywords": [
+        "git",
+        "davidquinton",
+        "warp_local",
+        "reverselab"
+      ]
+    },
+    {
+      "name": "flare-bypasser-arm",
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media-backup/flare-bypasser-arm",
+      "type": "python",
+      "description": "flare-bypasser-arm project",
+      "keywords": [
+        "python",
+        "docker",
+        "flare-bypasser-arm",
+        "docker-media-backup",
+        "archives_and_backups"
+      ]
+    },
+    {
+      "name": "PagePeelPro",
+      "path": "/Volumes/David External/_Downloads/Graphic Design/Scripts/New Folder With Items 2/codecanyon-3842307-page-peel-pro-1.3.2/PagePeelPro",
+      "type": "git",
+      "description": "PagePeelPro project",
+      "keywords": [
+        "codecanyon-3842307-page-peel-pro-1.3.2",
+        "pagepeelpro",
+        "git",
+        "new folder with items 2"
+      ]
+    },
+    {
+      "name": "campaign",
+      "path": "/Volumes/David External/_Downloads/Graphic Design/Scripts/formcraft/campaign",
+      "type": "git",
+      "description": "campaign project",
+      "keywords": [
+        "formcraft",
+        "campaign",
+        "git",
+        "scripts"
+      ]
+    },
+    {
+      "name": "idiorm",
+      "path": "/Volumes/David External/_Downloads/Graphic Design/Scripts/formcraft/idiorm",
+      "type": "git",
+      "description": "idiorm project",
+      "keywords": [
+        "formcraft",
+        "git",
+        "idiorm",
+        "scripts"
+      ]
+    },
+    {
+      "name": "gorgo-kirby.git",
+      "path": "/Volumes/David External/_Graphic Design/Web Templates/Gorgo/gorgokirbytheme 1446489049651/gorgo-kirby.git",
+      "type": "node",
+      "description": "Kirby is a file-based CMS. Easy to setup. Easy to use. Flexible as hell. Fork and clone the Repository",
+      "keywords": [
+        "node",
+        "gorgo",
+        "unity",
+        "gorgo-kirby.git",
+        "gorgokirbytheme 1446489049651"
+      ]
+    },
+    {
+      "name": "imagwp",
+      "path": "/Volumes/David External/_Graphic Design/Web Templates/_Themeforest Collection/imag-ultimate-18in1-wordpress-theme-source/imagwp",
+      "type": "git",
+      "description": "imagwp project",
+      "keywords": [
+        "imag-ultimate-18in1-wordpress-theme-source",
+        "git",
+        "imagwp",
+        "_themeforest collection"
+      ]
+    },
+    {
+      "name": "lcp_blu",
+      "path": "/Volumes/David External/_Graphic Design/Web Templates/_Themeforest Collection/londoncreative/london-creative/lcp_blu",
+      "type": "git",
+      "description": "lcp_blu project",
+      "keywords": [
+        "london-creative",
+        "git",
+        "lcp_blu",
+        "londoncreative"
+      ]
+    },
+    {
+      "name": "lcp_red",
+      "path": "/Volumes/David External/_Graphic Design/Web Templates/_Themeforest Collection/londoncreative/london-creative/lcp_red",
+      "type": "git",
+      "description": "lcp_red project",
+      "keywords": [
+        "lcp_red",
+        "git",
+        "londoncreative",
+        "london-creative"
+      ]
+    },
+    {
+      "name": "lcp_ylw",
+      "path": "/Volumes/David External/_Graphic Design/Web Templates/_Themeforest Collection/londoncreative/london-creative/lcp_ylw",
+      "type": "git",
+      "description": "lcp_ylw project",
+      "keywords": [
+        "london-creative",
+        "git",
+        "londoncreative",
+        "lcp_ylw"
+      ]
+    }
+  ],
+  "default_project": "sam_brain",
+  "total_discovered": 2117,
+  "exported": 50,
+  "export_date": "2026-01-06T11:12:24.190104"
+}

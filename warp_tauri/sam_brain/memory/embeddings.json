@@ -1,0 +1,15 @@
+{
+  "entries": [
+    {
+      "id": "fa824f9ae684",
+      "content": "Q: list files in SAM\nA: \ud83d\udcc1 .git\n\ud83d\udcc1 .github\n\ud83d\udcc1 .vg\n\ud83d\udcc1 SSOT\n\ud83d\udcc1 app\n\ud83d\udcc1 apps\n\ud83d\udcc1 docs\n\ud83d\udcc1 importers\n\ud83d\udcc1 media\n\ud83d\udcc1 scripts\n\ud83d\udcc1 tests\n\ud83d\udcc1 tooling\n\ud83d\udcc1 tools\n\ud83d\udcc1 ui-tests\n\ud83d\udcc1 warp_core\n\ud83d\udcc1 warp_inspect\n\ud83d\udcc1 warp_tauri\n\ud83d\udcc4 .DS_Store\n\ud83d\udcc4 AUDIT_CHECKLIST.md\n\ud83d\udcc4 AUDIT_REPORT.md\n\ud83d\udcc4 BLANK_SCREEN_DIAGNOSIS.md\n\ud83d\udcc4 CLAUDE_PROJECT_STATE.json\n\ud83d\udcc4 DIAGNOSTIC_STEPS.md\n\ud83d\udcc4 DIAGNOSTIC_TOOLS.md\n\ud83d\udcc4 FINAL_COMPLETION_REPORT.md\n\ud83d\udcc4 INPUT_FIX_GUIDE.md\n\ud83d\udcc4 MASTER_STATUS.md\n\ud83d\udcc4 Makefile\n\ud83d\udcc4 OPTIONAL_FEATURES_COMPLETE.md\n\ud83d\udcc4 OPTIONAL_FEATURES_QUICKSTART.md\n\ud83d\udcc4 PHASE1_COMPLETE.md\n\ud83d\udcc4 PHASE1_IMPLEMENTED.md\n\ud83d\udcc4",
+      "entry_type": "interaction",
+      "timestamp": "2026-01-06T11:42:17.179134",
+      "metadata": {
+        "project": "SAM",
+        "query": "list files in SAM"
+      }
+    }
+  ],
+  "updated_at": "2026-01-06T11:42:17.490582"
+}

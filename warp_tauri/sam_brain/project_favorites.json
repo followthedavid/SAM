@@ -1,0 +1,332 @@
+{
+  "favorites": {
+    "/Users/davidquinton/Projects/RVC/rvc-webui": {
+      "path": "/Users/davidquinton/Projects/RVC/rvc-webui",
+      "name": "rvc-webui",
+      "starred": true,
+      "pinned": true,
+      "tags": [
+        "active",
+        "ci-cd",
+        "containerized",
+        "fastapi",
+        "library"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.374955",
+      "color": ""
+    },
+    "/Users/davidquinton/Projects/SAM/voice/rvc": {
+      "path": "/Users/davidquinton/Projects/SAM/voice/rvc",
+      "name": "rvc",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "active",
+        "automation",
+        "ci-cd",
+        "containerized",
+        "go"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.378486",
+      "color": ""
+    },
+    "/Users/davidquinton/Projects/SAM/voice/rvc/rvc": {
+      "path": "/Users/davidquinton/Projects/SAM/voice/rvc/rvc",
+      "name": "rvc",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "active",
+        "python"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.381739",
+      "color": ""
+    },
+    "/Users/davidquinton/Projects/StashGrid": {
+      "path": "/Users/davidquinton/Projects/StashGrid",
+      "name": "StashGrid",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "active",
+        "python",
+        "swift"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.385452",
+      "color": ""
+    },
+    "/Users/davidquinton/Projects/character-pipeline/DECA": {
+      "path": "/Users/davidquinton/Projects/character-pipeline/DECA",
+      "name": "DECA",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "active",
+        "c++",
+        "containerized",
+        "machine-learning",
+        "ml"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.388617",
+      "color": ""
+    },
+    "/Users/davidquinton/Projects/character-pipeline/MICA": {
+      "path": "/Users/davidquinton/Projects/character-pipeline/MICA",
+      "name": "MICA",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "active",
+        "python"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.392128",
+      "color": ""
+    },
+    "/Users/davidquinton/Projects/character-pipeline/unity/CharacterGame": {
+      "path": "/Users/davidquinton/Projects/character-pipeline/unity/CharacterGame",
+      "name": "CharacterGame",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "active",
+        "c#"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.395144",
+      "color": ""
+    },
+    "/Users/davidquinton/Projects/motion-pipeline": {
+      "path": "/Users/davidquinton/Projects/motion-pipeline",
+      "name": "motion-pipeline",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "python",
+        "recent",
+        "tested"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.398076",
+      "color": ""
+    },
+    "/Users/davidquinton/Projects/motion-pipeline/models/RIFE": {
+      "path": "/Users/davidquinton/Projects/motion-pipeline/models/RIFE",
+      "name": "RIFE",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "machine-learning",
+        "ml",
+        "python",
+        "pytorch",
+        "recent"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.401271",
+      "color": ""
+    },
+    "/Users/davidquinton/ReverseLab/SAM/app/gui-electron": {
+      "path": "/Users/davidquinton/ReverseLab/SAM/app/gui-electron",
+      "name": "gui-electron",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "automation",
+        "ci-cd",
+        "electron",
+        "javascript",
+        "python"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.404954",
+      "color": ""
+    },
+    "/Users/davidquinton/ai-studio/ComfyUI/comfy_api_nodes": {
+      "path": "/Users/davidquinton/ai-studio/ComfyUI/comfy_api_nodes",
+      "name": "comfy_api_nodes",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "active",
+        "python"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.408790",
+      "color": ""
+    },
+    "/Users/davidquinton/ai-studio/ComfyUI/comfy_api_nodes/apis": {
+      "path": "/Users/davidquinton/ai-studio/ComfyUI/comfy_api_nodes/apis",
+      "name": "apis",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "active",
+        "python"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.411900",
+      "color": ""
+    },
+    "/Volumes/# 2/Stash/external/CommunityScrapers": {
+      "path": "/Volumes/# 2/Stash/external/CommunityScrapers",
+      "name": "CommunityScrapers",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "automation",
+        "ci-cd",
+        "python",
+        "ruby",
+        "stale"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.415007",
+      "color": ""
+    },
+    "/Volumes/# 2/Stash/external/gallery-dl": {
+      "path": "/Volumes/# 2/Stash/external/gallery-dl",
+      "name": "gallery-dl",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "ci-cd",
+        "containerized",
+        "javascript",
+        "library",
+        "python"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.418854",
+      "color": ""
+    },
+    "/Volumes/#1/Archives_and_Backups/docker-media-backup/flare-bypasser": {
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media-backup/flare-bypasser",
+      "name": "flare-bypasser",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "ci-cd",
+        "containerized",
+        "library",
+        "python",
+        "stale"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.422692",
+      "color": ""
+    },
+    "/Volumes/#1/Archives_and_Backups/docker-media-backup/flare-bypasser-arm/flare-bypasser-0.1.52": {
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media-backup/flare-bypasser-arm/flare-bypasser-0.1.52",
+      "name": "flare-bypasser-0.1.52",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "ci-cd",
+        "containerized",
+        "library",
+        "python",
+        "stale"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.426578",
+      "color": ""
+    },
+    "/Volumes/#1/Archives_and_Backups/docker-media-backup/flare-bypasser-arm/flare_bypasser": {
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media-backup/flare-bypasser-arm/flare_bypasser",
+      "name": "flare_bypasser",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "ci-cd",
+        "containerized",
+        "library",
+        "python",
+        "stale"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.430722",
+      "color": ""
+    },
+    "/Volumes/#1/Archives_and_Backups/docker-media/flare-bypasser": {
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media/flare-bypasser",
+      "name": "flare-bypasser",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "ci-cd",
+        "containerized",
+        "library",
+        "python",
+        "stale"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.435133",
+      "color": ""
+    },
+    "/Volumes/#1/Archives_and_Backups/docker-media/flare-bypasser-arm": {
+      "path": "/Volumes/#1/Archives_and_Backups/docker-media/flare-bypasser-arm",
+      "name": "flare-bypasser-arm",
+      "starred": true,
+      "pinned": false,
+      "tags": [
+        "ci-cd",
+        "containerized",
+        "library",
+        "python",
+        "stale"
+      ],
+      "notes": "",
+      "last_accessed": "",
+      "access_count": 0,
+      "added_at": "2026-01-06T15:28:27.439855",
+      "color": ""
+    }
+  },
+  "recent": [
+    "/Users/davidquinton/ReverseLab/SAM"
+  ],
+  "max_recent": 20,
+  "updated_at": "2026-01-06T15:28:27.441314"
+}

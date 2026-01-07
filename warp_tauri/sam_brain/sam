@@ -1,0 +1,8 @@
+#!/bin/bash
+# SAM - Smart Assistant Manager
+# Project-aware AI coding assistant with memory
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Use enhanced SAM for everything (handles routing internally)
+python3 "$SCRIPT_DIR/sam_enhanced.py" "$@"

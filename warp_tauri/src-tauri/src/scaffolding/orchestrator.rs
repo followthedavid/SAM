@@ -506,33 +506,29 @@ async fn handle_conversational(input: &str, _routing_latency: u64) -> Orchestrat
         }
     }
 
-    // Detect if this is an EXPLICIT roleplay/creative request (be restrictive)
-    let is_roleplay = lower.contains("roleplay") || lower.contains("role play") || lower.contains("role-play") ||
-                      lower.contains("pretend to be") || lower.contains("pretend you're") ||
-                      lower.contains("imagine you're") || lower.contains("imagine we") ||
-                      lower.contains("be my") || lower.contains("act as") || lower.contains("act like") ||
-                      lower.contains("you are a") || lower.contains("you're a");
+    // Detect if this is an EXPLICIT roleplay request - ONLY trigger on exact "roleplay" keyword
+    // User must explicitly request roleplay mode
+    let is_roleplay = lower.starts_with("roleplay") || lower.contains(" roleplay");
 
-    let is_creative = lower.contains("write me a story") || lower.contains("tell me a story") ||
-                      lower.contains("write a poem") || lower.contains("creative writing") ||
-                      lower.contains("let's chat") || lower.contains("just chat");
+    // Creative mode also requires explicit keyword
+    let is_creative = lower.starts_with("creative mode") || lower.contains("creative writing");
 
     // Adjust system prompt and settings based on mode
-    // Use qwen2.5-coder:1.5b for all modes to avoid model loading delays (78+ seconds)
+    // Use dolphin for roleplay (uncensored), qwen for standard chat
     let (system_prompt, temperature, max_tokens, model) = if is_roleplay || is_creative {
-        // Roleplay/creative mode - more expressive, longer responses
+        // Roleplay/creative mode - use uncensored model for flexibility
         let rp_prompt = r#"You are an AI companion engaging in creative roleplay or storytelling.
 Stay in character and be expressive. Respond with vivid, engaging content.
 Match the tone and style the user requests. Be creative and immersive.
 This is a private conversation - be open, playful, and collaborative.
 Do not break character or explain what you're doing."#;
-        (rp_prompt, 0.9, 512, "qwen2.5-coder:1.5b")  // Same model, just different settings
+        (rp_prompt, 0.9, 512, "dolphin-llama3:8b")  // Uncensored model for roleplay
     } else {
         // Standard conversational mode
         let std_prompt = r#"You are SAM, a friendly and helpful AI assistant.
 Respond naturally and conversationally. Be concise but warm.
 Do not output JSON or tool calls - just respond in plain text."#;
-        (std_prompt, 0.7, 256, "qwen2.5-coder:1.5b")
+        (std_prompt, 0.7, 256, "tinydolphin:1.1b")  // Fast uncensored model for chat
     };
 
     let prompt = format!("{}\n\nUser: {}\nAssistant:", system_prompt, input);
