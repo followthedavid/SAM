@@ -105,11 +105,11 @@
         "height": 800,
         "minWidth": 600,
         "minHeight": 400,
-        "focus": false,
+        "focus": true,
         "transparent": true,
         "decorations": true,
-        "titleBarStyle": "Visible",
-        "hiddenTitle": false
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
       }
     ],
     "macOSPrivateApi": true

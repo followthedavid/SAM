@@ -1,0 +1,47 @@
+client:
+  name: basic
+  file-system: device-agnostic
+tools: {}
+targets:
+  "PackageStructure": ["<PackageStructure>"]
+  "SAMControlCenter-arm64-apple-macosx26.0-debug.module": ["<SAMControlCenter-arm64-apple-macosx26.0-debug.module>"]
+  "main": ["<SAMControlCenter-arm64-apple-macosx26.0-debug.module>"]
+  "test": ["<SAMControlCenter-arm64-apple-macosx26.0-debug.module>"]
+default: "main"
+nodes:
+  "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/Sources/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+commands:
+  "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/Sources/ContentView.swift","/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/Sources/SAMControlCenterApp.swift"]
+    outputs: ["/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/sources"]
+    description: "Write auxiliary file /Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/sources"
+
+  "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/swift-version-62BF00628DC00FDC.txt":
+    tool: write-auxiliary-file
+    inputs: ["<swift-get-version>","/Volumes/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"]
+    outputs: ["/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/swift-version-62BF00628DC00FDC.txt"]
+    always-out-of-date: "true"
+    description: "Write auxiliary file /Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/swift-version-62BF00628DC00FDC.txt"
+
+  "<SAMControlCenter-arm64-apple-macosx26.0-debug.module>":
+    tool: phony
+    inputs: ["/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/Modules/SAMControlCenter.swiftmodule"]
+    outputs: ["<SAMControlCenter-arm64-apple-macosx26.0-debug.module>"]
+
+  "C.SAMControlCenter-arm64-apple-macosx26.0-debug.module":
+    tool: shell
+    inputs: ["/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/Sources/ContentView.swift","/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/Sources/SAMControlCenterApp.swift","/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/swift-version-62BF00628DC00FDC.txt","/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/sources"]
+    outputs: ["/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/Modules/SAMControlCenter.swiftmodule"]
+    description: "Compiling Swift Module 'SAMControlCenter' (2 sources)"
+    args: ["/Volumes/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-module-name","SAMControlCenter","-emit-dependencies","-emit-module","-emit-module-path","/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/Modules/SAMControlCenter.swiftmodule","-output-file-map","/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/output-file-map.json","-incremental","@/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/sources","-I","/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx14.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-Onone","-enable-testing","-j8","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-Xfrontend","-entry-point-function-name","-Xfrontend","SAMControlCenter_main","-swift-version","5","-Xfrontend","-experimental-lazy-typecheck","-Xfrontend","-experimental-skip-all-function-bodies","-Xfrontend","-experimental-allow-module-with-compiler-errors","-Xfrontend","-empty-abi-descriptor","-plugin-path","/Volumes/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-F","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-F","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-I","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-Xcc","-F","-Xcc","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-F","-Xcc","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","samcontrolcenter"]
+
+  "PackageStructure":
+    tool: package-structure-tool
+    inputs: ["/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/Sources/","/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/Package.swift","/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/Package.resolved"]
+    outputs: ["<PackageStructure>"]
+    description: "Planning build"
+    allow-missing-inputs: true
+

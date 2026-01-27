@@ -1,0 +1,95 @@
+# Perpetual Ladder Concepts for SAM
+# Self-improving code patterns for building software empires
+
+## Core Concepts
+- self-improving code
+- recursive self-improvement
+- bootstrapping compiler
+- metacircular evaluator
+- self-hosting compiler
+- self-modifying code
+
+## Evolutionary/Genetic
+- genetic algorithm
+- evolutionary programming
+- genetic programming
+- neuroevolution
+- NEAT algorithm
+- differential evolution
+- particle swarm optimization
+
+## Code Generation
+- code generation framework
+- AST manipulation
+- source-to-source transformation
+- transpiler architecture
+- compiler construction
+- LLVM tutorial
+- language implementation
+
+## Meta-programming
+- metaprogramming patterns
+- reflection API
+- code introspection
+- runtime code generation
+- JIT compilation
+- dynamic code loading
+- hot reloading
+
+## Progressive Enhancement
+- progressive enhancement
+- graceful degradation
+- feature flags
+- A/B testing framework
+- canary deployment
+- blue-green deployment
+
+## Automation & CI/CD
+- continuous improvement
+- automated refactoring
+- code quality automation
+- self-healing systems
+- chaos engineering
+- automated testing framework
+
+## AI-Assisted Development
+- AI code generation
+- copilot alternative
+- code completion model
+- program synthesis
+- neural program synthesis
+- code2vec
+- tree-sitter
+
+## Apple-Specific
+- Swift compiler internals
+- LLVM Apple fork
+- Xcode build system
+- xcrun automation
+- swiftc internals
+- clang Apple
+- SourceKit
+- Swift Package Manager internals
+
+## Search Queries for GitHub
+github:self-improving+code
+github:bootstrapping+compiler+tutorial
+github:metacircular+evaluator
+github:genetic+algorithm+code+generation
+github:compiler+construction+tutorial
+github:LLVM+tutorial+beginner
+github:Swift+compiler+internals
+github:AST+manipulation+Python
+github:code+generation+framework
+github:neuroevolution+NEAT
+github:program+synthesis
+github:self-hosting+language
+
+## Search Queries for Stack Overflow
+stackoverflow:how+to+write+self-modifying+code
+stackoverflow:bootstrapping+compiler+explained
+stackoverflow:genetic+algorithm+optimization
+stackoverflow:metaprogramming+best+practices
+stackoverflow:LLVM+getting+started
+stackoverflow:Swift+compiler+architecture
+stackoverflow:code+generation+patterns

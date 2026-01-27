@@ -106,6 +106,7 @@ pub struct ContextManager {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct CachedFile {
     content: String,
     truncated_content: String,

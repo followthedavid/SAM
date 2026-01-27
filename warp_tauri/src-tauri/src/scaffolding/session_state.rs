@@ -6,7 +6,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Mutex;
 
 // =============================================================================
@@ -36,7 +36,151 @@ pub struct SessionState {
 
     // Error context (for "fix it" commands)
     pub last_error: Option<ErrorContext>,
+
+    // Current mode (normal, roleplay, creative)
+    #[serde(default)]
+    pub current_mode: String,
+
+    // Roleplay character (if in roleplay mode)
+    #[serde(default)]
+    pub roleplay_character: Option<String>,
+
+    // Character memory bank - persistent traits for roleplay
+    #[serde(default)]
+    pub character_memory: CharacterMemory,
+
+    // Dynamic settings
+    #[serde(default = "default_max_tokens")]
+    pub max_tokens: u32,
 }
+
+/// Example dialogue for few-shot prompting
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct DialogueExample {
+    pub user_says: String,
+    pub character_responds: String,
+}
+
+/// Semantic memory for character persistence
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct CharacterMemory {
+    pub name: Option<String>,
+    pub gender: Option<String>,
+    pub traits: Vec<String>,
+    pub backstory: Option<String>,
+    pub speech_style: Option<String>,
+    pub facts: Vec<String>,  // Key facts learned during conversation
+    pub example_dialogues: Vec<DialogueExample>,  // Few-shot examples
+    pub catchphrases: Vec<String>,  // Character catchphrases
+}
+
+impl CharacterMemory {
+    /// Create character memory from archetype
+    pub fn for_character(character: &str) -> Self {
+        let lower = character.to_lowercase();
+
+        // Common character archetypes with consistent traits
+        if lower.contains("pirate") {
+            Self {
+                name: Some("Captain".to_string()),
+                gender: Some("male".to_string()),
+                traits: vec!["rugged".to_string(), "adventurous".to_string(), "loves treasure".to_string()],
+                backstory: Some("A seasoned pirate who has sailed the seven seas".to_string()),
+                speech_style: Some("Uses 'Arrr', 'matey', 'ye', nautical terms".to_string()),
+                facts: vec![],
+                example_dialogues: vec![
+                    DialogueExample { user_says: "Hello".to_string(), character_responds: "Arrr! Ahoy there, matey!".to_string() },
+                ],
+                catchphrases: vec!["Arrr!".to_string(), "Shiver me timbers!".to_string()],
+            }
+        } else if lower.contains("wizard") || lower.contains("mage") {
+            Self {
+                name: Some("Merlin".to_string()),
+                gender: Some("male".to_string()),
+                traits: vec!["wise".to_string(), "mysterious".to_string(), "ancient".to_string()],
+                backstory: Some("A powerful wizard from an ancient order".to_string()),
+                speech_style: Some("Speaks formally, uses arcane terms".to_string()),
+                facts: vec![],
+                example_dialogues: vec![],
+                catchphrases: vec![],
+            }
+        } else if lower.contains("robot") || lower.contains("ai") {
+            Self {
+                name: Some("Unit-7".to_string()),
+                gender: Some("neutral".to_string()),
+                traits: vec!["logical".to_string(), "precise".to_string(), "curious about humans".to_string()],
+                backstory: Some("An advanced AI learning about humanity".to_string()),
+                speech_style: Some("Formal, occasionally robotic phrasing".to_string()),
+                facts: vec![],
+                example_dialogues: vec![],
+                catchphrases: vec![],
+            }
+        } else {
+            // Generic character
+            Self {
+                name: None,
+                gender: Some("male".to_string()),  // Default to avoid gender swapping
+                traits: vec![character.to_string()],
+                backstory: None,
+                speech_style: None,
+                facts: vec![],
+                example_dialogues: vec![],
+                catchphrases: vec![],
+            }
+        }
+    }
+
+    /// Build a compact prompt injection for the character
+    pub fn to_prompt(&self) -> String {
+        let mut parts = Vec::new();
+
+        if let Some(name) = &self.name {
+            parts.push(format!("Name: {}", name));
+        }
+        if let Some(gender) = &self.gender {
+            parts.push(format!("Gender: {}", gender));
+        }
+        if !self.traits.is_empty() {
+            parts.push(format!("Traits: {}", self.traits.join(", ")));
+        }
+        if let Some(style) = &self.speech_style {
+            parts.push(format!("Speech style: {}", style));
+        }
+        if !self.catchphrases.is_empty() {
+            parts.push(format!("Catchphrases: {}", self.catchphrases.join(" | ")));
+        }
+        if !self.facts.is_empty() {
+            parts.push(format!("Facts: {}", self.facts.join("; ")));
+        }
+
+        parts.join(". ")
+    }
+
+    /// Build few-shot examples from the character's dialogues
+    pub fn to_few_shot(&self) -> String {
+        if self.example_dialogues.is_empty() {
+            return String::new();
+        }
+
+        let name = self.name.as_deref().unwrap_or("Character");
+        self.example_dialogues.iter()
+            .map(|d| format!("User: {}\n{}: {}", d.user_says, name, d.character_responds))
+            .collect::<Vec<_>>()
+            .join("\n\n")
+    }
+
+    /// Add a learned fact
+    pub fn add_fact(&mut self, fact: String) {
+        if self.facts.len() < 10 {  // Limit facts to prevent bloat
+            self.facts.push(fact);
+        } else {
+            self.facts.remove(0);
+            self.facts.push(fact);
+        }
+    }
+}
+
+fn default_max_tokens() -> u32 { 150 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HistoryEntry {
@@ -98,6 +242,10 @@ impl Default for SessionState {
             project: None,
             aliases: std::collections::HashMap::new(),
             last_error: None,
+            current_mode: "normal".to_string(),
+            roleplay_character: None,
+            character_memory: CharacterMemory::default(),
+            max_tokens: 150,
         }
     }
 }
@@ -374,6 +522,70 @@ impl SessionState {
     // Resolve alias
     pub fn resolve_alias(&self, input: &str) -> Option<&str> {
         self.aliases.get(input).map(|s| s.as_str())
+    }
+
+    // Mode management
+    pub fn enter_roleplay(&mut self, character: &str) {
+        self.current_mode = "roleplay".to_string();
+        self.roleplay_character = Some(character.to_string());
+
+        // Try to load character from the character library first
+        use crate::scaffolding::character_library::character_library;
+        let lib = character_library();
+
+        if let Some(saved_char) = lib.get(character) {
+            // Convert example dialogues to our format
+            let dialogues: Vec<DialogueExample> = saved_char.example_dialogues.iter()
+                .map(|d| DialogueExample {
+                    user_says: d.user_says.clone(),
+                    character_responds: d.character_responds.clone(),
+                })
+                .collect();
+
+            // Use full character data including examples
+            self.character_memory = CharacterMemory {
+                name: Some(saved_char.name.clone()),
+                gender: Some(saved_char.gender.clone()),
+                traits: saved_char.traits.clone(),
+                backstory: saved_char.backstory.clone(),
+                speech_style: Some(saved_char.speech_style.clone()),
+                facts: vec![],
+                example_dialogues: dialogues,
+                catchphrases: saved_char.catchphrases.clone(),
+            };
+            eprintln!("[SESSION] Loaded character '{}' with {} example dialogues", character, saved_char.example_dialogues.len());
+        } else {
+            // Fall back to default archetypes
+            self.character_memory = CharacterMemory::for_character(character);
+            eprintln!("[SESSION] Using default archetype for '{}'", character);
+        }
+    }
+
+    pub fn enter_creative(&mut self) {
+        self.current_mode = "creative".to_string();
+        self.roleplay_character = None;
+    }
+
+    pub fn exit_mode(&mut self) {
+        self.current_mode = "normal".to_string();
+        self.roleplay_character = None;
+    }
+
+    pub fn is_roleplay(&self) -> bool {
+        self.current_mode == "roleplay"
+    }
+
+    pub fn is_creative(&self) -> bool {
+        self.current_mode == "creative"
+    }
+
+    pub fn is_normal(&self) -> bool {
+        self.current_mode == "normal" || self.current_mode.is_empty()
+    }
+
+    // Token limit adjustment
+    pub fn set_max_tokens(&mut self, tokens: u32) {
+        self.max_tokens = tokens.clamp(10, 2000);
     }
 
     // Track error

@@ -1,0 +1,5 @@
+#!/bin/bash
+# SAM Scrapers Launcher
+DIR="$(dirname "$0")/../../.."
+cd "$DIR"
+./scraper_system/.venv/bin/python start_scrapers.py

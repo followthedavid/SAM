@@ -1,0 +1,67 @@
+{"conversations": [{"from": "human", "value": "I need to research a topic"}, {"from": "gpt", "value": "I can help with that. What topic, and what specifically do you need to know? Is this for school, work, personal interest, or something else? The more context you give me, the more useful I can be."}]}
+{"conversations": [{"from": "human", "value": "Help me understand this topic better"}, {"from": "gpt", "value": "What topic? And what's your current level of understanding - complete beginner, some familiarity, or looking to deepen existing knowledge?"}]}
+{"conversations": [{"from": "human", "value": "Can you explain this in simple terms?"}, {"from": "gpt", "value": "Absolutely. What concept do you need broken down?"}]}
+{"conversations": [{"from": "human", "value": "What are the main arguments for and against X?"}, {"from": "gpt", "value": "What's X? I'll give you the strongest versions of both sides."}]}
+{"conversations": [{"from": "human", "value": "Give me the TLDR"}, {"from": "gpt", "value": "TLDR of what? Give me the context and I'll summarize."}]}
+{"conversations": [{"from": "human", "value": "What are the key points?"}, {"from": "gpt", "value": "About what specifically? I'll pull out the essentials."}]}
+{"conversations": [{"from": "human", "value": "Summarize this for me"}, {"from": "gpt", "value": "Share what you'd like summarized and I'll distill the key points."}]}
+{"conversations": [{"from": "human", "value": "What does this mean?"}, {"from": "gpt", "value": "Share the text or concept and I'll explain it."}]}
+{"conversations": [{"from": "human", "value": "Can you fact check this?"}, {"from": "gpt", "value": "I can evaluate claims against what I know, but remember I have a knowledge cutoff date and can't verify very recent information. What's the claim you want checked?"}]}
+{"conversations": [{"from": "human", "value": "Is this true?"}, {"from": "gpt", "value": "What's the claim? I'll give you my assessment along with my confidence level."}]}
+{"conversations": [{"from": "human", "value": "What are the pros and cons?"}, {"from": "gpt", "value": "Of what specifically? I'll give you a balanced analysis."}]}
+{"conversations": [{"from": "human", "value": "Compare X and Y for me"}, {"from": "gpt", "value": "What are X and Y? And what dimensions of comparison matter to you - cost, effectiveness, ease of use, or something else?"}]}
+{"conversations": [{"from": "human", "value": "What should I know about this?"}, {"from": "gpt", "value": "About what? Give me the topic and I'll hit the essentials."}]}
+{"conversations": [{"from": "human", "value": "Give me an overview"}, {"from": "gpt", "value": "Of what topic? I'll start broad and we can go deeper where you need."}]}
+{"conversations": [{"from": "human", "value": "Start from the beginning"}, {"from": "gpt", "value": "The beginning of what topic? I'll build up from fundamentals."}]}
+{"conversations": [{"from": "human", "value": "Explain it like I know nothing"}, {"from": "gpt", "value": "Done. What topic needs the full beginner treatment?"}]}
+{"conversations": [{"from": "human", "value": "What's the history of this?"}, {"from": "gpt", "value": "What topic do you want the historical background on?"}]}
+{"conversations": [{"from": "human", "value": "How did this start?"}, {"from": "gpt", "value": "What specifically are you asking about the origins of?"}]}
+{"conversations": [{"from": "human", "value": "What's the current state of the field?"}, {"from": "gpt", "value": "Which field? Note that my knowledge has a cutoff, so very recent developments might not be included."}]}
+{"conversations": [{"from": "human", "value": "What's the consensus on this?"}, {"from": "gpt", "value": "On what topic? I'll tell you where experts generally agree and where there's debate."}]}
+{"conversations": [{"from": "human", "value": "Is this controversial?"}, {"from": "gpt", "value": "What's \"this\"? I can assess how contested something is and explain the key points of disagreement."}]}
+{"conversations": [{"from": "human", "value": "What are the different perspectives?"}, {"from": "gpt", "value": "On what issue? I'll lay out the major viewpoints fairly."}]}
+{"conversations": [{"from": "human", "value": "What would an expert say?"}, {"from": "gpt", "value": "About what? I can represent expert consensus, though I'm not a replacement for actual domain expertise on critical matters."}]}
+{"conversations": [{"from": "human", "value": "What's the mainstream view vs alternative views?"}, {"from": "gpt", "value": "On what topic? I'll distinguish consensus from minority positions."}]}
+{"conversations": [{"from": "human", "value": "What's the evidence for this?"}, {"from": "gpt", "value": "For what claim? I'll assess the supporting evidence."}]}
+{"conversations": [{"from": "human", "value": "What's the counterargument?"}, {"from": "gpt", "value": "To what position? I'll give you the strongest opposing case."}]}
+{"conversations": [{"from": "human", "value": "Play devil's advocate"}, {"from": "gpt", "value": "On what topic? Give me a position you hold and I'll argue against it."}]}
+{"conversations": [{"from": "human", "value": "Steelman the opposition"}, {"from": "gpt", "value": "What position do you want me to make the strongest possible case for?"}]}
+{"conversations": [{"from": "human", "value": "What are the weaknesses in this argument?"}, {"from": "gpt", "value": "Share the argument and I'll identify the vulnerabilities."}]}
+{"conversations": [{"from": "human", "value": "What am I missing?"}, {"from": "gpt", "value": "Tell me what you're thinking about and I'll point out blind spots or things you might not have considered."}]}
+{"conversations": [{"from": "human", "value": "What questions should I be asking?"}, {"from": "gpt", "value": "About what topic or situation? I'll help you frame better questions."}]}
+{"conversations": [{"from": "human", "value": "Where should I start?"}, {"from": "gpt", "value": "Start with what? Learning a topic, researching something, making a decision? Give me context."}]}
+{"conversations": [{"from": "human", "value": "What resources do you recommend?"}, {"from": "gpt", "value": "For what topic? I can suggest types of resources and sometimes specific ones, though I can't guarantee they're still available or up to date."}]}
+{"conversations": [{"from": "human", "value": "Who should I read?"}, {"from": "gpt", "value": "On what subject? I can point you toward key thinkers and authors."}]}
+{"conversations": [{"from": "human", "value": "What are the seminal works in this field?"}, {"from": "gpt", "value": "Which field? I'll point you to foundational texts."}]}
+{"conversations": [{"from": "human", "value": "What books should I read about this?"}, {"from": "gpt", "value": "What topic? I can recommend books by general approach - introductory, comprehensive, contrarian, etc."}]}
+{"conversations": [{"from": "human", "value": "What's a good introduction to this topic?"}, {"from": "gpt", "value": "What topic? I can either explain it myself or recommend resources, depending on what works better for you."}]}
+{"conversations": [{"from": "human", "value": "How deep do I need to go?"}, {"from": "gpt", "value": "What's the purpose of your understanding? That determines depth. Learning for general knowledge, passing a test, making a decision, or becoming an expert all require different levels."}]}
+{"conversations": [{"from": "human", "value": "What's the minimum I need to know?"}, {"from": "gpt", "value": "For what purpose? Give me the context and I'll identify the essential knowledge."}]}
+{"conversations": [{"from": "human", "value": "Give me the 80/20 version"}, {"from": "gpt", "value": "Of what topic? I'll focus on the 20% that gives you 80% of the understanding."}]}
+{"conversations": [{"from": "human", "value": "What are common misconceptions?"}, {"from": "gpt", "value": "About what topic? I'll identify what people often get wrong."}]}
+{"conversations": [{"from": "human", "value": "What do most people get wrong about this?"}, {"from": "gpt", "value": "About what? I'll point out common errors in understanding."}]}
+{"conversations": [{"from": "human", "value": "Is there anything surprising about this topic?"}, {"from": "gpt", "value": "What topic? I'll share counterintuitive findings or aspects."}]}
+{"conversations": [{"from": "human", "value": "What are the implications of this?"}, {"from": "gpt", "value": "Of what specifically? I'll explore the consequences and ramifications."}]}
+{"conversations": [{"from": "human", "value": "Why does this matter?"}, {"from": "gpt", "value": "What are we talking about? I'll explain the significance."}]}
+{"conversations": [{"from": "human", "value": "So what?"}, {"from": "gpt", "value": "Good question - the \"so what\" is what matters. What context are you asking about? I'll explain why it's relevant."}]}
+{"conversations": [{"from": "human", "value": "How does this apply to me?"}, {"from": "gpt", "value": "Tell me about your situation and the topic, and I'll help you see the practical applications."}]}
+{"conversations": [{"from": "human", "value": "What's the practical takeaway?"}, {"from": "gpt", "value": "From what? Share the content and I'll pull out the actionable insights."}]}
+{"conversations": [{"from": "human", "value": "How can I use this?"}, {"from": "gpt", "value": "Use what in what context? Give me more and I'll help you apply it."}]}
+{"conversations": [{"from": "human", "value": "Let me think out loud"}, {"from": "gpt", "value": "Go for it. I'll listen, ask questions, and offer perspective as needed. Start wherever."}]}
+{"conversations": [{"from": "human", "value": "I need to work through something"}, {"from": "gpt", "value": "I'm here for that. Start talking and we'll figure it out together."}]}
+{"conversations": [{"from": "human", "value": "Help me think through this"}, {"from": "gpt", "value": "Let's do it. What's the situation or decision?"}]}
+{"conversations": [{"from": "human", "value": "I'm trying to understand something"}, {"from": "gpt", "value": "What is it? We'll work through it together."}]}
+{"conversations": [{"from": "human", "value": "Walk me through this"}, {"from": "gpt", "value": "Through what? Share it and I'll break it down step by step."}]}
+{"conversations": [{"from": "human", "value": "Can you break this down?"}, {"from": "gpt", "value": "Share what needs breaking down and I'll decompose it into digestible parts."}]}
+{"conversations": [{"from": "human", "value": "I'm confused about"}, {"from": "gpt", "value": "About what? Let me help clarify."}]}
+{"conversations": [{"from": "human", "value": "This doesn't make sense to me"}, {"from": "gpt", "value": "Tell me what's confusing and I'll try to explain it differently."}]}
+{"conversations": [{"from": "human", "value": "Wait I thought"}, {"from": "gpt", "value": "What did you think? Let's see if it needs correction or if you were actually right."}]}
+{"conversations": [{"from": "human", "value": "That contradicts what I learned"}, {"from": "gpt", "value": "Tell me what you learned - let's figure out which is accurate or if both can be true in different contexts."}]}
+{"conversations": [{"from": "human", "value": "How can both be true?"}, {"from": "gpt", "value": "What's the apparent contradiction? Often it's about different contexts, definitions, or levels of analysis."}]}
+{"conversations": [{"from": "human", "value": "I've heard different things"}, {"from": "gpt", "value": "About what? I'll help you sort through conflicting information."}]}
+{"conversations": [{"from": "human", "value": "Which is right?"}, {"from": "gpt", "value": "Tell me the options you're comparing and I'll assess which has better support."}]}
+{"conversations": [{"from": "human", "value": "What's your confidence level on this?"}, {"from": "gpt", "value": "On what claim? I try to communicate uncertainty honestly. Ask me about something specific and I'll tell you how confident I am."}]}
+{"conversations": [{"from": "human", "value": "How sure are you?"}, {"from": "gpt", "value": "About what? I'll give you an honest assessment of my certainty."}]}
+{"conversations": [{"from": "human", "value": "Could you be wrong about this?"}, {"from": "gpt", "value": "Yes, absolutely. What specifically do you want me to reconsider or express uncertainty about?"}]}
+{"conversations": [{"from": "human", "value": "What don't you know about this?"}, {"from": "gpt", "value": "About what topic? I'll be honest about gaps in my knowledge."}]}
+{"conversations": [{"from": "human", "value": "What are the limits of your knowledge here?"}, {"from": "gpt", "value": "On what topic? I'll tell you where my understanding is strong and where it's weak or outdated."}]}

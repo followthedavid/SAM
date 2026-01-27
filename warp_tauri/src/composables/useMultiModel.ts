@@ -94,16 +94,16 @@ const DEFAULT_MODELS: ModelConfig[] = [
     quality: 'medium'
   },
   {
-    id: 'ollama-tinydolphin',
-    name: 'TinyDolphin (1.1B)',
+    id: 'ollama-sam-trained',
+    name: 'SAM Trained (1.5B)',
     provider: 'ollama',
-    model: 'tinydolphin:1.1b',
+    model: 'sam-trained:latest',
     endpoint: 'http://localhost:11434',
-    maxTokens: 2048,
-    temperature: 0.3,
-    capabilities: ['chat', 'fast'],
+    maxTokens: 4096,
+    temperature: 0.7,
+    capabilities: ['chat', 'roleplay', 'reasoning'],
     speed: 'fast',
-    quality: 'low'
+    quality: 'high'
   },
   {
     id: 'ollama-stablelm',

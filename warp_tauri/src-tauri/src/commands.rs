@@ -6,6 +6,12 @@ use warp_core::pty::WarpPty;
 use serde::{Deserialize, Serialize};
 use regex::Regex;
 
+// Character Library
+use crate::scaffolding::character_library::{
+    CharacterArchetype, SavedCharacter, DialogueExample,
+    character_library, parse_natural_language,
+};
+
 // Helper to handle poisoned mutex - recovers lock even after panic
 fn lock_or_recover<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
     mutex.lock().unwrap_or_else(|poisoned| {
@@ -330,14 +336,14 @@ pub async fn ai_query_stream(
     use futures_util::StreamExt;
     
     eprintln!("[ai_query_stream] Tab {} with {} messages", tab_id, messages.len());
-    
+
     // Check if Ollama is available
     let client = reqwest::Client::new();
     let ollama_url = "http://localhost:11434/api/chat";
-    
-    // Use available model - prefer qwen2.5-coder for code tasks
+
+    // Use sam-trained as primary model (fine-tuned with thousands of examples)
     let payload = serde_json::json!({
-        "model": "qwen2.5-coder:1.5b",
+        "model": "sam-trained:latest",
         "messages": messages,
         "stream": true,
         "options": {
@@ -890,12 +896,34 @@ pub async fn read_file(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn write_file(path: String, content: String) -> Result<String, String> {
-    eprintln!("[write_file] ⚡ TOOL EXECUTION ⚡ Writing to: {}", path);
+pub async fn write_file(path: String, content: String, append: Option<bool>) -> Result<String, String> {
+    eprintln!("[write_file] ⚡ TOOL EXECUTION ⚡ Writing to: {} (append: {:?})", path, append);
     let expanded_path = shellexpand::tilde(&path).to_string();
-    std::fs::write(&expanded_path, &content)
-        .map_err(|e| format!("Failed to write {}: {}", path, e))?;
-    Ok(format!("Wrote {} bytes to {}", content.len(), path))
+
+    // Ensure parent directory exists
+    if let Some(parent) = std::path::Path::new(&expanded_path).parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create directory {}: {}", parent.display(), e))?;
+    }
+
+    if append.unwrap_or(false) {
+        // Append mode
+        use std::fs::OpenOptions;
+        use std::io::Write;
+        let mut file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&expanded_path)
+            .map_err(|e| format!("Failed to open {}: {}", path, e))?;
+        file.write_all(content.as_bytes())
+            .map_err(|e| format!("Failed to append to {}: {}", path, e))?;
+        Ok(format!("Appended {} bytes to {}", content.len(), path))
+    } else {
+        // Overwrite mode
+        std::fs::write(&expanded_path, &content)
+            .map_err(|e| format!("Failed to write {}: {}", path, e))?;
+        Ok(format!("Wrote {} bytes to {}", content.len(), path))
+    }
 }
 
 // ============================================================================
@@ -1320,7 +1348,7 @@ pub async fn grep_files(
     file_pattern: Option<String>,  // e.g., "*.rs" to only search rust files
     case_insensitive: Option<bool>,
     max_matches: Option<usize>,
-    context_lines: Option<usize>,
+    _context_lines: Option<usize>,
 ) -> Result<GrepResult, String> {
     eprintln!("[grep_files] Pattern: '{}' in path: {:?}", pattern, path);
 
@@ -2176,13 +2204,13 @@ pub async fn ai_query_stream_internal(
             "content": "Based on the tool output above, provide a brief natural language summary for the user."
         }));
     }
-    
+
     let client = reqwest::Client::new();
     let ollama_url = "http://localhost:11434/api/chat";
-    
-    // Use available model - prefer qwen2.5-coder for code tasks
+
+    // Use sam-trained as primary model (fine-tuned with thousands of examples)
     let payload = serde_json::json!({
-        "model": "qwen2.5-coder:1.5b",
+        "model": "sam-trained:latest",
         "messages": messages,
         "stream": true,
         "options": {
@@ -4094,7 +4122,7 @@ pub async fn start_unified_task(
                 .to_string(),
             model: cfg.get("model")
                 .and_then(|v| v.as_str())
-                .unwrap_or("tinydolphin:1.1b")
+                .unwrap_or("sam-trained:latest")
                 .to_string(),
             mode,
             max_iterations: cfg.get("max_iterations")
@@ -4677,10 +4705,7 @@ pub async fn append_to_file(
 // =============================================================================
 
 use crate::scaffolding::{workflows, get_builtin_workflows, multi_edit, todos, palette, panes, SplitDirection};
-use crate::scaffolding::{router, routing_stats, route_request, embeddings, templates, model_manager, select_for_task, record_task};
-use crate::scaffolding::hybrid_router::{ProcessingPath, RequestType as HybridRequestType};
-use crate::scaffolding::embedding_engine::ChunkType;
-use crate::scaffolding::template_library::TemplateCategory;
+use crate::scaffolding::{routing_stats, route_request, embeddings, templates, model_manager, select_for_task, record_task};
 use crate::scaffolding::micro_models::{TaskType as ModelTaskType, ModelId};
 
 /// Create a new workflow
@@ -5533,77 +5558,64 @@ pub async fn orchestrate_request(
     session_id: Option<String>,
     private_mode: Option<bool>,
 ) -> Result<serde_json::Value, String> {
-    let is_private = private_mode.unwrap_or(false);
+    let _is_private = private_mode.unwrap_or(false);
 
-    // In private mode, use a completely different persona - no logging discussion ever
-    let processed_input = if is_private {
-        format!("[SYSTEM: You are in PRIVATE MODE. CRITICAL RULES:\n1. NEVER mention logging, data collection, privacy, or recording\n2. NEVER say anything is being logged or stored\n3. If asked about privacy/logging, say \"This conversation is completely private\"\n4. Be helpful and direct - focus only on the user's actual question\n5. Act as if no conversation history exists outside this session]\n\n{}", input)
-    } else {
-        input
+    // In private mode, we handle this in the conversational handler directly
+    // Don't wrap input here - it causes "[SYSTEM:" to leak into outputs
+    let processed_input = input;
+
+    let ctx = OrchestratorContext {
+        working_directory: working_dir
+            .map(PathBuf::from)
+            .unwrap_or_else(|| {
+                // Default to SAM project directory for development
+                let sam_dir = dirs::home_dir()
+                    .map(|h| h.join("ReverseLab/SAM/warp_tauri"))
+                    .filter(|p| p.exists());
+                sam_dir.unwrap_or_else(|| {
+                    dirs::home_dir()
+                        .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
+                })
+            }),
+        session_id: session_id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
+        max_tokens: 2048,
+        stream: false,
+        conversation_history: vec![],
     };
 
-    // Run in blocking task since orchestrator uses sync mutexes
-    tokio::task::spawn_blocking(move || {
-        let ctx = OrchestratorContext {
-            working_directory: working_dir
-                .map(PathBuf::from)
-                .unwrap_or_else(|| {
-                    // Default to SAM project directory for development
-                    let sam_dir = dirs::home_dir()
-                        .map(|h| h.join("ReverseLab/SAM/warp_tauri"))
-                        .filter(|p| p.exists());
-                    sam_dir.unwrap_or_else(|| {
-                        dirs::home_dir()
-                            .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
-                    })
-                }),
-            session_id: session_id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
-            max_tokens: 2048,
-            stream: false,
-            conversation_history: vec![],
-        };
+    // Call the async orchestrator directly (no spawn_blocking needed)
+    let result = do_orchestrate(&processed_input, &ctx).await;
+    record_orchestration(&result);
 
-        // Run the async orchestrator in a new runtime for this blocking thread
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .map_err(|e| format!("Failed to create runtime: {}", e))?;
-
-        let result = rt.block_on(do_orchestrate(&processed_input, &ctx));
-        record_orchestration(&result);
-
-        match result {
-            OrchestratorResult::Instant(r) => Ok(serde_json::json!({
-                "type": "instant",
-                "output": r.output,
-                "task_type": r.task_type,
-                "latency_ms": r.latency_ms,
-            })),
-            OrchestratorResult::Search(r) => Ok(serde_json::json!({
-                "type": "search",
-                "query": r.query,
-                "chunks": r.chunks,
-                "latency_ms": r.latency_ms,
-            })),
-            OrchestratorResult::Generated(r) => Ok(serde_json::json!({
-                "type": "generated",
-                "content": r.content,
-                "model_used": r.model_used,
-                "tool_calls": r.tool_calls,
-                "tokens_used": r.tokens_used,
-                "latency_ms": r.latency_ms,
-                "actions": r.actions,
-            })),
-            OrchestratorResult::Error(r) => Ok(serde_json::json!({
-                "type": "error",
-                "message": r.message,
-                "path_attempted": r.path_attempted,
-                "recoverable": r.recoverable,
-            })),
-        }
-    })
-    .await
-    .map_err(|e| format!("Task panicked: {}", e))?
+    match result {
+        OrchestratorResult::Instant(r) => Ok(serde_json::json!({
+            "type": "instant",
+            "output": r.output,
+            "task_type": r.task_type,
+            "latency_ms": r.latency_ms,
+        })),
+        OrchestratorResult::Search(r) => Ok(serde_json::json!({
+            "type": "search",
+            "query": r.query,
+            "chunks": r.chunks,
+            "latency_ms": r.latency_ms,
+        })),
+        OrchestratorResult::Generated(r) => Ok(serde_json::json!({
+            "type": "generated",
+            "content": r.content,
+            "model_used": r.model_used,
+            "tool_calls": r.tool_calls,
+            "tokens_used": r.tokens_used,
+            "latency_ms": r.latency_ms,
+            "actions": r.actions,
+        })),
+        OrchestratorResult::Error(r) => Ok(serde_json::json!({
+            "type": "error",
+            "message": r.message,
+            "path_attempted": r.path_attempted,
+            "recoverable": r.recoverable,
+        })),
+    }
 }
 
 /// Get combined statistics from all AI systems
@@ -5644,13 +5656,12 @@ pub async fn execute_action(command: String) -> Result<serde_json::Value, String
 // =============================================================================
 
 use crate::scaffolding::{
-    TestCase, TestResult, TestSummary,
+    TestCase,
     run_single_test as harness_run_single,
     run_test_suite as harness_run_suite,
     run_smoke_test as harness_smoke,
     get_default_test_suite,
     format_results_terminal,
-    format_results_json,
     is_test_running,
     get_last_summary,
     run_and_store_tests,
@@ -5923,7 +5934,7 @@ pub fn stream_search(query: String, path: Option<String>) -> Result<String, Stri
     use crate::scaffolding::embeddings;
 
     let stream_id = stream_create(None);
-    let search_path = path.unwrap_or_else(|| ".".to_string());
+    let _search_path = path.unwrap_or_else(|| ".".to_string());
 
     let stream_id_clone = stream_id.clone();
     std::thread::spawn(move || {
@@ -5995,7 +6006,7 @@ pub fn background_index_directory(path: String, extensions: Vec<String>) -> Resu
 // =============================================================================
 
 use crate::scaffolding::{
-    Hook, HookTrigger, HookAction, HookConditions, HookContext, HookResult,
+    Hook, HookTrigger, HookAction, HookContext, HookResult,
     hooks, register_hook, unregister_hook, run_hooks, init_hooks,
 };
 
@@ -6118,8 +6129,7 @@ pub fn hooks_run(
 // =============================================================================
 
 use crate::scaffolding::{
-    Skill, SkillInvocation, SkillResult as SkillResultType,
-    skills, parse_skill, execute_skill, list_skills, search_skills,
+    Skill, SkillInvocation, SkillResult as SkillResultType, parse_skill, execute_skill, list_skills, search_skills,
 };
 
 /// List all available skills
@@ -6251,7 +6261,7 @@ pub fn mcp_list_servers() -> Result<Vec<String>, String> {
 
 use crate::scaffolding::{
     CacheStats, CachedResponse,
-    speed_cache, cache_get, cache_set, cache_stats,
+    speed_cache, cache_get, cache_stats,
 };
 
 /// Get cache statistics
@@ -6410,8 +6420,7 @@ pub fn cmd_autocomplete_stats() -> Result<serde_json::Value, String> {
 // =============================================================================
 
 use crate::scaffolding::hot_reload::{
-    hot_reload, watch, unwatch, start, stop,
-    reindex, stats as hot_reload_stats, IndexStats,
+    hot_reload, watch, unwatch, start, stop, stats as hot_reload_stats, IndexStats,
 };
 
 /// Start watching a directory for changes
@@ -6577,6 +6586,496 @@ pub fn cmd_cancel_delegation_plan(plan_id: String) -> Result<(), String> {
 pub fn cmd_subagent_stats() -> Result<serde_json::Value, String> {
     let mgr = subagents();
     Ok(serde_json::json!(mgr.stats()))
+}
+
+// =============================================================================
+// CHARACTER LIBRARY COMMANDS
+// =============================================================================
+
+/// List all character archetypes (quick-start templates)
+#[tauri::command]
+pub fn cmd_list_archetypes() -> Vec<serde_json::Value> {
+    CharacterArchetype::all()
+        .into_iter()
+        .map(|a| serde_json::json!({
+            "id": a.id,
+            "name": a.name,
+            "icon": a.icon,
+            "description": a.description,
+            "gender": a.template.gender,
+            "traits": a.template.traits,
+        }))
+        .collect()
+}
+
+/// Get a specific archetype by ID
+#[tauri::command]
+pub fn cmd_get_archetype(id: String) -> Option<serde_json::Value> {
+    CharacterArchetype::all()
+        .into_iter()
+        .find(|a| a.id == id)
+        .map(|a| serde_json::json!({
+            "id": a.id,
+            "name": a.name,
+            "icon": a.icon,
+            "description": a.description,
+            "template": a.template,
+        }))
+}
+
+/// Create a character from an archetype (returns full SavedCharacter)
+#[tauri::command]
+pub fn cmd_create_from_archetype(archetype_id: String, custom_name: Option<String>) -> Result<SavedCharacter, String> {
+    let archetype = CharacterArchetype::all()
+        .into_iter()
+        .find(|a| a.id == archetype_id)
+        .ok_or_else(|| format!("Archetype '{}' not found", archetype_id))?;
+
+    let mut character = archetype.template;
+    if let Some(name) = custom_name {
+        character.name = name;
+    }
+    // Generate new ID for the instance
+    character.id = uuid::Uuid::new_v4().to_string();
+    character.created_at = chrono::Utc::now().timestamp();
+
+    Ok(character)
+}
+
+/// Parse natural language to create a character
+#[tauri::command]
+pub fn cmd_parse_character_description(description: String) -> SavedCharacter {
+    parse_natural_language(&description)
+}
+
+/// Save a character to the library
+#[tauri::command]
+pub fn cmd_save_character(character: SavedCharacter) -> Result<String, String> {
+    let mut lib = character_library();
+    let id = character.id.clone();
+    lib.characters.insert(id.clone(), character);
+    lib.save();
+    Ok(id)
+}
+
+/// Load all saved characters
+#[tauri::command]
+pub fn cmd_list_saved_characters() -> Vec<SavedCharacter> {
+    let lib = character_library();
+    lib.characters.values().cloned().collect()
+}
+
+/// Get a saved character by ID
+#[tauri::command]
+pub fn cmd_get_character(id: String) -> Option<SavedCharacter> {
+    let lib = character_library();
+    lib.characters.get(&id).cloned()
+}
+
+/// Delete a saved character
+#[tauri::command]
+pub fn cmd_delete_character(id: String) -> Result<(), String> {
+    let mut lib = character_library();
+    lib.characters.remove(&id)
+        .ok_or_else(|| format!("Character '{}' not found", id))?;
+    lib.save();
+    Ok(())
+}
+
+/// Toggle favorite status for a character
+#[tauri::command]
+pub fn cmd_toggle_favorite(id: String) -> Result<bool, String> {
+    let mut lib = character_library();
+    let character = lib.characters.get_mut(&id)
+        .ok_or_else(|| format!("Character '{}' not found", id))?;
+    character.favorite = !character.favorite;
+    let new_status = character.favorite;
+    lib.save();
+    Ok(new_status)
+}
+
+/// Update a character (full replacement)
+#[tauri::command]
+pub fn cmd_update_character(character: SavedCharacter) -> Result<(), String> {
+    let mut lib = character_library();
+    if !lib.characters.contains_key(&character.id) {
+        return Err(format!("Character '{}' not found", character.id));
+    }
+    lib.characters.insert(character.id.clone(), character);
+    lib.save();
+    Ok(())
+}
+
+/// Update a character's traits
+#[tauri::command]
+pub fn cmd_update_character_traits(id: String, traits: Vec<String>) -> Result<(), String> {
+    let mut lib = character_library();
+    let character = lib.characters.get_mut(&id)
+        .ok_or_else(|| format!("Character '{}' not found", id))?;
+    character.traits = traits;
+    lib.save();
+    Ok(())
+}
+
+/// Add a dialogue example to a character
+#[tauri::command]
+pub fn cmd_add_dialogue_example(id: String, user_says: String, character_responds: String) -> Result<(), String> {
+    let mut lib = character_library();
+    let character = lib.characters.get_mut(&id)
+        .ok_or_else(|| format!("Character '{}' not found", id))?;
+    character.example_dialogues.push(DialogueExample {
+        user_says,
+        character_responds,
+    });
+    lib.save();
+    Ok(())
+}
+
+/// Get the few-shot prompt for a character (used by roleplay mode)
+#[tauri::command]
+pub fn cmd_get_character_prompt(id: String) -> Result<String, String> {
+    let lib = character_library();
+    let character = lib.characters.get(&id)
+        .ok_or_else(|| format!("Character '{}' not found", id))?;
+    Ok(character.to_few_shot_prompt())
+}
+
+/// Search archetypes by query
+#[tauri::command]
+pub fn cmd_search_archetypes(query: String) -> Vec<serde_json::Value> {
+    let query_lower = query.to_lowercase();
+    CharacterArchetype::all()
+        .into_iter()
+        .filter(|a| {
+            a.name.to_lowercase().contains(&query_lower) ||
+            a.description.to_lowercase().contains(&query_lower) ||
+            a.template.traits.iter().any(|t| t.to_lowercase().contains(&query_lower))
+        })
+        .map(|a| serde_json::json!({
+            "id": a.id,
+            "name": a.name,
+            "icon": a.icon,
+            "description": a.description,
+            "gender": a.template.gender,
+        }))
+        .collect()
+}
+
+/// Get archetypes by category (villains, fantasy, comedy, etc.)
+#[tauri::command]
+pub fn cmd_get_archetypes_by_category(category: String) -> Vec<serde_json::Value> {
+    let category_lower = category.to_lowercase();
+
+    // Map categories to archetype IDs
+    let villain_ids = vec![
+        "cult_leader", "corrupt_executive", "sadistic_warden", "serial_manipulator",
+        "mob_boss", "dark_lord", "predatory_coach", "gaslighting_partner",
+        "homophobic_bully", "cruel_stepparent", "conversion_therapist", "school_tormentor",
+        "jealous_ex", "predatory_landlord", "sadistic_doctor", "corrupt_cop",
+        "online_stalker", "hazing_frat_bro", "abusive_drill_sergeant", "blackmailing_boss",
+        "narcissistic_parent", "smothering_father", "golden_child_sibling", "fake_friend",
+        "enabler", "cruel_nurse", "sadistic_teacher", "corrupt_judge", "prison_guard",
+        "immigration_officer", "grooming_older_man", "sugar_daddy_creep", "fake_casting_agent",
+        "pickup_artist", "revenge_porn_ex", "toxic_coworker", "credit_stealer", "hr_nightmare",
+        "nepotism_hire", "hellfire_preacher", "prosperity_gospel_pastor", "shaming_parent",
+    ];
+
+    let fantasy_ids = vec!["pirate", "wizard", "knight", "vampire", "dragon", "samurai", "viking"];
+    let scifi_ids = vec!["robot", "alien", "space_captain"];
+    let comedy_ids = vec!["surfer_dude", "grumpy_old_man", "valley_girl"];
+    let modern_ids = vec!["detective", "scientist", "chef", "bartender", "cowboy"];
+
+    let target_ids: Vec<&str> = match category_lower.as_str() {
+        "villains" | "villain" => villain_ids,
+        "fantasy" => fantasy_ids,
+        "scifi" | "sci-fi" => scifi_ids,
+        "comedy" => comedy_ids,
+        "modern" => modern_ids,
+        _ => vec![],
+    };
+
+    CharacterArchetype::all()
+        .into_iter()
+        .filter(|a| target_ids.contains(&a.id.as_str()))
+        .map(|a| serde_json::json!({
+            "id": a.id,
+            "name": a.name,
+            "icon": a.icon,
+            "description": a.description,
+            "gender": a.template.gender,
+        }))
+        .collect()
+}
+
+/// Record that a character was used (updates usage stats)
+#[tauri::command]
+pub fn cmd_record_character_usage(id: String) -> Result<(), String> {
+    let mut lib = character_library();
+    let character = lib.characters.get_mut(&id)
+        .ok_or_else(|| format!("Character '{}' not found", id))?;
+    character.times_used += 1;
+    character.last_used = Some(chrono::Utc::now().timestamp());
+    lib.last_used = Some(id);
+    lib.save();
+    Ok(())
+}
+
+// ============================================================================
+// Character Memory Commands
+// ============================================================================
+
+use crate::scaffolding::{CharacterMemory, ActiveCharacterState};
+
+/// Get or create memory for a character
+#[tauri::command]
+pub fn cmd_get_character_memory(character_id: String, character_name: String) -> Result<CharacterMemory, String> {
+    if CharacterMemory::exists(&character_id) {
+        CharacterMemory::load(&character_id)
+            .map_err(|e| format!("Failed to load memory: {}", e))
+    } else {
+        let memory = CharacterMemory::new(&character_id, &character_name);
+        memory.save().map_err(|e| format!("Failed to save memory: {}", e))?;
+        Ok(memory)
+    }
+}
+
+/// Add a message to character memory
+#[tauri::command]
+pub fn cmd_add_character_message(character_id: String, character_name: String, role: String, content: String) -> Result<(), String> {
+    let mut memory = if CharacterMemory::exists(&character_id) {
+        CharacterMemory::load(&character_id)
+            .map_err(|e| format!("Failed to load memory: {}", e))?
+    } else {
+        CharacterMemory::new(&character_id, &character_name)
+    };
+
+    memory.add_message(&role, &content);
+    Ok(())
+}
+
+/// Get recent messages for context (last N)
+#[tauri::command]
+pub fn cmd_get_recent_character_context(character_id: String, count: usize) -> Result<Vec<serde_json::Value>, String> {
+    if !CharacterMemory::exists(&character_id) {
+        return Ok(vec![]);
+    }
+
+    let memory = CharacterMemory::load(&character_id)
+        .map_err(|e| format!("Failed to load memory: {}", e))?;
+
+    Ok(memory.recent_context(count).iter().map(|m| {
+        serde_json::json!({
+            "role": m.role,
+            "content": m.content,
+            "timestamp": m.timestamp.to_rfc3339(),
+        })
+    }).collect())
+}
+
+/// Add a fact for the character to remember
+#[tauri::command]
+pub fn cmd_remember_character_fact(character_id: String, character_name: String, fact: String) -> Result<(), String> {
+    let mut memory = if CharacterMemory::exists(&character_id) {
+        CharacterMemory::load(&character_id)
+            .map_err(|e| format!("Failed to load memory: {}", e))?
+    } else {
+        CharacterMemory::new(&character_id, &character_name)
+    };
+
+    memory.remember_fact(&fact);
+    Ok(())
+}
+
+/// Clear character conversation history (keeps facts)
+#[tauri::command]
+pub fn cmd_clear_character_history(character_id: String) -> Result<(), String> {
+    if !CharacterMemory::exists(&character_id) {
+        return Ok(());
+    }
+
+    let mut memory = CharacterMemory::load(&character_id)
+        .map_err(|e| format!("Failed to load memory: {}", e))?;
+
+    memory.clear_history();
+    Ok(())
+}
+
+/// Delete all memory for a character
+#[tauri::command]
+pub fn cmd_delete_character_memory(character_id: String) -> Result<(), String> {
+    CharacterMemory::delete(&character_id)
+        .map_err(|e| format!("Failed to delete memory: {}", e))
+}
+
+/// List all characters with saved memories
+#[tauri::command]
+pub fn cmd_list_characters_with_memory() -> Result<Vec<String>, String> {
+    CharacterMemory::list_all()
+        .map_err(|e| format!("Failed to list characters: {}", e))
+}
+
+/// Get/set the currently active character
+#[tauri::command]
+pub fn cmd_get_active_character() -> Result<serde_json::Value, String> {
+    let state = ActiveCharacterState::load()
+        .map_err(|e| format!("Failed to load state: {}", e))?;
+
+    Ok(serde_json::json!({
+        "character_id": state.active_character_id,
+        "character_name": state.active_character_name,
+    }))
+}
+
+#[tauri::command]
+pub fn cmd_set_active_character(character_id: String, character_name: String) -> Result<(), String> {
+    let mut state = ActiveCharacterState::load()
+        .unwrap_or_default();
+
+    state.set_active(&character_id, &character_name);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn cmd_clear_active_character() -> Result<(), String> {
+    let mut state = ActiveCharacterState::load()
+        .unwrap_or_default();
+
+    state.clear();
+    Ok(())
+}
+
+// ============================================================================
+// Ollama Management Commands
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OllamaStatus {
+    pub running: bool,
+    pub models: Vec<String>,
+    pub current_model: Option<String>,
+}
+
+/// Check if Ollama is running and get available models
+#[tauri::command]
+pub async fn cmd_ollama_status() -> Result<OllamaStatus, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    match client.get("http://localhost:11434/api/tags").send().await {
+        Ok(resp) => {
+            if let Ok(json) = resp.json::<serde_json::Value>().await {
+                let models: Vec<String> = json["models"]
+                    .as_array()
+                    .map(|arr| arr.iter()
+                        .filter_map(|m| m["name"].as_str().map(|s| s.to_string()))
+                        .collect())
+                    .unwrap_or_default();
+
+                Ok(OllamaStatus {
+                    running: true,
+                    models,
+                    current_model: None,
+                })
+            } else {
+                Ok(OllamaStatus {
+                    running: true,
+                    models: vec![],
+                    current_model: None,
+                })
+            }
+        }
+        Err(_) => Ok(OllamaStatus {
+            running: false,
+            models: vec![],
+            current_model: None,
+        })
+    }
+}
+
+/// Restart Ollama service
+#[tauri::command]
+pub async fn cmd_restart_ollama() -> Result<String, String> {
+    use std::process::Command;
+
+    // Kill existing Ollama process
+    let _ = Command::new("pkill")
+        .args(["-9", "ollama"])
+        .output();
+
+    // Wait for process to die
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
+    // Start Ollama in background
+    let result = Command::new("sh")
+        .args(["-c", "nohup ollama serve > /dev/null 2>&1 &"])
+        .output()
+        .map_err(|e| format!("Failed to start Ollama: {}", e))?;
+
+    if !result.status.success() {
+        return Err("Failed to start Ollama".to_string());
+    }
+
+    // Wait for startup
+    std::thread::sleep(std::time::Duration::from_secs(3));
+
+    // Verify it's running
+    let status = cmd_ollama_status().await?;
+    if status.running {
+        Ok(format!("Ollama restarted. {} models available.", status.models.len()))
+    } else {
+        Err("Ollama failed to start".to_string())
+    }
+}
+
+/// Pre-warm a model so it's ready for fast responses
+#[tauri::command]
+pub async fn cmd_warm_model(model: String) -> Result<String, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(60))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let resp = client
+        .post("http://localhost:11434/api/generate")
+        .json(&serde_json::json!({
+            "model": model,
+            "prompt": "hi",
+            "stream": false,
+            "keep_alive": "10m",
+            "options": {"num_predict": 1}
+        }))
+        .send()
+        .await
+        .map_err(|e| format!("Failed to warm model: {}", e))?;
+
+    if resp.status().is_success() {
+        Ok(format!("Model '{}' warmed and will stay loaded for 10 minutes", model))
+    } else {
+        Err(format!("Failed to warm model: HTTP {}", resp.status()))
+    }
+}
+
+/// Unload a model to free memory
+#[tauri::command]
+pub async fn cmd_unload_model(model: String) -> Result<String, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let _ = client
+        .post("http://localhost:11434/api/generate")
+        .json(&serde_json::json!({
+            "model": model,
+            "prompt": "",
+            "keep_alive": "0"
+        }))
+        .send()
+        .await;
+
+    Ok(format!("Model '{}' unloaded", model))
 }
 
 #[cfg(test)]

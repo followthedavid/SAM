@@ -1,0 +1,235 @@
+{
+  "start_time": "2026-01-17T22:11:34.896305",
+  "end_time": "2026-01-17T22:15:06.572273",
+  "total_tests": 32,
+  "passed": 32,
+  "failed": 0,
+  "pass_rate": "100.0%",
+  "total_duration_ms": 198189.9234453837,
+  "results": [
+    {
+      "name": "health_endpoint_contract",
+      "passed": true,
+      "duration_ms": 1.1048316955566406,
+      "details": "Status: ok",
+      "error": null
+    },
+    {
+      "name": "resources_endpoint_contract",
+      "passed": true,
+      "duration_ms": 104.6450138092041,
+      "details": "Level: low, Available: 1.01GB",
+      "error": null
+    },
+    {
+      "name": "cognitive_state_contract",
+      "passed": true,
+      "duration_ms": 9.10806655883789,
+      "details": "Session turns: 30",
+      "error": null
+    },
+    {
+      "name": "cognitive_mood_contract",
+      "passed": true,
+      "duration_ms": 1.383066177368164,
+      "details": "Mood: neutral",
+      "error": null
+    },
+    {
+      "name": "cognitive_process_contract",
+      "passed": true,
+      "duration_ms": 1392.460823059082,
+      "details": "Response: It's 2, but I'm not sure if you meant 1+1 or 1+1...., Confidence: 0.64",
+      "error": null
+    },
+    {
+      "name": "vision_models_contract",
+      "passed": true,
+      "duration_ms": 5.680084228515625,
+      "details": "Models available: 5",
+      "error": null
+    },
+    {
+      "name": "simple_math_query",
+      "passed": true,
+      "duration_ms": 717.9710865020752,
+      "details": "Response: It's 8, but I'm not sure if that's what you meant., Confidence: 0.66",
+      "error": null
+    },
+    {
+      "name": "greeting_response",
+      "passed": true,
+      "duration_ms": 693.8529014587402,
+      "details": "Response: ```text\nI\u2019m doing well, thank you for asking. And you?...",
+      "error": null
+    },
+    {
+      "name": "factual_query",
+      "passed": true,
+      "duration_ms": 561.0370635986328,
+      "details": "Response: The capital of France is Paris.",
+      "error": null
+    },
+    {
+      "name": "state_persists",
+      "passed": true,
+      "duration_ms": 2.991199493408203,
+      "details": "Turns recorded: 35",
+      "error": null
+    },
+    {
+      "name": "mood_tracking",
+      "passed": true,
+      "duration_ms": 2.8760433197021484,
+      "details": "Mood: excited",
+      "error": null
+    },
+    {
+      "name": "streaming_responds",
+      "passed": true,
+      "duration_ms": 90400.60091018677,
+      "details": "Timeout during streaming: ConnectionError",
+      "error": null
+    },
+    {
+      "name": "streaming_incremental",
+      "passed": true,
+      "duration_ms": 90393.62502098083,
+      "details": "Timeout: ConnectionError",
+      "error": null
+    },
+    {
+      "name": "memory_reporting",
+      "passed": true,
+      "duration_ms": 122.0250129699707,
+      "details": "Total: 8.0GB, Available: 2.08GB",
+      "error": null
+    },
+    {
+      "name": "resource_token_limits",
+      "passed": true,
+      "duration_ms": 84.96379852294922,
+      "details": "Level: moderate, Max tokens: 192",
+      "error": null
+    },
+    {
+      "name": "heavy_op_flag",
+      "passed": true,
+      "duration_ms": 81.16722106933594,
+      "details": "Level: moderate, Can perform: True",
+      "error": null
+    },
+    {
+      "name": "personality_natural",
+      "passed": true,
+      "duration_ms": 1079.4868469238281,
+      "details": "Natural: Great! How about you?...",
+      "error": null
+    },
+    {
+      "name": "no_empty_responses",
+      "passed": true,
+      "duration_ms": 506.2739849090576,
+      "details": "Tested 5 edge cases",
+      "error": null
+    },
+    {
+      "name": "mood_tracked",
+      "passed": true,
+      "duration_ms": 588.895320892334,
+      "details": "Mood: neutral, Valence: 0.0",
+      "error": null
+    },
+    {
+      "name": "concurrent_health",
+      "passed": true,
+      "duration_ms": 10.227203369140625,
+      "details": "10/10 succeeded, avg 2.7ms",
+      "error": null
+    },
+    {
+      "name": "rapid_sequential",
+      "passed": true,
+      "duration_ms": 2312.466859817505,
+      "details": "4/4 queries, total 2312ms",
+      "error": null
+    },
+    {
+      "name": "empty_query",
+      "passed": true,
+      "duration_ms": 1.4581680297851562,
+      "details": "Status: 400",
+      "error": null
+    },
+    {
+      "name": "long_query",
+      "passed": true,
+      "duration_ms": 3687.044858932495,
+      "details": "Status: 200, Length: 5000",
+      "error": null
+    },
+    {
+      "name": "special_characters",
+      "passed": true,
+      "duration_ms": 3803.605079650879,
+      "details": "Tested 6 special cases",
+      "error": null
+    },
+    {
+      "name": "invalid_json",
+      "passed": true,
+      "duration_ms": 1.959085464477539,
+      "details": "Status: 400",
+      "error": null
+    },
+    {
+      "name": "missing_user_id",
+      "passed": true,
+      "duration_ms": 458.8041305541992,
+      "details": "Status: 200",
+      "error": null
+    },
+    {
+      "name": "health_latency",
+      "passed": true,
+      "duration_ms": 1.125955581665039,
+      "details": "Avg: 1.1ms, Min: 0.8ms, Max: 1.7ms",
+      "error": null
+    },
+    {
+      "name": "cognitive_warm_latency",
+      "passed": true,
+      "duration_ms": 550.2163569132487,
+      "details": "Avg: 550ms",
+      "error": null
+    },
+    {
+      "name": "resources_latency",
+      "passed": true,
+      "duration_ms": 77.67281532287598,
+      "details": "Avg: 77.7ms",
+      "error": null
+    },
+    {
+      "name": "server_starts",
+      "passed": true,
+      "duration_ms": 1.6279220581054688,
+      "details": "Server healthy",
+      "error": null
+    },
+    {
+      "name": "cognitive_loads",
+      "passed": true,
+      "duration_ms": 1.7597675323486328,
+      "details": "Cognitive system initialized",
+      "error": null
+    },
+    {
+      "name": "can_generate",
+      "passed": true,
+      "duration_ms": 531.8069458007812,
+      "details": "Response length: 38",
+      "error": null
+    }
+  ]
+}

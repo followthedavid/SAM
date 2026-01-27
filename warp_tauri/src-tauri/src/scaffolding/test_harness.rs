@@ -5,9 +5,9 @@
 
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
-use crate::scaffolding::orchestrator::{orchestrate, OrchestratorContext, OrchestratorResult, ConversationTurn};
-use crate::scaffolding::hybrid_router::{ProcessingPath, route_request};
-use crate::scaffolding::intent_sanitizer::{sanitize_query, SensitivityLevel};
+use crate::scaffolding::orchestrator::{orchestrate, OrchestratorContext, OrchestratorResult};
+use crate::scaffolding::hybrid_router::route_request;
+use crate::scaffolding::intent_sanitizer::sanitize_query;
 
 /// A single test case
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -376,7 +376,7 @@ pub fn format_results_terminal(summary: &TestSummary) -> String {
 
     for result in &summary.results {
         let status = if result.passed { "✓ PASS" } else { "✗ FAIL" };
-        let status_color = if result.passed { "" } else { "" };
+        let _status_color = if result.passed { "" } else { "" };
 
         output.push_str(&format!(
             "║ {} {:40} {:>6}ms ║\n",

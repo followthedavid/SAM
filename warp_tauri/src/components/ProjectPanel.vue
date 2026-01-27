@@ -22,8 +22,13 @@
       </div>
     </div>
 
-    <!-- Panel Content -->
-    <div class="panel-content">
+    <!-- Site Ripper: Custom Dashboard -->
+    <div v-if="project.id === 'site-ripper'" class="panel-content scraper-panel">
+      <ScraperDashboard />
+    </div>
+
+    <!-- Panel Content (default) -->
+    <div v-else class="panel-content">
       <!-- Metrics Section -->
       <section class="section metrics-section">
         <h3>Metrics</h3>
@@ -265,8 +270,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, defineAsyncComponent } from 'vue'
 import type { Project, ProjectTask, RunningTask } from '../stores/projectStore'
+
+// Lazy load ScraperDashboard for Site Ripper project
+const ScraperDashboard = defineAsyncComponent(() => import('./ScraperDashboard.vue'))
 
 const props = defineProps<{
   project: Project
@@ -515,6 +523,12 @@ async function copyPath() {
   gap: 28px;
   max-height: 70vh;
   overflow-y: auto;
+}
+
+/* Scraper Dashboard - full bleed */
+.panel-content.scraper-panel {
+  padding: 0;
+  max-height: calc(100vh - 100px);
 }
 
 /* Section Styles */

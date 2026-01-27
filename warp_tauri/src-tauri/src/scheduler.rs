@@ -35,7 +35,7 @@ impl Scheduler {
         drop(running);
 
         let store = Arc::clone(&self.store);
-        let monitor = self.monitor.clone();
+        let _monitor = self.monitor.clone();
         let interval = self.interval_sec;
         let running_flag = Arc::clone(&self.running);
 

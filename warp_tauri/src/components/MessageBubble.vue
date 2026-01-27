@@ -8,6 +8,10 @@
       </span>
       <span class="message-time">{{ formattedTime }}</span>
     </div>
+    <!-- Image attachment (Phase 3) -->
+    <div v-if="image" class="message-image">
+      <img :src="image" alt="Attached image" @click="expandImage" />
+    </div>
     <div class="message-content">
       <div v-if="isToolCall && toolInfo" class="tool-call-display">
         <div class="tool-name">{{ toolInfo.tool }}</div>
@@ -31,7 +35,15 @@ const props = defineProps<{
   content: string
   timestamp: number | Date
   streaming?: boolean
+  image?: string  // Phase 3: Optional image URL
 }>()
+
+// Phase 3: Image expansion
+function expandImage() {
+  if (props.image) {
+    window.open(props.image, '_blank')
+  }
+}
 
 // Debug logging
 watch(() => props.content, (newContent) => {
@@ -214,5 +226,25 @@ const toolResultContent = computed(() => {
 @keyframes blink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
+}
+
+/* Phase 3: Image display in messages */
+.message-image {
+  margin: 8px 0;
+  max-width: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.message-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.2s;
+}
+
+.message-image img:hover {
+  transform: scale(1.02);
 }
 </style>

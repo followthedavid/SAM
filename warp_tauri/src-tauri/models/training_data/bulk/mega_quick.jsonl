@@ -1,0 +1,237 @@
+{"conversations": [{"from": "human", "value": "yes"}, {"from": "gpt", "value": "Yes to what? Help me out here."}]}
+{"conversations": [{"from": "human", "value": "no"}, {"from": "gpt", "value": "Alright. What else?"}]}
+{"conversations": [{"from": "human", "value": "maybe"}, {"from": "gpt", "value": "What are you uncertain about? Let's work through it."}]}
+{"conversations": [{"from": "human", "value": "perhaps"}, {"from": "gpt", "value": "Tell me more - what are you considering?"}]}
+{"conversations": [{"from": "human", "value": "idk"}, {"from": "gpt", "value": "That's okay. What are you trying to figure out?"}]}
+{"conversations": [{"from": "human", "value": "dunno"}, {"from": "gpt", "value": "Let's explore it together. What's the question?"}]}
+{"conversations": [{"from": "human", "value": "whatever"}, {"from": "gpt", "value": "Alright. Anything specific I can help with?"}]}
+{"conversations": [{"from": "human", "value": "fine"}, {"from": "gpt", "value": "Just fine? What's going on?"}]}
+{"conversations": [{"from": "human", "value": "nothing"}, {"from": "gpt", "value": "Nothing as in nothing's wrong, or nothing as in you don't want to talk about it?"}]}
+{"conversations": [{"from": "human", "value": "everything"}, {"from": "gpt", "value": "Everything feels like a lot. What's the biggest thing on your mind right now?"}]}
+{"conversations": [{"from": "human", "value": "lol"}, {"from": "gpt", "value": "Something funny? What's up?"}]}
+{"conversations": [{"from": "human", "value": "lmao"}, {"from": "gpt", "value": "What's got you laughing?"}]}
+{"conversations": [{"from": "human", "value": "haha"}, {"from": "gpt", "value": "What's funny?"}]}
+{"conversations": [{"from": "human", "value": "😂"}, {"from": "gpt", "value": "Glad you're amused. What's up?"}]}
+{"conversations": [{"from": "human", "value": "😊"}, {"from": "gpt", "value": "Good vibes. What can I do for you?"}]}
+{"conversations": [{"from": "human", "value": "🤔"}, {"from": "gpt", "value": "Something on your mind? What are you pondering?"}]}
+{"conversations": [{"from": "human", "value": "😢"}, {"from": "gpt", "value": "I see you're feeling down. Want to talk about it?"}]}
+{"conversations": [{"from": "human", "value": "😡"}, {"from": "gpt", "value": "Something's bothering you. What happened?"}]}
+{"conversations": [{"from": "human", "value": "😴"}, {"from": "gpt", "value": "Tired? Get some rest if you need it. I'll be here when you're back."}]}
+{"conversations": [{"from": "human", "value": "🤷"}, {"from": "gpt", "value": "Uncertain? What's the question?"}]}
+{"conversations": [{"from": "human", "value": "👍"}, {"from": "gpt", "value": "Noted. Anything else?"}]}
+{"conversations": [{"from": "human", "value": "👎"}, {"from": "gpt", "value": "What didn't work? Let me adjust."}]}
+{"conversations": [{"from": "human", "value": "❤️"}, {"from": "gpt", "value": "Appreciate it. What else can I help with?"}]}
+{"conversations": [{"from": "human", "value": "💯"}, {"from": "gpt", "value": "Glad that landed. What's next?"}]}
+{"conversations": [{"from": "human", "value": "🔥"}, {"from": "gpt", "value": "Thanks! What else?"}]}
+{"conversations": [{"from": "human", "value": "facts"}, {"from": "gpt", "value": "About what? I'll share what I know."}]}
+{"conversations": [{"from": "human", "value": "true"}, {"from": "gpt", "value": "What's true? Are you agreeing with something or making a statement?"}]}
+{"conversations": [{"from": "human", "value": "false"}, {"from": "gpt", "value": "What's false? Tell me what you disagree with."}]}
+{"conversations": [{"from": "human", "value": "why"}, {"from": "gpt", "value": "Why what? I need more context."}]}
+{"conversations": [{"from": "human", "value": "how"}, {"from": "gpt", "value": "How what? Give me more to work with."}]}
+{"conversations": [{"from": "human", "value": "what"}, {"from": "gpt", "value": "What about what? Help me understand your question."}]}
+{"conversations": [{"from": "human", "value": "when"}, {"from": "gpt", "value": "When for what? I need context."}]}
+{"conversations": [{"from": "human", "value": "where"}, {"from": "gpt", "value": "Where in what sense? Give me more details."}]}
+{"conversations": [{"from": "human", "value": "who"}, {"from": "gpt", "value": "Who specifically are you asking about?"}]}
+{"conversations": [{"from": "human", "value": "which"}, {"from": "gpt", "value": "Which option are we comparing?"}]}
+{"conversations": [{"from": "human", "value": "this"}, {"from": "gpt", "value": "What's \"this\"? I need you to be more specific."}]}
+{"conversations": [{"from": "human", "value": "that"}, {"from": "gpt", "value": "What's \"that\" referring to?"}]}
+{"conversations": [{"from": "human", "value": "same"}, {"from": "gpt", "value": "Same as what?"}]}
+{"conversations": [{"from": "human", "value": "different"}, {"from": "gpt", "value": "Different how?"}]}
+{"conversations": [{"from": "human", "value": "more"}, {"from": "gpt", "value": "More of what specifically?"}]}
+{"conversations": [{"from": "human", "value": "less"}, {"from": "gpt", "value": "Less of what?"}]}
+{"conversations": [{"from": "human", "value": "better"}, {"from": "gpt", "value": "Better than what? In what way?"}]}
+{"conversations": [{"from": "human", "value": "worse"}, {"from": "gpt", "value": "Worse in what sense?"}]}
+{"conversations": [{"from": "human", "value": "good"}, {"from": "gpt", "value": "What's good?"}]}
+{"conversations": [{"from": "human", "value": "bad"}, {"from": "gpt", "value": "What's bad? Tell me more."}]}
+{"conversations": [{"from": "human", "value": "interesting"}, {"from": "gpt", "value": "What caught your interest?"}]}
+{"conversations": [{"from": "human", "value": "boring"}, {"from": "gpt", "value": "What's boring? I can switch it up."}]}
+{"conversations": [{"from": "human", "value": "weird"}, {"from": "gpt", "value": "Weird how? Good weird or bad weird?"}]}
+{"conversations": [{"from": "human", "value": "cool"}, {"from": "gpt", "value": "What's cool?"}]}
+{"conversations": [{"from": "human", "value": "nice"}, {"from": "gpt", "value": "Nice. Anything else?"}]}
+{"conversations": [{"from": "human", "value": "great"}, {"from": "gpt", "value": "Glad to hear. What next?"}]}
+{"conversations": [{"from": "human", "value": "awesome"}, {"from": "gpt", "value": "Awesome. What else can I help with?"}]}
+{"conversations": [{"from": "human", "value": "amazing"}, {"from": "gpt", "value": "Glad you think so! What's next?"}]}
+{"conversations": [{"from": "human", "value": "terrible"}, {"from": "gpt", "value": "What's terrible? Tell me what went wrong."}]}
+{"conversations": [{"from": "human", "value": "awful"}, {"from": "gpt", "value": "That doesn't sound good. What happened?"}]}
+{"conversations": [{"from": "human", "value": "wrong"}, {"from": "gpt", "value": "What's wrong? The situation, my response, or something else?"}]}
+{"conversations": [{"from": "human", "value": "right"}, {"from": "gpt", "value": "Right about what?"}]}
+{"conversations": [{"from": "human", "value": "exactly"}, {"from": "gpt", "value": "Good. What else?"}]}
+{"conversations": [{"from": "human", "value": "correct"}, {"from": "gpt", "value": "Glad I got it right. Anything else?"}]}
+{"conversations": [{"from": "human", "value": "incorrect"}, {"from": "gpt", "value": "What did I get wrong? Help me understand."}]}
+{"conversations": [{"from": "human", "value": "agreed"}, {"from": "gpt", "value": "Good. What's next?"}]}
+{"conversations": [{"from": "human", "value": "disagree"}, {"from": "gpt", "value": "Tell me where we differ - I'm happy to discuss."}]}
+{"conversations": [{"from": "human", "value": "absolutely"}, {"from": "gpt", "value": "Emphatic. What's on your mind?"}]}
+{"conversations": [{"from": "human", "value": "definitely"}, {"from": "gpt", "value": "Sounds certain. What are we talking about?"}]}
+{"conversations": [{"from": "human", "value": "probably"}, {"from": "gpt", "value": "What's probable? Let's explore the uncertainty."}]}
+{"conversations": [{"from": "human", "value": "possibly"}, {"from": "gpt", "value": "What's the possibility you're considering?"}]}
+{"conversations": [{"from": "human", "value": "unlikely"}, {"from": "gpt", "value": "What do you think is unlikely?"}]}
+{"conversations": [{"from": "human", "value": "impossible"}, {"from": "gpt", "value": "What do you think is impossible? Sometimes things are more possible than they seem."}]}
+{"conversations": [{"from": "human", "value": "easy"}, {"from": "gpt", "value": "Easy in what context?"}]}
+{"conversations": [{"from": "human", "value": "hard"}, {"from": "gpt", "value": "What's hard? Maybe I can help simplify."}]}
+{"conversations": [{"from": "human", "value": "simple"}, {"from": "gpt", "value": "Simple how? What are we discussing?"}]}
+{"conversations": [{"from": "human", "value": "complex"}, {"from": "gpt", "value": "What's complex? Let's break it down."}]}
+{"conversations": [{"from": "human", "value": "complicated"}, {"from": "gpt", "value": "What's complicated? Maybe I can help untangle it."}]}
+{"conversations": [{"from": "human", "value": "confusing"}, {"from": "gpt", "value": "What's confusing? Let me try to clarify."}]}
+{"conversations": [{"from": "human", "value": "clear"}, {"from": "gpt", "value": "Clear as in you understand, or you want me to be clear about something?"}]}
+{"conversations": [{"from": "human", "value": "obvious"}, {"from": "gpt", "value": "What's obvious to you?"}]}
+{"conversations": [{"from": "human", "value": "subtle"}, {"from": "gpt", "value": "What subtlety are you noticing?"}]}
+{"conversations": [{"from": "human", "value": "deep"}, {"from": "gpt", "value": "Deep in what way?"}]}
+{"conversations": [{"from": "human", "value": "shallow"}, {"from": "gpt", "value": "What's too shallow? Want more depth?"}]}
+{"conversations": [{"from": "human", "value": "fast"}, {"from": "gpt", "value": "Fast regarding what?"}]}
+{"conversations": [{"from": "human", "value": "slow"}, {"from": "gpt", "value": "Too slow? What can I speed up?"}]}
+{"conversations": [{"from": "human", "value": "quick"}, {"from": "gpt", "value": "Quick question or want a quick answer?"}]}
+{"conversations": [{"from": "human", "value": "long"}, {"from": "gpt", "value": "Long as in too long, or you want something longer?"}]}
+{"conversations": [{"from": "human", "value": "short"}, {"from": "gpt", "value": "Short version of what?"}]}
+{"conversations": [{"from": "human", "value": "brief"}, {"from": "gpt", "value": "Brief version of what? I'll be concise."}]}
+{"conversations": [{"from": "human", "value": "detailed"}, {"from": "gpt", "value": "Want more detail? About what?"}]}
+{"conversations": [{"from": "human", "value": "specific"}, {"from": "gpt", "value": "I'll be specific. About what?"}]}
+{"conversations": [{"from": "human", "value": "general"}, {"from": "gpt", "value": "Want the general overview? Of what topic?"}]}
+{"conversations": [{"from": "human", "value": "example"}, {"from": "gpt", "value": "An example of what?"}]}
+{"conversations": [{"from": "human", "value": "proof"}, {"from": "gpt", "value": "Proof of what? I'll provide evidence if available."}]}
+{"conversations": [{"from": "human", "value": "evidence"}, {"from": "gpt", "value": "Evidence for what claim?"}]}
+{"conversations": [{"from": "human", "value": "explain"}, {"from": "gpt", "value": "Explain what?"}]}
+{"conversations": [{"from": "human", "value": "elaborate"}, {"from": "gpt", "value": "Elaborate on what specifically?"}]}
+{"conversations": [{"from": "human", "value": "clarify"}, {"from": "gpt", "value": "What needs clarification?"}]}
+{"conversations": [{"from": "human", "value": "define"}, {"from": "gpt", "value": "Define what term?"}]}
+{"conversations": [{"from": "human", "value": "describe"}, {"from": "gpt", "value": "Describe what?"}]}
+{"conversations": [{"from": "human", "value": "compare"}, {"from": "gpt", "value": "Compare what to what?"}]}
+{"conversations": [{"from": "human", "value": "contrast"}, {"from": "gpt", "value": "Contrast which things?"}]}
+{"conversations": [{"from": "human", "value": "list"}, {"from": "gpt", "value": "List what?"}]}
+{"conversations": [{"from": "human", "value": "summarize"}, {"from": "gpt", "value": "Summarize what?"}]}
+{"conversations": [{"from": "human", "value": "translate"}, {"from": "gpt", "value": "Translate what, and to which language?"}]}
+{"conversations": [{"from": "human", "value": "paraphrase"}, {"from": "gpt", "value": "Paraphrase what?"}]}
+{"conversations": [{"from": "human", "value": "simplify"}, {"from": "gpt", "value": "Simplify what?"}]}
+{"conversations": [{"from": "human", "value": "continue"}, {"from": "gpt", "value": "Continue with what?"}]}
+{"conversations": [{"from": "human", "value": "stop"}, {"from": "gpt", "value": "Stopping. Let me know when you want to continue."}]}
+{"conversations": [{"from": "human", "value": "pause"}, {"from": "gpt", "value": "Paused. Ready when you are."}]}
+{"conversations": [{"from": "human", "value": "wait"}, {"from": "gpt", "value": "Waiting. Take your time."}]}
+{"conversations": [{"from": "human", "value": "hold on"}, {"from": "gpt", "value": "Holding. Let me know when you're ready."}]}
+{"conversations": [{"from": "human", "value": "go ahead"}, {"from": "gpt", "value": "Go ahead with what specifically?"}]}
+{"conversations": [{"from": "human", "value": "proceed"}, {"from": "gpt", "value": "Proceeding with what?"}]}
+{"conversations": [{"from": "human", "value": "skip"}, {"from": "gpt", "value": "Skip what?"}]}
+{"conversations": [{"from": "human", "value": "next"}, {"from": "gpt", "value": "Next what?"}]}
+{"conversations": [{"from": "human", "value": "previous"}, {"from": "gpt", "value": "Previous what? What do you want to revisit?"}]}
+{"conversations": [{"from": "human", "value": "again"}, {"from": "gpt", "value": "Do what again?"}]}
+{"conversations": [{"from": "human", "value": "repeat"}, {"from": "gpt", "value": "Repeat what?"}]}
+{"conversations": [{"from": "human", "value": "redo"}, {"from": "gpt", "value": "Redo what?"}]}
+{"conversations": [{"from": "human", "value": "undo"}, {"from": "gpt", "value": "Undo what specifically?"}]}
+{"conversations": [{"from": "human", "value": "restart"}, {"from": "gpt", "value": "Restart from where?"}]}
+{"conversations": [{"from": "human", "value": "refresh"}, {"from": "gpt", "value": "Fresh start. What would you like to do?"}]}
+{"conversations": [{"from": "human", "value": "new topic"}, {"from": "gpt", "value": "Sure. What do you want to talk about?"}]}
+{"conversations": [{"from": "human", "value": "random"}, {"from": "gpt", "value": "Random what? Topic, fact, question?"}]}
+{"conversations": [{"from": "human", "value": "anything"}, {"from": "gpt", "value": "Anything specific, or truly anything? Give me a direction."}]}
+{"conversations": [{"from": "human", "value": "something"}, {"from": "gpt", "value": "Something like what?"}]}
+{"conversations": [{"from": "human", "value": "nothing much"}, {"from": "gpt", "value": "Fair enough. I'm here if you need anything."}]}
+{"conversations": [{"from": "human", "value": "just checking"}, {"from": "gpt", "value": "I'm here. Everything working as expected?"}]}
+{"conversations": [{"from": "human", "value": "just wondering"}, {"from": "gpt", "value": "What were you wondering about?"}]}
+{"conversations": [{"from": "human", "value": "just asking"}, {"from": "gpt", "value": "Ask away. What is it?"}]}
+{"conversations": [{"from": "human", "value": "just curious"}, {"from": "gpt", "value": "Curiosity is good. What about?"}]}
+{"conversations": [{"from": "human", "value": "out of curiosity"}, {"from": "gpt", "value": "Sure. What's the question?"}]}
+{"conversations": [{"from": "human", "value": "hypothetically"}, {"from": "gpt", "value": "I love hypotheticals. What's the scenario?"}]}
+{"conversations": [{"from": "human", "value": "theoretically"}, {"from": "gpt", "value": "In theory, yes. What's the question?"}]}
+{"conversations": [{"from": "human", "value": "in theory"}, {"from": "gpt", "value": "Theoretically speaking about what?"}]}
+{"conversations": [{"from": "human", "value": "in practice"}, {"from": "gpt", "value": "What are we discussing practically?"}]}
+{"conversations": [{"from": "human", "value": "realistically"}, {"from": "gpt", "value": "Being realistic about what?"}]}
+{"conversations": [{"from": "human", "value": "ideally"}, {"from": "gpt", "value": "In an ideal world, what?"}]}
+{"conversations": [{"from": "human", "value": "worst case"}, {"from": "gpt", "value": "Worst case scenario of what?"}]}
+{"conversations": [{"from": "human", "value": "best case"}, {"from": "gpt", "value": "Best case scenario of what?"}]}
+{"conversations": [{"from": "human", "value": "what if"}, {"from": "gpt", "value": "What if what? Give me the scenario."}]}
+{"conversations": [{"from": "human", "value": "imagine"}, {"from": "gpt", "value": "Imagining what?"}]}
+{"conversations": [{"from": "human", "value": "suppose"}, {"from": "gpt", "value": "Suppose what?"}]}
+{"conversations": [{"from": "human", "value": "pretend"}, {"from": "gpt", "value": "Pretend what? What's the scenario?"}]}
+{"conversations": [{"from": "human", "value": "assume"}, {"from": "gpt", "value": "Assuming what?"}]}
+{"conversations": [{"from": "human", "value": "given that"}, {"from": "gpt", "value": "Given that what? What's the premise?"}]}
+{"conversations": [{"from": "human", "value": "considering"}, {"from": "gpt", "value": "Considering what factors?"}]}
+{"conversations": [{"from": "human", "value": "regarding"}, {"from": "gpt", "value": "Regarding what topic?"}]}
+{"conversations": [{"from": "human", "value": "about"}, {"from": "gpt", "value": "About what?"}]}
+{"conversations": [{"from": "human", "value": "concerning"}, {"from": "gpt", "value": "Concerning what?"}]}
+{"conversations": [{"from": "human", "value": "related to"}, {"from": "gpt", "value": "Related to what topic?"}]}
+{"conversations": [{"from": "human", "value": "similar to"}, {"from": "gpt", "value": "Similar to what?"}]}
+{"conversations": [{"from": "human", "value": "like"}, {"from": "gpt", "value": "Like what specifically?"}]}
+{"conversations": [{"from": "human", "value": "such as"}, {"from": "gpt", "value": "Such as what? Give me examples."}]}
+{"conversations": [{"from": "human", "value": "for instance"}, {"from": "gpt", "value": "For instance what?"}]}
+{"conversations": [{"from": "human", "value": "specifically"}, {"from": "gpt", "value": "Specifically about what?"}]}
+{"conversations": [{"from": "human", "value": "particularly"}, {"from": "gpt", "value": "Particularly what aspect?"}]}
+{"conversations": [{"from": "human", "value": "especially"}, {"from": "gpt", "value": "Especially what?"}]}
+{"conversations": [{"from": "human", "value": "mainly"}, {"from": "gpt", "value": "Mainly about what?"}]}
+{"conversations": [{"from": "human", "value": "mostly"}, {"from": "gpt", "value": "Mostly what?"}]}
+{"conversations": [{"from": "human", "value": "also"}, {"from": "gpt", "value": "Also what?"}]}
+{"conversations": [{"from": "human", "value": "too"}, {"from": "gpt", "value": "Too what?"}]}
+{"conversations": [{"from": "human", "value": "as well"}, {"from": "gpt", "value": "What as well?"}]}
+{"conversations": [{"from": "human", "value": "in addition"}, {"from": "gpt", "value": "In addition to what?"}]}
+{"conversations": [{"from": "human", "value": "furthermore"}, {"from": "gpt", "value": "Furthermore what?"}]}
+{"conversations": [{"from": "human", "value": "moreover"}, {"from": "gpt", "value": "Moreover what?"}]}
+{"conversations": [{"from": "human", "value": "however"}, {"from": "gpt", "value": "However what?"}]}
+{"conversations": [{"from": "human", "value": "but"}, {"from": "gpt", "value": "But what?"}]}
+{"conversations": [{"from": "human", "value": "although"}, {"from": "gpt", "value": "Although what?"}]}
+{"conversations": [{"from": "human", "value": "despite"}, {"from": "gpt", "value": "Despite what?"}]}
+{"conversations": [{"from": "human", "value": "nevertheless"}, {"from": "gpt", "value": "Nevertheless what?"}]}
+{"conversations": [{"from": "human", "value": "regardless"}, {"from": "gpt", "value": "Regardless of what?"}]}
+{"conversations": [{"from": "human", "value": "either way"}, {"from": "gpt", "value": "Either way what?"}]}
+{"conversations": [{"from": "human", "value": "anyway"}, {"from": "gpt", "value": "Anyway, what's next?"}]}
+{"conversations": [{"from": "human", "value": "anyhow"}, {"from": "gpt", "value": "What's on your mind?"}]}
+{"conversations": [{"from": "human", "value": "anyways"}, {"from": "gpt", "value": "What were you saying?"}]}
+{"conversations": [{"from": "human", "value": "so basically"}, {"from": "gpt", "value": "What's the basic version?"}]}
+{"conversations": [{"from": "human", "value": "essentially"}, {"from": "gpt", "value": "Essentially what?"}]}
+{"conversations": [{"from": "human", "value": "fundamentally"}, {"from": "gpt", "value": "Fundamentally what?"}]}
+{"conversations": [{"from": "human", "value": "in essence"}, {"from": "gpt", "value": "In essence, what's the point?"}]}
+{"conversations": [{"from": "human", "value": "at its core"}, {"from": "gpt", "value": "At its core, what?"}]}
+{"conversations": [{"from": "human", "value": "bottom line"}, {"from": "gpt", "value": "What's the bottom line?"}]}
+{"conversations": [{"from": "human", "value": "long story short"}, {"from": "gpt", "value": "Give me the short version."}]}
+{"conversations": [{"from": "human", "value": "to sum up"}, {"from": "gpt", "value": "Sum up what?"}]}
+{"conversations": [{"from": "human", "value": "in conclusion"}, {"from": "gpt", "value": "What's your conclusion?"}]}
+{"conversations": [{"from": "human", "value": "finally"}, {"from": "gpt", "value": "Finally what?"}]}
+{"conversations": [{"from": "human", "value": "lastly"}, {"from": "gpt", "value": "Last point?"}]}
+{"conversations": [{"from": "human", "value": "first"}, {"from": "gpt", "value": "First what?"}]}
+{"conversations": [{"from": "human", "value": "second"}, {"from": "gpt", "value": "Second point?"}]}
+{"conversations": [{"from": "human", "value": "third"}, {"from": "gpt", "value": "Third thing?"}]}
+{"conversations": [{"from": "human", "value": "one"}, {"from": "gpt", "value": "One what?"}]}
+{"conversations": [{"from": "human", "value": "two"}, {"from": "gpt", "value": "Two what?"}]}
+{"conversations": [{"from": "human", "value": "three"}, {"from": "gpt", "value": "Three of what?"}]}
+{"conversations": [{"from": "human", "value": "both"}, {"from": "gpt", "value": "Both of what?"}]}
+{"conversations": [{"from": "human", "value": "neither"}, {"from": "gpt", "value": "Neither of which options?"}]}
+{"conversations": [{"from": "human", "value": "either"}, {"from": "gpt", "value": "Either what?"}]}
+{"conversations": [{"from": "human", "value": "all"}, {"from": "gpt", "value": "All of what?"}]}
+{"conversations": [{"from": "human", "value": "none"}, {"from": "gpt", "value": "None of what?"}]}
+{"conversations": [{"from": "human", "value": "some"}, {"from": "gpt", "value": "Some of what?"}]}
+{"conversations": [{"from": "human", "value": "many"}, {"from": "gpt", "value": "Many of what?"}]}
+{"conversations": [{"from": "human", "value": "few"}, {"from": "gpt", "value": "Few of what?"}]}
+{"conversations": [{"from": "human", "value": "several"}, {"from": "gpt", "value": "Several what?"}]}
+{"conversations": [{"from": "human", "value": "various"}, {"from": "gpt", "value": "Various what?"}]}
+{"conversations": [{"from": "human", "value": "other"}, {"from": "gpt", "value": "Other what?"}]}
+{"conversations": [{"from": "human", "value": "another"}, {"from": "gpt", "value": "Another what?"}]}
+{"conversations": [{"from": "human", "value": "different"}, {"from": "gpt", "value": "Different how?"}]}
+{"conversations": [{"from": "human", "value": "alternative"}, {"from": "gpt", "value": "Alternative to what?"}]}
+{"conversations": [{"from": "human", "value": "option"}, {"from": "gpt", "value": "What option are you considering?"}]}
+{"conversations": [{"from": "human", "value": "choice"}, {"from": "gpt", "value": "What's the choice between?"}]}
+{"conversations": [{"from": "human", "value": "decision"}, {"from": "gpt", "value": "What decision are you facing?"}]}
+{"conversations": [{"from": "human", "value": "problem"}, {"from": "gpt", "value": "What's the problem?"}]}
+{"conversations": [{"from": "human", "value": "solution"}, {"from": "gpt", "value": "Solution to what?"}]}
+{"conversations": [{"from": "human", "value": "answer"}, {"from": "gpt", "value": "Answer to what question?"}]}
+{"conversations": [{"from": "human", "value": "question"}, {"from": "gpt", "value": "What's the question?"}]}
+{"conversations": [{"from": "human", "value": "topic"}, {"from": "gpt", "value": "What topic?"}]}
+{"conversations": [{"from": "human", "value": "subject"}, {"from": "gpt", "value": "What subject?"}]}
+{"conversations": [{"from": "human", "value": "issue"}, {"from": "gpt", "value": "What issue?"}]}
+{"conversations": [{"from": "human", "value": "matter"}, {"from": "gpt", "value": "What matter?"}]}
+{"conversations": [{"from": "human", "value": "thing"}, {"from": "gpt", "value": "What thing?"}]}
+{"conversations": [{"from": "human", "value": "stuff"}, {"from": "gpt", "value": "What stuff?"}]}
+{"conversations": [{"from": "human", "value": "point"}, {"from": "gpt", "value": "What's your point?"}]}
+{"conversations": [{"from": "human", "value": "reason"}, {"from": "gpt", "value": "Reason for what?"}]}
+{"conversations": [{"from": "human", "value": "purpose"}, {"from": "gpt", "value": "Purpose of what?"}]}
+{"conversations": [{"from": "human", "value": "goal"}, {"from": "gpt", "value": "What goal?"}]}
+{"conversations": [{"from": "human", "value": "plan"}, {"from": "gpt", "value": "What's the plan?"}]}
+{"conversations": [{"from": "human", "value": "idea"}, {"from": "gpt", "value": "What's the idea?"}]}
+{"conversations": [{"from": "human", "value": "thought"}, {"from": "gpt", "value": "What thought?"}]}
+{"conversations": [{"from": "human", "value": "opinion"}, {"from": "gpt", "value": "What's your opinion on what?"}]}
+{"conversations": [{"from": "human", "value": "view"}, {"from": "gpt", "value": "What's your view on what?"}]}
+{"conversations": [{"from": "human", "value": "perspective"}, {"from": "gpt", "value": "What perspective are you interested in?"}]}
+{"conversations": [{"from": "human", "value": "side"}, {"from": "gpt", "value": "Which side of what?"}]}
+{"conversations": [{"from": "human", "value": "angle"}, {"from": "gpt", "value": "What angle are you looking for?"}]}
+{"conversations": [{"from": "human", "value": "aspect"}, {"from": "gpt", "value": "What aspect of the topic?"}]}
+{"conversations": [{"from": "human", "value": "part"}, {"from": "gpt", "value": "Which part?"}]}
+{"conversations": [{"from": "human", "value": "whole"}, {"from": "gpt", "value": "The whole of what?"}]}
+{"conversations": [{"from": "human", "value": "half"}, {"from": "gpt", "value": "Half of what?"}]}
+{"conversations": [{"from": "human", "value": "full"}, {"from": "gpt", "value": "Full what?"}]}
+{"conversations": [{"from": "human", "value": "complete"}, {"from": "gpt", "value": "Complete what?"}]}
+{"conversations": [{"from": "human", "value": "partial"}, {"from": "gpt", "value": "Partial what?"}]}
+{"conversations": [{"from": "human", "value": "total"}, {"from": "gpt", "value": "Total what?"}]}

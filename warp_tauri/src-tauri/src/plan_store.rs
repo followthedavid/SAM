@@ -2,7 +2,7 @@
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use chrono::{Utc, DateTime};
-use std::sync::{Mutex, MutexGuard, PoisonError};
+use std::sync::{Mutex, MutexGuard};
 use std::path::PathBuf;
 
 // Helper to handle poisoned mutex - recovers lock even after panic

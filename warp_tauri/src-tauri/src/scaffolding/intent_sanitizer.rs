@@ -35,6 +35,7 @@ struct SensitivityPattern {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 enum ReplacementStrategy {
     Reframe,        // Reframe as technical/creative writing task
     Generalize,     // Make more generic

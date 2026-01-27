@@ -272,7 +272,7 @@ impl CommandPalette {
     }
 
     // Search files only
-    pub fn search_files(&self, query: &str, root: &str) -> SearchResult {
+    pub fn search_files(&self, query: &str, _root: &str) -> SearchResult {
         let mut results = Vec::new();
 
         // Search cached files

@@ -193,6 +193,11 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background: var(--warp-bg-surface, #12121a) !important; /* Fallback for non-Tauri */
+}
+
+/* Tauri-specific: use transparent for vibrancy */
+html.tauri, body.tauri {
   background: transparent !important;
 }
 

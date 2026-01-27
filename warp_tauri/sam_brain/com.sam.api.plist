@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.sam.api</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/python3</string>
+        <string>/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/sam_api.py</string>
+        <string>server</string>
+        <string>8765</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+        <key>Crashed</key>
+        <true/>
+    </dict>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain</string>
+
+    <key>StandardOutPath</key>
+    <string>/Users/davidquinton/.sam/daemon/api.stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/davidquinton/.sam/daemon/api.stderr.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/davidquinton</string>
+    </dict>
+
+    <key>ProcessType</key>
+    <string>Interactive</string>
+
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+</dict>
+</plist>

@@ -17,6 +17,8 @@ pub mod phase1_6_tests;
 pub mod ollama;
 pub mod ssh_session;
 pub mod scaffolding;
+pub mod debug_server;
+pub mod structured_log;
 
 use conversation::ConversationState;
 use std::sync::{Arc, Mutex};

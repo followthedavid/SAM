@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 SAM Chat Interface
-- Routes requests intelligently (local first, browser bridge for complex)
-- Sanitizes before external routing
+- Uses fine-tuned MLX model (SAM Brain) for local inference
+- Auto-escalates to Claude via browser bridge when needed
 - Executes tools (read/write/run)
 - Maintains conversation context
 """
@@ -16,14 +16,12 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, List
 
-# Import the router
+# Import the escalation handler (uses MLX model + Claude bridge)
 sys.path.insert(0, str(Path(__file__).parent))
-from smart_router import route_request, Provider, sanitize_content, format_external_prompt
+from escalation_handler import process_request, EscalationReason
+from smart_router import Provider, sanitize_content
 
 # Configuration
-OLLAMA_URL = "http://localhost:11434"
-LOCAL_MODEL = "dolphin-llama3:8b"  # Best local model available
-FALLBACK_MODEL = "qwen2.5-coder:3b"  # Fallback if 8b not loaded
 BRIDGE_QUEUE = Path.home() / ".sam_chatgpt_queue.json"
 CONVERSATION_LOG = Path("/Volumes/Plex/SSOT/sam_conversations.json")
 
@@ -38,46 +36,24 @@ TOOLS = {
 }
 
 
-def query_local(prompt: str, context: str = "", model: str = LOCAL_MODEL) -> Optional[str]:
-    """Query local Ollama model."""
+def query_sam_brain(prompt: str, context: str = "", auto_escalate: bool = True):
+    """Query SAM Brain (fine-tuned MLX model) with auto-escalation to Claude."""
     try:
-        system = """You are SAM, a local AI assistant. You help with coding projects.
-You can execute tools by responding with JSON like: {"tool": "read_file", "args": {"path": "/path/to/file"}}
-For direct answers, just respond normally.
-Be concise and actionable."""
-
-        messages = [
-            {"role": "system", "content": system},
-        ]
-
+        full_prompt = prompt
         if context:
-            messages.append({"role": "user", "content": f"Context:\n{context}"})
-            messages.append({"role": "assistant", "content": "I understand the context. What would you like me to do?"})
+            full_prompt = f"Context:\n{context}\n\nRequest:\n{prompt}"
 
-        messages.append({"role": "user", "content": prompt})
+        result = process_request(full_prompt, auto_escalate=auto_escalate)
 
-        data = json.dumps({
-            "model": model,
-            "messages": messages,
-            "stream": False,
-            "options": {
-                "temperature": 0.1,
-                "num_predict": 1000,
-            }
-        }).encode()
-
-        req = urllib.request.Request(
-            f"{OLLAMA_URL}/api/chat",
-            data=data,
-            headers={"Content-Type": "application/json"}
-        )
-
-        with urllib.request.urlopen(req, timeout=120) as response:
-            result = json.loads(response.read().decode())
-            return result.get("message", {}).get("content", "")
+        return {
+            "content": result.content,
+            "provider": result.provider,
+            "confidence": result.confidence,
+            "escalation_reason": result.escalation_reason.value
+        }
 
     except Exception as e:
-        print(f"[SAM] Local model error: {e}")
+        print(f"[SAM] Brain error: {e}")
         return None
 
 
@@ -187,75 +163,68 @@ def parse_tool_call(response: str) -> Optional[Dict]:
     return None
 
 
-def chat(prompt: str, project_context: str = "") -> str:
+def chat(prompt: str, project_context: str = "", force_claude: bool = False) -> str:
     """
     Main chat function.
-    Routes intelligently, executes tools, returns response.
+    Uses SAM Brain (MLX) first, auto-escalates to Claude when needed.
     """
     print(f"[SAM] Processing: {prompt[:50]}...")
 
-    # Get routing decision
-    decision = route_request(prompt, project_context)
-    print(f"[SAM] Route: {decision.provider.value} ({decision.reason})")
+    # Query SAM Brain with auto-escalation
+    result = query_sam_brain(prompt, project_context, auto_escalate=not force_claude)
 
-    if decision.provider == Provider.LOCAL:
-        # Try local model
-        response = query_local(prompt, project_context)
+    if result is None:
+        return "[SAM] Error: Could not process request"
 
-        if response:
-            # Check if response contains a tool call
-            tool_call = parse_tool_call(response)
-            if tool_call:
-                tool_result = execute_tool(tool_call.get("tool"), tool_call.get("args", {}))
-                # Feed result back to model
-                followup = query_local(
-                    f"Tool result:\n{tool_result}\n\nNow provide your response to the user.",
-                    project_context
-                )
-                return followup or tool_result
-            return response
+    # Show provider info
+    provider_icon = "🧠" if result["provider"] == "sam" else "☁️"
+    confidence_str = f"{result['confidence']:.0%}" if result["provider"] == "sam" else "N/A"
 
-        # Local failed, escalate to browser bridge
-        print("[SAM] Local model failed, escalating to browser bridge...")
-        decision.provider = Provider.CHATGPT
+    header = f"{provider_icon} [{result['provider'].upper()}]"
+    if result["escalation_reason"] != "none":
+        header += f" (escalated: {result['escalation_reason']})"
+    if result["provider"] == "sam":
+        header += f" [confidence: {confidence_str}]"
 
-    # External routing (browser bridge)
-    if decision.provider in [Provider.CHATGPT, Provider.CLAUDE]:
-        provider = "chatgpt" if decision.provider == Provider.CHATGPT else "claude"
+    response = result["content"]
 
-        # Sanitize before sending
-        clean_prompt = format_external_prompt(decision, "SAM Project")
+    # Check if response contains a tool call
+    tool_call = parse_tool_call(response)
+    if tool_call:
+        tool_result = execute_tool(tool_call.get("tool"), tool_call.get("args", {}))
+        # Feed result back to model for final response
+        followup = query_sam_brain(
+            f"Tool result:\n{tool_result}\n\nNow provide your response to the user.",
+            project_context,
+            auto_escalate=False
+        )
+        if followup:
+            return f"{header}\n\n{followup['content']}"
+        return f"{header}\n\n{tool_result}"
 
-        print(f"[SAM] Queuing to {provider} browser bridge...")
-        request_id = queue_browser_request(clean_prompt, provider)
-
-        return f"""[Queued to {provider.upper()}]
-Request ID: {request_id}
-
-Your request has been sanitized and queued for {provider}.
-Open {provider} in your browser - the bridge will send it automatically.
-
-To check for response: sam chat --check {request_id}"""
-
-    return "Unable to process request."
+    return f"{header}\n\n{response}"
 
 
 def main():
     """CLI interface."""
     if len(sys.argv) < 2:
         print("""
-SAM Chat Interface
-==================
+SAM Chat Interface (MLX + Auto-Escalation)
+==========================================
 
 Usage:
-  sam_chat.py "<your message>"              - Chat with SAM
+  sam_chat.py "<your message>"              - Chat with SAM (auto-escalates to Claude if needed)
+  sam_chat.py --claude "<message>"          - Force Claude (via browser bridge)
   sam_chat.py --project <path> "<message>"  - Chat with project context
-  sam_chat.py --check <request_id>          - Check browser bridge response
   sam_chat.py --status                      - Show status
+
+SAM uses the fine-tuned MLX model locally and automatically escalates
+to Claude via browser bridge when confidence is low or task is complex.
 
 Examples:
   sam_chat.py "list files in the SAM project"
   sam_chat.py "implement a login function"
+  sam_chat.py --claude "design a microservices architecture"
   sam_chat.py --project ~/Projects/myapp "explain the main.py file"
 """)
         return
@@ -263,31 +232,37 @@ Examples:
     # Parse arguments
     args = sys.argv[1:]
     project_path = None
-    check_id = None
+    force_claude = False
 
     if "--project" in args:
         idx = args.index("--project")
         project_path = args[idx + 1]
         args = args[:idx] + args[idx+2:]
 
-    if "--check" in args:
-        idx = args.index("--check")
-        check_id = args[idx + 1]
-        response = check_bridge_response(check_id)
-        if response:
-            print(f"Response from bridge:\n{response}")
-        else:
-            print(f"No response yet for {check_id}")
-        return
+    if "--claude" in args:
+        idx = args.index("--claude")
+        force_claude = True
+        args = args[:idx] + args[idx+1:]
 
     if "--status" in args:
-        # Check Ollama
+        print("SAM Status")
+        print("=" * 40)
+        # Check MLX model
         try:
-            resp = urllib.request.urlopen(f"{OLLAMA_URL}/api/tags", timeout=5)
-            models = json.loads(resp.read())
-            print(f"Ollama: Online ({len(models.get('models', []))} models)")
-        except:
-            print("Ollama: Offline")
+            from mlx_inference import ADAPTER_PATH, BASE_MODEL
+            if ADAPTER_PATH.exists():
+                print(f"SAM Brain: Ready (adapters at {ADAPTER_PATH})")
+            else:
+                print(f"SAM Brain: Using base model ({BASE_MODEL})")
+        except Exception as e:
+            print(f"SAM Brain: Error - {e}")
+
+        # Check bridge profile
+        bridge_profile = Path.home() / ".sam-ai-bridge-profile"
+        if bridge_profile.exists():
+            print("Claude Bridge: Profile exists (may need login refresh)")
+        else:
+            print("Claude Bridge: Not configured (run: node ai_bridge.cjs login claude)")
 
         # Check bridge queue
         if BRIDGE_QUEUE.exists():
@@ -308,7 +283,7 @@ Examples:
 
     # Chat
     prompt = " ".join(args)
-    response = chat(prompt, context)
+    response = chat(prompt, context, force_claude=force_claude)
     print(f"\n{response}")
 
 

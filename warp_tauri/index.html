@@ -7,7 +7,25 @@
     <title>Warp_Open Terminal</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <!-- Fallback loading indicator - if you see this, webview is working -->
+      <div id="loading-fallback" style="
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        background: rgba(20, 20, 30, 0.95);
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        z-index: 10000;
+      ">
+        <div style="font-size: 48px; margin-bottom: 16px;">🤖</div>
+        <div style="font-size: 18px; font-weight: 500;">Loading SAM...</div>
+        <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 8px;">If you see this for more than 5 seconds, Vue may not be loading</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

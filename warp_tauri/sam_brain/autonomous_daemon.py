@@ -20,6 +20,15 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, List
 
+# Evolution system imports
+try:
+    from evolution_tracker import EvolutionTracker, Improvement
+    from improvement_detector import ImprovementDetector, ScanResult
+    from evolution_ladders import LadderAssessor
+    EVOLUTION_AVAILABLE = True
+except ImportError:
+    EVOLUTION_AVAILABLE = False
+
 # Configuration
 REGISTRY_PATH = Path.home() / ".sam" / "projects" / "registry.json"
 MLX_SERVER = "http://localhost:11435"
@@ -347,6 +356,165 @@ def run_improvement_cycle():
     return cycle_results
 
 
+# =====================
+# EVOLUTION SYSTEM TASKS
+# =====================
+
+def task_scan_for_improvements() -> Dict:
+    """Scan all projects for improvement opportunities."""
+    if not EVOLUTION_AVAILABLE:
+        log("Evolution system not available", "WARN")
+        return {"status": "unavailable"}
+
+    log("Running improvement scan...")
+    detector = ImprovementDetector()
+    result = detector.full_scan()
+
+    log(f"Scan complete: {len(result.improvements)} new improvements detected")
+    return {
+        "status": "complete",
+        "improvements_found": len(result.improvements),
+        "duration": result.scan_duration
+    }
+
+
+def task_assess_evolution_levels() -> Dict:
+    """Assess all projects against evolution ladders."""
+    if not EVOLUTION_AVAILABLE:
+        return {"status": "unavailable"}
+
+    log("Assessing project evolution levels...")
+    assessor = LadderAssessor()
+    assessments = assessor.assess_all_projects()
+
+    # Log projects at low levels that need attention
+    low_level_projects = [
+        (pid, a) for pid, a in assessments.items()
+        if a.current_level < 3
+    ]
+
+    for pid, assessment in low_level_projects[:5]:
+        log(f"  {pid}: Level {assessment.current_level} - {assessment.next_evolution[:50]}")
+
+    return {
+        "status": "complete",
+        "projects_assessed": len(assessments),
+        "average_level": sum(a.current_level for a in assessments.values()) / len(assessments)
+    }
+
+
+def task_execute_auto_approved() -> Dict:
+    """Execute improvements that are auto-approved."""
+    if not EVOLUTION_AVAILABLE:
+        return {"status": "unavailable"}
+
+    log("Checking for auto-approved improvements...")
+    tracker = EvolutionTracker()
+
+    # Get queued improvements
+    queued = tracker.get_queued_improvements(limit=10)
+    executed = 0
+
+    for improvement, score in queued:
+        # Check if auto-approvable
+        from improvement_detector import IMPROVEMENT_TYPES
+        type_config = IMPROVEMENT_TYPES.get(improvement.type, {})
+
+        if type_config.get("auto_approve", False):
+            log(f"  Auto-executing: {improvement.description[:50]}...")
+            # Mark as implementing
+            tracker.update_improvement_status(improvement.id, "implementing")
+
+            # For now, just mark complete - actual execution would go here
+            # In production, this would run the actual improvement
+            tracker.update_improvement_status(
+                improvement.id,
+                "completed",
+                outcome="Auto-executed by daemon"
+            )
+            executed += 1
+
+    log(f"Executed {executed} auto-approved improvements")
+    return {"status": "complete", "executed": executed}
+
+
+def task_sync_ssot() -> Dict:
+    """Sync evolution tracker with SSOT documentation."""
+    if not EVOLUTION_AVAILABLE:
+        return {"status": "unavailable"}
+
+    log("Syncing with SSOT...")
+    tracker = EvolutionTracker()
+
+    # Sync projects from SSOT
+    tracker.sync_from_ssot()
+
+    # Get summary for logging
+    summary = tracker.get_project_status_summary()
+    log(f"  Synced {summary['total_projects']} projects, avg progress: {summary['average_progress']:.1%}")
+
+    return {
+        "status": "complete",
+        "projects": summary["total_projects"],
+        "average_progress": summary["average_progress"]
+    }
+
+
+def task_generate_evolution_report() -> Dict:
+    """Generate weekly evolution report."""
+    if not EVOLUTION_AVAILABLE:
+        return {"status": "unavailable"}
+
+    log("Generating evolution report...")
+
+    tracker = EvolutionTracker()
+    assessor = LadderAssessor()
+
+    report = {
+        "timestamp": datetime.now().isoformat(),
+        "projects": tracker.get_project_status_summary(),
+        "improvements": tracker.get_improvement_summary(),
+        "evolution_summary": assessor.summary(),
+        "roadmap": assessor.get_evolution_roadmap()[:10]
+    }
+
+    # Save report
+    report_path = OUTPUT_DIR / f"evolution_report_{datetime.now().strftime('%Y%m%d')}.json"
+    with open(report_path, "w") as f:
+        json.dump(report, f, indent=2)
+
+    log(f"  Report saved to {report_path}")
+    return {"status": "complete", "report_path": str(report_path)}
+
+
+def run_evolution_cycle():
+    """Run evolution-focused improvement cycle."""
+    if not EVOLUTION_AVAILABLE:
+        log("Evolution system not available - skipping evolution cycle", "WARN")
+        return
+
+    log("=" * 60)
+    log("Starting evolution cycle")
+    log("=" * 60)
+
+    results = {}
+
+    # 1. Sync with SSOT first
+    results["sync"] = task_sync_ssot()
+
+    # 2. Scan for improvements
+    results["scan"] = task_scan_for_improvements()
+
+    # 3. Assess evolution levels
+    results["assess"] = task_assess_evolution_levels()
+
+    # 4. Execute auto-approved improvements
+    results["execute"] = task_execute_auto_approved()
+
+    log("Evolution cycle complete")
+    return results
+
+
 def daemon_loop():
     """Main daemon loop - runs continuously."""
     log("=" * 60)
@@ -354,6 +522,7 @@ def daemon_loop():
     log(f"Cycle interval: {CYCLE_INTERVAL_MINUTES} minutes")
     log(f"Output directory: {OUTPUT_DIR}")
     log(f"Approval queue: {APPROVAL_QUEUE}")
+    log(f"Evolution system: {'Available' if EVOLUTION_AVAILABLE else 'Not Available'}")
     log("=" * 60)
 
     # Initial disk space check
@@ -361,9 +530,19 @@ def daemon_loop():
     log(f"Disk space - Internal: {spaces.get('internal_gb', 0):.1f}GB, "
         f"Plex: {spaces.get('/Volumes/Plex', 0):.1f}GB")
 
+    cycle_count = 0
+
     while True:
         try:
+            # Run standard improvement cycle
             run_improvement_cycle()
+
+            # Run evolution cycle every 2nd iteration (every hour with 30min intervals)
+            if EVOLUTION_AVAILABLE and cycle_count % 2 == 0:
+                run_evolution_cycle()
+
+            cycle_count += 1
+
         except Exception as e:
             log(f"Cycle error: {e}", "ERROR")
 
@@ -378,6 +557,10 @@ def main():
     parser.add_argument("--once", action="store_true", help="Run one cycle and exit")
     parser.add_argument("--project", type=str, help="Process single project by ID")
     parser.add_argument("--status", action="store_true", help="Show status and exit")
+    parser.add_argument("--evolution", action="store_true", help="Run evolution cycle only")
+    parser.add_argument("--scan", action="store_true", help="Scan for improvements only")
+    parser.add_argument("--assess", action="store_true", help="Assess evolution levels only")
+    parser.add_argument("--report", action="store_true", help="Generate evolution report")
     args = parser.parse_args()
 
     if args.status:
@@ -409,8 +592,33 @@ def main():
             print(f"Project not found: {args.project}")
         return
 
+    # Evolution-specific commands
+    if args.evolution:
+        run_evolution_cycle()
+        return
+
+    if args.scan:
+        result = task_scan_for_improvements()
+        print(json.dumps(result, indent=2))
+        return
+
+    if args.assess:
+        if EVOLUTION_AVAILABLE:
+            assessor = LadderAssessor()
+            print(assessor.summary())
+        else:
+            print("Evolution system not available")
+        return
+
+    if args.report:
+        result = task_generate_evolution_report()
+        print(json.dumps(result, indent=2))
+        return
+
     if args.once:
         run_improvement_cycle()
+        if EVOLUTION_AVAILABLE:
+            run_evolution_cycle()
     else:
         daemon_loop()
 

@@ -94,7 +94,7 @@ export class ScaffoldedAgent {
 
     // Initialize components
     this.contextManager = new ContextManager({
-      summarizeModel: 'tinydolphin:1.1b'
+      summarizeModel: 'sam-trained:latest'
     });
 
     this.constrainedOutput = new ConstrainedOutput({

@@ -29,6 +29,42 @@
 
     <!-- Right: AI & Recording Status -->
     <div class="status-right">
+      <!-- Character Library Button -->
+      <div class="status-item status-characters" @click="toggleCharacterMenu">
+        <span class="character-icon">🎭</span>
+        <span>Characters</span>
+
+        <!-- Character Dropdown Menu -->
+        <div v-if="showCharacterMenu" class="character-menu" @click.stop>
+          <div class="character-menu-header">
+            <span class="menu-title">Roleplay Characters</span>
+          </div>
+
+          <button class="character-menu-btn" @click="openCharacterLibrary">
+            <span>📚</span> Browse Library
+            <span class="btn-hint">80+ archetypes</span>
+          </button>
+
+          <button class="character-menu-btn" @click="openCharacterCreator">
+            <span>✨</span> Create New
+            <span class="btn-hint">Custom character</span>
+          </button>
+
+          <div v-if="recentCharacters.length > 0" class="recent-characters">
+            <div class="section-title">Recent</div>
+            <button
+              v-for="char in recentCharacters"
+              :key="char.id"
+              class="recent-character-btn"
+              @click="selectCharacter(char)"
+            >
+              <span class="char-name">{{ char.name }}</span>
+              <span class="char-archetype">{{ char.archetype || 'Custom' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Recording Indicator -->
       <div v-if="isRecording" class="status-item status-recording">
         <span class="recording-dot"></span>
@@ -51,10 +87,63 @@
         <span>{{ shortModelName }}</span>
       </div>
 
-      <!-- Ollama Connection -->
-      <div class="status-item status-connection" :class="{ connected: ollamaConnected }">
-        <span class="connection-dot"></span>
-        <span>{{ ollamaConnected ? 'Ollama' : 'Offline' }}</span>
+      <!-- Ollama Connection (Clickable for controls) -->
+      <div
+        class="status-item status-connection"
+        :class="{ connected: ollamaConnected, loading: ollamaLoading }"
+        @click="toggleOllamaMenu"
+      >
+        <span class="connection-dot" :class="{ spinning: ollamaLoading }"></span>
+        <span>{{ ollamaLoading ? 'Loading...' : (ollamaConnected ? 'Ollama' : 'Offline') }}</span>
+
+        <!-- Ollama Dropdown Menu -->
+        <div v-if="showOllamaMenu" class="ollama-menu" @click.stop>
+          <div class="ollama-menu-header">
+            <span class="menu-title">Ollama Controls</span>
+            <span class="model-count">{{ availableModels.length }} models</span>
+          </div>
+
+          <!-- Status -->
+          <div class="ollama-status-row">
+            <span :class="ollamaConnected ? 'status-ok' : 'status-error'">
+              {{ ollamaConnected ? '● Connected' : '○ Disconnected' }}
+            </span>
+          </div>
+
+          <!-- Restart Button -->
+          <button class="ollama-menu-btn" @click="restartOllama" :disabled="ollamaLoading">
+            <span>🔄</span> Restart Ollama
+          </button>
+
+          <!-- Model Selection -->
+          <div class="ollama-models" v-if="availableModels.length > 0">
+            <div class="model-section-title">Models</div>
+            <div
+              v-for="model in availableModels"
+              :key="model"
+              class="model-item"
+              :class="{ active: model === currentModel }"
+            >
+              <span class="model-name">{{ model }}</span>
+              <div class="model-actions">
+                <button
+                  class="model-btn warm"
+                  @click="warmModel(model)"
+                  title="Pre-warm model"
+                >
+                  🔥
+                </button>
+                <button
+                  class="model-btn unload"
+                  @click="unloadModel(model)"
+                  title="Unload from memory"
+                >
+                  💤
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </footer>
@@ -62,6 +151,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { invoke } from '@tauri-apps/api/tauri'
 
 // Props
 const props = defineProps<{
@@ -76,9 +166,139 @@ const props = defineProps<{
 
 // Ollama connection state
 const ollamaConnected = ref(false)
+const ollamaLoading = ref(false)
+const showOllamaMenu = ref(false)
+const availableModels = ref<string[]>([])
+const currentModel = ref<string | null>(null)
+
+// Character menu state
+const showCharacterMenu = ref(false)
+const recentCharacters = ref<Array<{ id: string; name: string; archetype?: string }>>([])
+
+// Emits for character actions
+const emit = defineEmits<{
+  openCharacterLibrary: []
+  openCharacterCreator: []
+  selectCharacter: [character: { id: string; name: string; archetype?: string }]
+}>()
+
+// Toggle character menu
+function toggleCharacterMenu() {
+  showCharacterMenu.value = !showCharacterMenu.value
+  if (showCharacterMenu.value) {
+    showOllamaMenu.value = false
+    loadRecentCharacters()
+  }
+}
+
+// Load recent characters from backend
+async function loadRecentCharacters() {
+  try {
+    const characters = await invoke<Array<{ id: string; name: string; archetype?: string; times_used: number }>>('cmd_list_saved_characters')
+    // Sort by usage and take top 5
+    recentCharacters.value = characters
+      .sort((a, b) => b.times_used - a.times_used)
+      .slice(0, 5)
+  } catch (e) {
+    console.error('Failed to load recent characters:', e)
+  }
+}
+
+// Open character library
+function openCharacterLibrary() {
+  showCharacterMenu.value = false
+  emit('openCharacterLibrary')
+}
+
+// Open character creator
+function openCharacterCreator() {
+  showCharacterMenu.value = false
+  emit('openCharacterCreator')
+}
+
+// Select a recent character
+function selectCharacter(character: { id: string; name: string; archetype?: string }) {
+  showCharacterMenu.value = false
+  emit('selectCharacter', character)
+}
 
 // Notification state
 const activeNotification = ref<{ message: string; type: 'info' | 'success' | 'warning' | 'error' } | null>(null)
+
+// Toggle Ollama menu
+function toggleOllamaMenu() {
+  showOllamaMenu.value = !showOllamaMenu.value
+  if (showOllamaMenu.value) {
+    fetchOllamaStatus()
+  }
+}
+
+// Close menus when clicking outside
+function handleClickOutside(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (!target.closest('.status-connection')) {
+    showOllamaMenu.value = false
+  }
+  if (!target.closest('.status-characters')) {
+    showCharacterMenu.value = false
+  }
+}
+
+// Fetch Ollama status via Tauri command
+async function fetchOllamaStatus() {
+  try {
+    const status = await invoke<{ running: boolean; models: string[]; current_model: string | null }>('cmd_ollama_status')
+    ollamaConnected.value = status.running
+    availableModels.value = status.models
+    currentModel.value = status.current_model
+  } catch (e) {
+    console.error('Failed to get Ollama status:', e)
+    ollamaConnected.value = false
+  }
+}
+
+// Restart Ollama
+async function restartOllama() {
+  ollamaLoading.value = true
+  showNotification('Restarting Ollama...', 'info')
+  try {
+    const result = await invoke<string>('cmd_restart_ollama')
+    showNotification(result, 'success')
+    await fetchOllamaStatus()
+  } catch (e) {
+    showNotification(`Failed to restart: ${e}`, 'error')
+  } finally {
+    ollamaLoading.value = false
+  }
+}
+
+// Warm a model
+async function warmModel(model: string) {
+  ollamaLoading.value = true
+  showNotification(`Warming ${model}...`, 'info')
+  try {
+    const result = await invoke<string>('cmd_warm_model', { model })
+    showNotification(result, 'success')
+    currentModel.value = model
+  } catch (e) {
+    showNotification(`Failed to warm: ${e}`, 'error')
+  } finally {
+    ollamaLoading.value = false
+  }
+}
+
+// Unload a model
+async function unloadModel(model: string) {
+  try {
+    const result = await invoke<string>('cmd_unload_model', { model })
+    showNotification(result, 'success')
+    if (currentModel.value === model) {
+      currentModel.value = null
+    }
+  } catch (e) {
+    showNotification(`Failed to unload: ${e}`, 'error')
+  }
+}
 
 // Display path (shortened for UI)
 const displayPath = computed(() => {
@@ -121,12 +341,14 @@ let connectionCheckInterval: ReturnType<typeof setInterval> | null = null
 onMounted(() => {
   checkOllamaConnection()
   connectionCheckInterval = setInterval(checkOllamaConnection, 10000) // Check every 10s
+  document.addEventListener('click', handleClickOutside)
 })
 
 onUnmounted(() => {
   if (connectionCheckInterval) {
     clearInterval(connectionCheckInterval)
   }
+  document.removeEventListener('click', handleClickOutside)
 })
 
 // Expose method to show notifications
@@ -293,5 +515,268 @@ defineExpose({ showNotification })
 
 .status-item:hover {
   background: var(--warp-bg-hover);
+}
+
+/* Ollama Menu */
+.status-connection {
+  position: relative;
+  cursor: pointer;
+}
+
+.status-connection.loading .connection-dot {
+  background: var(--warp-warning);
+}
+
+.connection-dot.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.ollama-menu {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 8px;
+  min-width: 220px;
+  background: var(--warp-bg-elevated);
+  border: 1px solid var(--warp-border-subtle);
+  border-radius: var(--warp-radius-md);
+  box-shadow: var(--warp-shadow-lg);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.ollama-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--warp-space-2) var(--warp-space-3);
+  background: var(--warp-bg-surface);
+  border-bottom: 1px solid var(--warp-border-subtle);
+}
+
+.menu-title {
+  font-weight: var(--warp-weight-medium);
+  color: var(--warp-text-primary);
+}
+
+.model-count {
+  font-size: var(--warp-text-xs);
+  color: var(--warp-text-tertiary);
+}
+
+.ollama-status-row {
+  padding: var(--warp-space-2) var(--warp-space-3);
+  font-size: var(--warp-text-sm);
+}
+
+.status-ok {
+  color: var(--warp-success);
+}
+
+.status-error {
+  color: var(--warp-error);
+}
+
+.ollama-menu-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--warp-space-2);
+  width: 100%;
+  padding: var(--warp-space-2) var(--warp-space-3);
+  background: none;
+  border: none;
+  color: var(--warp-text-primary);
+  font-size: var(--warp-text-sm);
+  cursor: pointer;
+  transition: background var(--warp-transition-fast);
+}
+
+.ollama-menu-btn:hover:not(:disabled) {
+  background: var(--warp-bg-hover);
+}
+
+.ollama-menu-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ollama-models {
+  border-top: 1px solid var(--warp-border-subtle);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.model-section-title {
+  padding: var(--warp-space-2) var(--warp-space-3);
+  font-size: var(--warp-text-xs);
+  color: var(--warp-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.model-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--warp-space-1) var(--warp-space-3);
+  transition: background var(--warp-transition-fast);
+}
+
+.model-item:hover {
+  background: var(--warp-bg-hover);
+}
+
+.model-item.active {
+  background: var(--warp-accent-primary-subtle);
+}
+
+.model-name {
+  font-family: var(--warp-font-mono);
+  font-size: var(--warp-text-xs);
+  color: var(--warp-text-secondary);
+}
+
+.model-item.active .model-name {
+  color: var(--warp-accent-primary);
+  font-weight: var(--warp-weight-medium);
+}
+
+.model-actions {
+  display: flex;
+  gap: var(--warp-space-1);
+}
+
+.model-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  border-radius: var(--warp-radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  transition: background var(--warp-transition-fast);
+}
+
+.model-btn:hover {
+  background: var(--warp-bg-surface);
+}
+
+.model-btn.warm:hover {
+  background: rgba(255, 165, 0, 0.2);
+}
+
+.model-btn.unload:hover {
+  background: rgba(100, 100, 255, 0.2);
+}
+
+/* Character Menu */
+.status-characters {
+  position: relative;
+  cursor: pointer;
+  color: var(--warp-accent-secondary);
+}
+
+.status-characters:hover {
+  color: var(--warp-accent-primary);
+}
+
+.character-icon {
+  font-size: 14px;
+}
+
+.character-menu {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 8px;
+  min-width: 240px;
+  background: var(--warp-bg-elevated);
+  border: 1px solid var(--warp-border-subtle);
+  border-radius: var(--warp-radius-md);
+  box-shadow: var(--warp-shadow-lg);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.character-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--warp-space-2) var(--warp-space-3);
+  background: var(--warp-bg-surface);
+  border-bottom: 1px solid var(--warp-border-subtle);
+}
+
+.character-menu-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--warp-space-2);
+  width: 100%;
+  padding: var(--warp-space-2) var(--warp-space-3);
+  background: none;
+  border: none;
+  color: var(--warp-text-primary);
+  font-size: var(--warp-text-sm);
+  cursor: pointer;
+  transition: background var(--warp-transition-fast);
+  text-align: left;
+}
+
+.character-menu-btn:hover {
+  background: var(--warp-bg-hover);
+}
+
+.btn-hint {
+  margin-left: auto;
+  font-size: var(--warp-text-xs);
+  color: var(--warp-text-tertiary);
+}
+
+.recent-characters {
+  border-top: 1px solid var(--warp-border-subtle);
+  padding: var(--warp-space-1) 0;
+}
+
+.section-title {
+  padding: var(--warp-space-1) var(--warp-space-3);
+  font-size: var(--warp-text-xs);
+  color: var(--warp-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.recent-character-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: var(--warp-space-2) var(--warp-space-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background var(--warp-transition-fast);
+}
+
+.recent-character-btn:hover {
+  background: var(--warp-bg-hover);
+}
+
+.char-name {
+  color: var(--warp-text-primary);
+  font-size: var(--warp-text-sm);
+  font-weight: var(--warp-weight-medium);
+}
+
+.char-archetype {
+  color: var(--warp-text-tertiary);
+  font-size: var(--warp-text-xs);
 }
 </style>

@@ -290,6 +290,38 @@ const defaultProjects: Project[] = [
     runningTasks: [],
     tags: ['video', 'ai'],
   },
+  {
+    id: 'site-ripper',
+    name: 'Site Ripper',
+    icon: '📊',
+    description: 'Training data collection pipeline - scrapers for LLM training',
+    status: 'healthy',
+    metrics: { linesOfCode: 0, filesModified: 0, lastActivity: new Date() },
+    goals: [
+      { id: 'g1', description: 'Index 500K+ articles', status: 'in_progress', progress: 72 },
+      { id: 'g2', description: 'Download all indexed content', status: 'in_progress', progress: 15 },
+      { id: 'g3', description: 'Process to training format', status: 'in_progress', progress: 5 },
+      { id: 'g4', description: 'Build Interview Magazine scraper', status: 'pending' },
+      { id: 'g5', description: 'Build GQ/Esquire scraper', status: 'pending' },
+    ],
+    suggestedTasks: [
+      { id: 't1', description: 'Start Nifty download (39K pending)', estimatedHours: 8, command: 'scraper:nifty-download' },
+      { id: 't2', description: 'Start WWD download (244K pending)', estimatedHours: 24, command: 'scraper:wwd-download' },
+      { id: 't3', description: 'Index FirstView archive', estimatedHours: 4, command: 'scraper:firstview-index' },
+      { id: 't4', description: 'Start V Magazine download', estimatedHours: 6, command: 'scraper:vmag-download' },
+      { id: 't5', description: 'Start W Magazine download', estimatedHours: 12, command: 'scraper:wmag-download' },
+      { id: 't6', description: 'Build Interview Magazine scraper', estimatedHours: 2, command: 'scraper:build-interview' },
+      { id: 't7', description: 'Build Literotica scraper', estimatedHours: 3, command: 'scraper:build-literotica' },
+      { id: 't8', description: 'Process training data pipeline', estimatedHours: 4, command: 'scraper:process-training' },
+    ],
+    runningTasks: [
+      { id: 'r1', description: 'Nifty Archive scraper', progress: 38, eta: '~6h', pid: 55111, startedAt: new Date() },
+      { id: 'r2', description: 'V Magazine scraper', progress: 34, eta: '~4h', pid: 16899, startedAt: new Date() },
+      { id: 'r3', description: 'W Magazine scraper', progress: 7, eta: '~12h', pid: 16884, startedAt: new Date() },
+    ],
+    path: '/Users/davidquinton/ReverseLab/SAM/scrapers',
+    tags: ['data', 'training', 'scraping'],
+  },
 ]
 
 // Reactive state

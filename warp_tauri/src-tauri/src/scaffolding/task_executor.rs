@@ -9,7 +9,6 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::process::Command;
-use tokio::sync::mpsc;
 
 /// Types of executable tasks
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -25,6 +24,7 @@ pub enum TaskType {
     ProjectScan { path: Option<String> },
     Refresh,
     ModeExit,  // Exit roleplay/creative mode
+    SetTokens { limit: u32 },  // Dynamic token limit
     Custom { action: String, params: serde_json::Value },
 }
 
@@ -93,8 +93,16 @@ impl TaskExecutor {
         }
 
         // Mode exit commands
-        if lower == "exit roleplay" || lower == "exit creative mode" || lower == "exit creative" {
+        if lower == "exit roleplay" || lower == "exit creative mode" || lower == "exit creative" || lower == "exit" {
             return Some(TaskType::ModeExit);
+        }
+
+        // Token limit commands: "tokens 200", "set tokens 200", "limit 200"
+        if lower.starts_with("tokens ") || lower.starts_with("set tokens ") || lower.starts_with("limit ") {
+            let num_str = lower.split_whitespace().last().unwrap_or("150");
+            if let Ok(limit) = num_str.parse::<u32>() {
+                return Some(TaskType::SetTokens { limit });
+            }
         }
 
         // Special commands
@@ -151,13 +159,33 @@ impl TaskExecutor {
                 self.execute_file_create(&path, &content).await
             }
             TaskType::ModeExit => {
+                // Clear session mode state (sync operation)
+                {
+                    use crate::scaffolding::session_state::session;
+                    session().exit_mode();
+                }
                 TaskResult {
                     success: true,
                     task_type: "mode_exit".to_string(),
-                    output: "Exited mode. Back to normal assistant mode.".to_string(),
+                    output: "✓ Exited mode. Back to normal.".to_string(),
                     error: None,
                     duration_ms: 0,
-                    changes_made: vec![],
+                    changes_made: vec!["mode: normal".to_string()],
+                }
+            }
+            TaskType::SetTokens { limit } => {
+                // Set token limit (sync operation)
+                {
+                    use crate::scaffolding::session_state::session;
+                    session().set_max_tokens(limit);
+                }
+                TaskResult {
+                    success: true,
+                    task_type: "set_tokens".to_string(),
+                    output: format!("✓ Token limit set to {}", limit),
+                    error: None,
+                    duration_ms: 0,
+                    changes_made: vec![format!("max_tokens: {}", limit)],
                 }
             }
             TaskType::Custom { action, params } => {

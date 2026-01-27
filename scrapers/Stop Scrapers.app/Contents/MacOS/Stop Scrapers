@@ -1,0 +1,6 @@
+#!/bin/bash
+# Stop SAM Scrapers
+DIR="$(dirname "$0")/../../.."
+cd "$DIR"
+./scraper_system/.venv/bin/python start_scrapers.py stop
+osascript -e 'display notification "Scrapers stopped" with title "SAM Scrapers"'

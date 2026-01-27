@@ -39,7 +39,7 @@ describe('useSessionStore', () => {
     it('should update session state', () => {
       const store = useSessionStore()
       const tabs = [
-        { id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: null },
+        { id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: undefined },
         { id: 'tab-2', name: 'Editor', kind: 'editor' as const, content: '' },
       ]
       const paneCwds = new Map([['pane-1', '/home/user']])
@@ -55,7 +55,7 @@ describe('useSessionStore', () => {
 
     it('should have recoverable session after update', () => {
       const store = useSessionStore()
-      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: null }]
+      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: undefined }]
 
       store.updateSession(tabs, 'tab-1', new Map())
       store.forceSave()
@@ -65,7 +65,7 @@ describe('useSessionStore', () => {
 
     it('should clear session', () => {
       const store = useSessionStore()
-      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: null }]
+      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: undefined }]
 
       store.updateSession(tabs, 'tab-1', new Map())
       store.forceSave()
@@ -79,7 +79,7 @@ describe('useSessionStore', () => {
   describe('recovery hints', () => {
     it('should store recovery hints for panes', () => {
       const store = useSessionStore()
-      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: null }]
+      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: undefined }]
 
       store.updateSession(tabs, 'tab-1', new Map())
       store.updateRecoveryHint('pane-1', {
@@ -96,7 +96,7 @@ describe('useSessionStore', () => {
 
     it('should update pane CWD separately', () => {
       const store = useSessionStore()
-      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: null }]
+      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: undefined }]
 
       store.updateSession(tabs, 'tab-1', new Map())
       store.updatePaneCwd('pane-1', '/var/log')
@@ -110,7 +110,7 @@ describe('useSessionStore', () => {
   describe('session expiry', () => {
     it('should not recover session older than 24 hours', () => {
       const store = useSessionStore()
-      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: null }]
+      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: undefined }]
 
       store.updateSession(tabs, 'tab-1', new Map())
       store.forceSave()
@@ -123,7 +123,7 @@ describe('useSessionStore', () => {
 
     it('should recover session within 24 hours', () => {
       const store = useSessionStore()
-      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: null }]
+      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: undefined }]
 
       store.updateSession(tabs, 'tab-1', new Map())
       store.forceSave()
@@ -138,7 +138,7 @@ describe('useSessionStore', () => {
   describe('auto-save', () => {
     it('should auto-save periodically after starting', () => {
       const store = useSessionStore()
-      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: null }]
+      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: undefined }]
 
       store.updateSession(tabs, 'tab-1', new Map())
       store.startAutoSave()
@@ -155,7 +155,7 @@ describe('useSessionStore', () => {
 
     it('should call forceSave during auto-save', () => {
       const store = useSessionStore()
-      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: null }]
+      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: undefined }]
 
       store.updateSession(tabs, 'tab-1', new Map())
       store.startAutoSave()
@@ -191,14 +191,14 @@ describe('useSessionStore', () => {
       const store = useSessionStore()
 
       // First save
-      const tabs1 = [{ id: 'tab-1', name: 'Tab 1', kind: 'terminal' as const, layout: null }]
+      const tabs1 = [{ id: 'tab-1', name: 'Tab 1', kind: 'terminal' as const, layout: undefined }]
       store.updateSession(tabs1, 'tab-1', new Map())
       store.forceSave()
 
       // Second save with different tabs
       const tabs2 = [
-        { id: 'tab-1', name: 'Tab 1', kind: 'terminal' as const, layout: null },
-        { id: 'tab-2', name: 'Tab 2', kind: 'terminal' as const, layout: null },
+        { id: 'tab-1', name: 'Tab 1', kind: 'terminal' as const, layout: undefined },
+        { id: 'tab-2', name: 'Tab 2', kind: 'terminal' as const, layout: undefined },
       ]
       store.updateSession(tabs2, 'tab-2', new Map())
       store.forceSave()
@@ -221,7 +221,7 @@ describe('useSessionStore', () => {
 
     it('should handle large CWD maps', () => {
       const store = useSessionStore()
-      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: null }]
+      const tabs = [{ id: 'tab-1', name: 'Terminal', kind: 'terminal' as const, layout: undefined }]
       const cwds = new Map<string, string>()
 
       // Add 100 pane CWDs

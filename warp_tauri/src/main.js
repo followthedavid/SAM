@@ -2,6 +2,12 @@ import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
 
+// Detect Tauri and enable transparency
+if (window.__TAURI__) {
+  document.documentElement.classList.add('tauri')
+  document.body.classList.add('tauri')
+}
+
 const app = createApp(App)
 
 // Global error handler to prevent blank screens

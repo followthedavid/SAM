@@ -1,10 +1,136 @@
 // Pane Manager - Split Pane Terminal Management
 //
 // Manages multiple terminal panes with layouts.
-// Warp/iTerm2 style split panes.
+// Warp/iTerm2 style split panes with tab colors and naming.
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+// =============================================================================
+// TAB COLORS
+// =============================================================================
+
+/// Preset tab colors (Warp-style)
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum TabColorPreset {
+    Default,
+    Red,
+    Orange,
+    Yellow,
+    Green,
+    Cyan,
+    Blue,
+    Purple,
+    Pink,
+    Gray,
+}
+
+impl TabColorPreset {
+    /// Get RGB values for preset
+    pub fn rgb(&self) -> (u8, u8, u8) {
+        match self {
+            TabColorPreset::Default => (128, 128, 128),
+            TabColorPreset::Red => (239, 68, 68),
+            TabColorPreset::Orange => (249, 115, 22),
+            TabColorPreset::Yellow => (234, 179, 8),
+            TabColorPreset::Green => (34, 197, 94),
+            TabColorPreset::Cyan => (6, 182, 212),
+            TabColorPreset::Blue => (59, 130, 246),
+            TabColorPreset::Purple => (168, 85, 247),
+            TabColorPreset::Pink => (236, 72, 153),
+            TabColorPreset::Gray => (107, 114, 128),
+        }
+    }
+
+    /// Get all presets
+    pub fn all() -> Vec<TabColorPreset> {
+        vec![
+            TabColorPreset::Default,
+            TabColorPreset::Red,
+            TabColorPreset::Orange,
+            TabColorPreset::Yellow,
+            TabColorPreset::Green,
+            TabColorPreset::Cyan,
+            TabColorPreset::Blue,
+            TabColorPreset::Purple,
+            TabColorPreset::Pink,
+            TabColorPreset::Gray,
+        ]
+    }
+}
+
+/// Tab color - preset or custom RGB
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum TabColor {
+    Preset(TabColorPreset),
+    Custom { r: u8, g: u8, b: u8 },
+}
+
+impl Default for TabColor {
+    fn default() -> Self {
+        TabColor::Preset(TabColorPreset::Default)
+    }
+}
+
+impl TabColor {
+    /// Get RGB values
+    pub fn rgb(&self) -> (u8, u8, u8) {
+        match self {
+            TabColor::Preset(p) => p.rgb(),
+            TabColor::Custom { r, g, b } => (*r, *g, *b),
+        }
+    }
+
+    /// Create from hex string (e.g., "#FF5733")
+    pub fn from_hex(hex: &str) -> Option<Self> {
+        let hex = hex.trim_start_matches('#');
+        if hex.len() != 6 {
+            return None;
+        }
+        let r = u8::from_str_radix(&hex[0..2], 16).ok()?;
+        let g = u8::from_str_radix(&hex[2..4], 16).ok()?;
+        let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
+        Some(TabColor::Custom { r, g, b })
+    }
+
+    /// Convert to hex string
+    pub fn to_hex(&self) -> String {
+        let (r, g, b) = self.rgb();
+        format!("#{:02X}{:02X}{:02X}", r, g, b)
+    }
+}
+
+/// Tab icon (optional)
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum TabIcon {
+    /// Emoji icon
+    Emoji(String),
+    /// Named icon (for icon fonts)
+    Named(String),
+    /// No icon
+    None,
+}
+
+impl Default for TabIcon {
+    fn default() -> Self {
+        TabIcon::None
+    }
+}
+
+// =============================================================================
+// DIRECTORY COLOR RULES
+// =============================================================================
+
+/// Rule for auto-assigning tab colors based on directory
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DirectoryColorRule {
+    /// Path pattern (supports glob-like matching)
+    pub pattern: String,
+    /// Color to assign
+    pub color: TabColor,
+    /// Optional icon
+    pub icon: Option<TabIcon>,
+}
 
 // =============================================================================
 // TYPES
@@ -18,6 +144,8 @@ pub struct Pane {
     pub cwd: String,
     pub active: bool,
     pub created_at: i64,
+    /// Running process name
+    pub process: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -46,7 +174,17 @@ pub enum SplitDirection {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tab {
     pub id: String,
+    /// Custom name (if set)
     pub name: Option<String>,
+    /// Tab color
+    pub color: TabColor,
+    /// Tab icon
+    pub icon: TabIcon,
+    /// Whether tab is pinned (stays at start, can't be closed accidentally)
+    pub pinned: bool,
+    /// Auto-name based on process/directory
+    pub auto_name: bool,
+    /// Layout
     pub layout: PaneLayout,
     pub created_at: i64,
 }
@@ -65,6 +203,10 @@ pub struct PaneManager {
     tabs: Vec<Tab>,
     panes: HashMap<String, Pane>,
     active_tab: usize,
+    /// Directory-based color rules
+    directory_rules: Vec<DirectoryColorRule>,
+    /// Default color for new tabs
+    default_color: TabColor,
 }
 
 impl PaneManager {
@@ -73,11 +215,49 @@ impl PaneManager {
             tabs: Vec::new(),
             panes: HashMap::new(),
             active_tab: 0,
+            directory_rules: Self::default_directory_rules(),
+            default_color: TabColor::default(),
         };
 
         // Create initial tab with single pane
         manager.new_tab(None);
         manager
+    }
+
+    /// Default directory color rules
+    fn default_directory_rules() -> Vec<DirectoryColorRule> {
+        vec![
+            DirectoryColorRule {
+                pattern: "*/Projects/*".to_string(),
+                color: TabColor::Preset(TabColorPreset::Blue),
+                icon: Some(TabIcon::Emoji("📁".to_string())),
+            },
+            DirectoryColorRule {
+                pattern: "*/.git".to_string(),
+                color: TabColor::Preset(TabColorPreset::Orange),
+                icon: Some(TabIcon::Emoji("🔀".to_string())),
+            },
+            DirectoryColorRule {
+                pattern: "*/node_modules/*".to_string(),
+                color: TabColor::Preset(TabColorPreset::Green),
+                icon: Some(TabIcon::Emoji("📦".to_string())),
+            },
+            DirectoryColorRule {
+                pattern: "*/.config/*".to_string(),
+                color: TabColor::Preset(TabColorPreset::Purple),
+                icon: Some(TabIcon::Emoji("⚙️".to_string())),
+            },
+            DirectoryColorRule {
+                pattern: "*/Documents/*".to_string(),
+                color: TabColor::Preset(TabColorPreset::Cyan),
+                icon: Some(TabIcon::Emoji("📄".to_string())),
+            },
+            DirectoryColorRule {
+                pattern: "*/Downloads/*".to_string(),
+                color: TabColor::Preset(TabColorPreset::Yellow),
+                icon: Some(TabIcon::Emoji("⬇️".to_string())),
+            },
+        ]
     }
 
     // ==========================================================================
@@ -88,10 +268,43 @@ impl PaneManager {
     pub fn new_tab(&mut self, name: Option<&str>) -> &Tab {
         let pane = self.create_pane();
         let pane_id = pane.id.clone();
+        let cwd = pane.cwd.clone();
+
+        // Determine color based on directory rules
+        let (color, icon) = self.color_for_directory(&cwd);
 
         let tab = Tab {
             id: format!("tab_{}", chrono::Utc::now().timestamp_millis()),
             name: name.map(|s| s.to_string()),
+            color,
+            icon: icon.unwrap_or_default(),
+            pinned: false,
+            auto_name: name.is_none(), // Auto-name if no explicit name
+            layout: PaneLayout {
+                root: LayoutNode::Pane(pane_id.clone()),
+                active_pane: Some(pane_id),
+            },
+            created_at: chrono::Utc::now().timestamp(),
+        };
+
+        self.tabs.push(tab);
+        self.active_tab = self.tabs.len() - 1;
+
+        &self.tabs[self.active_tab]
+    }
+
+    /// Create a new tab with specific color
+    pub fn new_tab_with_color(&mut self, name: Option<&str>, color: TabColor) -> &Tab {
+        let pane = self.create_pane();
+        let pane_id = pane.id.clone();
+
+        let tab = Tab {
+            id: format!("tab_{}", chrono::Utc::now().timestamp_millis()),
+            name: name.map(|s| s.to_string()),
+            color,
+            icon: TabIcon::None,
+            pinned: false,
+            auto_name: name.is_none(),
             layout: PaneLayout {
                 root: LayoutNode::Pane(pane_id.clone()),
                 active_pane: Some(pane_id),
@@ -162,6 +375,244 @@ impl PaneManager {
     pub fn rename_tab(&mut self, tab_id: &str, name: &str) -> bool {
         if let Some(tab) = self.tabs.iter_mut().find(|t| t.id == tab_id) {
             tab.name = Some(name.to_string());
+            tab.auto_name = false; // Disable auto-naming when explicitly renamed
+            true
+        } else {
+            false
+        }
+    }
+
+    // ==========================================================================
+    // Tab Color and Appearance
+    // ==========================================================================
+
+    /// Set tab color
+    pub fn set_tab_color(&mut self, tab_id: &str, color: TabColor) -> bool {
+        if let Some(tab) = self.tabs.iter_mut().find(|t| t.id == tab_id) {
+            tab.color = color;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Set tab color by preset
+    pub fn set_tab_color_preset(&mut self, tab_id: &str, preset: TabColorPreset) -> bool {
+        self.set_tab_color(tab_id, TabColor::Preset(preset))
+    }
+
+    /// Set tab color by hex
+    pub fn set_tab_color_hex(&mut self, tab_id: &str, hex: &str) -> bool {
+        if let Some(color) = TabColor::from_hex(hex) {
+            self.set_tab_color(tab_id, color)
+        } else {
+            false
+        }
+    }
+
+    /// Set tab icon
+    pub fn set_tab_icon(&mut self, tab_id: &str, icon: TabIcon) -> bool {
+        if let Some(tab) = self.tabs.iter_mut().find(|t| t.id == tab_id) {
+            tab.icon = icon;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Set tab icon by emoji
+    pub fn set_tab_emoji(&mut self, tab_id: &str, emoji: &str) -> bool {
+        self.set_tab_icon(tab_id, TabIcon::Emoji(emoji.to_string()))
+    }
+
+    /// Toggle tab pinned status
+    pub fn toggle_pin(&mut self, tab_id: &str) -> Option<bool> {
+        if let Some(tab) = self.tabs.iter_mut().find(|t| t.id == tab_id) {
+            tab.pinned = !tab.pinned;
+            Some(tab.pinned)
+        } else {
+            None
+        }
+    }
+
+    /// Pin tab
+    pub fn pin_tab(&mut self, tab_id: &str) -> bool {
+        if let Some(tab) = self.tabs.iter_mut().find(|t| t.id == tab_id) {
+            tab.pinned = true;
+            // Move pinned tabs to the beginning
+            self.sort_tabs_by_pinned();
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Unpin tab
+    pub fn unpin_tab(&mut self, tab_id: &str) -> bool {
+        if let Some(tab) = self.tabs.iter_mut().find(|t| t.id == tab_id) {
+            tab.pinned = false;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Sort tabs so pinned ones are at the beginning
+    fn sort_tabs_by_pinned(&mut self) {
+        // Get current active tab ID
+        let active_id = self.tabs.get(self.active_tab).map(|t| t.id.clone());
+
+        // Stable sort: pinned tabs first
+        self.tabs.sort_by(|a, b| b.pinned.cmp(&a.pinned));
+
+        // Restore active tab index
+        if let Some(id) = active_id {
+            if let Some(new_idx) = self.tabs.iter().position(|t| t.id == id) {
+                self.active_tab = new_idx;
+            }
+        }
+    }
+
+    /// Get color for a directory based on rules
+    fn color_for_directory(&self, path: &str) -> (TabColor, Option<TabIcon>) {
+        for rule in &self.directory_rules {
+            if Self::matches_pattern(path, &rule.pattern) {
+                return (rule.color.clone(), rule.icon.clone());
+            }
+        }
+        (self.default_color.clone(), None)
+    }
+
+    /// Simple glob-like pattern matching
+    fn matches_pattern(path: &str, pattern: &str) -> bool {
+        // Simple * matching
+        if pattern == "*" {
+            return true;
+        }
+
+        let parts: Vec<&str> = pattern.split('*').collect();
+        if parts.len() == 1 {
+            return path == pattern;
+        }
+
+        let mut pos = 0;
+        for (i, part) in parts.iter().enumerate() {
+            if part.is_empty() {
+                continue;
+            }
+            if let Some(found) = path[pos..].find(part) {
+                if i == 0 && found != 0 {
+                    return false; // First part must match at start
+                }
+                pos += found + part.len();
+            } else {
+                return false;
+            }
+        }
+
+        // Last part must match at end if pattern doesn't end with *
+        if !pattern.ends_with('*') {
+            if let Some(last) = parts.last() {
+                if !last.is_empty() && !path.ends_with(last) {
+                    return false;
+                }
+            }
+        }
+
+        true
+    }
+
+    /// Add a directory color rule
+    pub fn add_directory_rule(&mut self, pattern: &str, color: TabColor, icon: Option<TabIcon>) {
+        self.directory_rules.push(DirectoryColorRule {
+            pattern: pattern.to_string(),
+            color,
+            icon,
+        });
+    }
+
+    /// Remove a directory color rule
+    pub fn remove_directory_rule(&mut self, pattern: &str) -> bool {
+        let original_len = self.directory_rules.len();
+        self.directory_rules.retain(|r| r.pattern != pattern);
+        self.directory_rules.len() < original_len
+    }
+
+    /// Get all directory rules
+    pub fn directory_rules(&self) -> &[DirectoryColorRule] {
+        &self.directory_rules
+    }
+
+    /// Set default tab color
+    pub fn set_default_color(&mut self, color: TabColor) {
+        self.default_color = color;
+    }
+
+    /// Update tab appearance based on active pane's directory
+    pub fn update_tab_from_directory(&mut self, tab_id: &str) -> bool {
+        // First collect the info we need
+        let tab_info = self.tabs.iter().find(|t| t.id == tab_id).and_then(|tab| {
+            if !tab.auto_name {
+                return None;
+            }
+            tab.layout.active_pane.as_ref().and_then(|pane_id| {
+                self.panes.get(pane_id).map(|pane| pane.cwd.clone())
+            })
+        });
+
+        if let Some(cwd) = tab_info {
+            let (color, icon) = self.color_for_directory(&cwd);
+            let dir_name = std::path::Path::new(&cwd)
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string());
+
+            if let Some(tab) = self.tabs.iter_mut().find(|t| t.id == tab_id) {
+                tab.color = color;
+                if let Some(i) = icon {
+                    tab.icon = i;
+                }
+                // Auto-set name to directory name if auto_name is enabled
+                if tab.auto_name && tab.name.is_none() {
+                    tab.name = dir_name;
+                }
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Get display name for a tab (auto-generated if not set)
+    pub fn get_tab_display_name(&self, tab_id: &str) -> Option<String> {
+        let tab = self.tabs.iter().find(|t| t.id == tab_id)?;
+
+        // If explicit name is set, use it
+        if let Some(ref name) = tab.name {
+            return Some(name.clone());
+        }
+
+        // Try to get name from active pane's process or directory
+        if let Some(pane_id) = &tab.layout.active_pane {
+            if let Some(pane) = self.panes.get(pane_id) {
+                // Prefer process name
+                if let Some(ref process) = pane.process {
+                    return Some(process.clone());
+                }
+                // Fall back to directory name
+                return std::path::Path::new(&pane.cwd)
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string());
+            }
+        }
+
+        // Default to tab index
+        self.tabs.iter().position(|t| t.id == tab_id)
+            .map(|i| format!("Tab {}", i + 1))
+    }
+
+    /// Set pane's running process
+    pub fn set_pane_process(&mut self, pane_id: &str, process: Option<&str>) -> bool {
+        if let Some(pane) = self.panes.get_mut(pane_id) {
+            pane.process = process.map(|s| s.to_string());
             true
         } else {
             false
@@ -193,6 +644,7 @@ impl PaneManager {
                 .unwrap_or_else(|_| ".".to_string()),
             active: true,
             created_at: chrono::Utc::now().timestamp(),
+            process: None,
         };
 
         self.panes.insert(pane.id.clone(), pane.clone());
@@ -630,5 +1082,130 @@ mod tests {
             assert!(size.cols >= 49 && size.cols <= 51);
             assert_eq!(size.rows, 50);
         }
+    }
+
+    #[test]
+    fn test_tab_color_preset() {
+        let mut manager = PaneManager::new();
+        let tab_id = manager.active_tab().unwrap().id.clone();
+
+        assert!(manager.set_tab_color_preset(&tab_id, TabColorPreset::Blue));
+
+        let tab = manager.active_tab().unwrap();
+        assert_eq!(tab.color, TabColor::Preset(TabColorPreset::Blue));
+    }
+
+    #[test]
+    fn test_tab_color_hex() {
+        let mut manager = PaneManager::new();
+        let tab_id = manager.active_tab().unwrap().id.clone();
+
+        assert!(manager.set_tab_color_hex(&tab_id, "#FF5733"));
+
+        let tab = manager.active_tab().unwrap();
+        if let TabColor::Custom { r, g, b } = tab.color {
+            assert_eq!(r, 255);
+            assert_eq!(g, 87);
+            assert_eq!(b, 51);
+        } else {
+            panic!("Expected custom color");
+        }
+    }
+
+    #[test]
+    fn test_tab_icon_emoji() {
+        let mut manager = PaneManager::new();
+        let tab_id = manager.active_tab().unwrap().id.clone();
+
+        assert!(manager.set_tab_emoji(&tab_id, "🚀"));
+
+        let tab = manager.active_tab().unwrap();
+        assert_eq!(tab.icon, TabIcon::Emoji("🚀".to_string()));
+    }
+
+    #[test]
+    fn test_pin_tab() {
+        let mut manager = PaneManager::new();
+        manager.new_tab(Some("Second"));
+
+        let first_tab_id = manager.tabs[0].id.clone();
+        let second_tab_id = manager.tabs[1].id.clone();
+
+        // Pin second tab
+        assert!(manager.pin_tab(&second_tab_id));
+
+        // Pinned tabs should be first
+        assert!(manager.tabs[0].pinned);
+        assert_eq!(manager.tabs[0].id, second_tab_id);
+        assert!(!manager.tabs[1].pinned);
+    }
+
+    #[test]
+    fn test_color_from_hex() {
+        let color = TabColor::from_hex("#FF0000").unwrap();
+        assert_eq!(color.rgb(), (255, 0, 0));
+
+        let color2 = TabColor::from_hex("00FF00").unwrap();
+        assert_eq!(color2.rgb(), (0, 255, 0));
+
+        assert!(TabColor::from_hex("invalid").is_none());
+    }
+
+    #[test]
+    fn test_color_to_hex() {
+        let color = TabColor::Preset(TabColorPreset::Red);
+        assert_eq!(color.to_hex(), "#EF4444");
+
+        let custom = TabColor::Custom { r: 255, g: 128, b: 0 };
+        assert_eq!(custom.to_hex(), "#FF8000");
+    }
+
+    #[test]
+    fn test_pattern_matching() {
+        assert!(PaneManager::matches_pattern("/home/user/Projects/myapp", "*/Projects/*"));
+        assert!(PaneManager::matches_pattern("/home/user/.config/app", "*/.config/*"));
+        assert!(!PaneManager::matches_pattern("/home/user/Documents", "*/Projects/*"));
+    }
+
+    #[test]
+    fn test_rename_disables_auto_name() {
+        let mut manager = PaneManager::new();
+        let tab_id = manager.active_tab().unwrap().id.clone();
+
+        assert!(manager.tabs[0].auto_name); // Default is auto-name
+
+        manager.rename_tab(&tab_id, "My Custom Tab");
+
+        assert!(!manager.tabs[0].auto_name); // Should be disabled after rename
+        assert_eq!(manager.tabs[0].name, Some("My Custom Tab".to_string()));
+    }
+
+    #[test]
+    fn test_tab_display_name() {
+        let mut manager = PaneManager::new();
+        let tab_id = manager.active_tab().unwrap().id.clone();
+
+        // Should return something (either directory name or Tab 1)
+        let name = manager.get_tab_display_name(&tab_id);
+        assert!(name.is_some());
+    }
+
+    #[test]
+    fn test_directory_rules() {
+        let mut manager = PaneManager::new();
+
+        // Add custom rule
+        manager.add_directory_rule(
+            "*/custom/*",
+            TabColor::Preset(TabColorPreset::Pink),
+            Some(TabIcon::Emoji("💖".to_string()))
+        );
+
+        let (color, icon) = manager.color_for_directory("/home/user/custom/project");
+        assert_eq!(color, TabColor::Preset(TabColorPreset::Pink));
+        assert_eq!(icon, Some(TabIcon::Emoji("💖".to_string())));
+
+        // Remove rule
+        assert!(manager.remove_directory_rule("*/custom/*"));
     }
 }

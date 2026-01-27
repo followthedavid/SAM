@@ -70,7 +70,7 @@ pub fn run_phase3_batch_inproc(
     
     // Get batch and execute each entry
     {
-        let mut state_guard = state.lock().unwrap();
+        let state_guard = state.lock().unwrap();
         
         let batch = match state_guard.get_batch(batch_id) {
             Some(b) => b.clone(),

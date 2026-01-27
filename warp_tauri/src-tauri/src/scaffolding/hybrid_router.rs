@@ -9,7 +9,111 @@
 // Goal: Handle 80%+ of requests without heavy LLM usage
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+
+// =============================================================================
+// REASONING LEVELS (Warp-style)
+// =============================================================================
+
+/// Reasoning level for LLM inference - controls depth vs speed tradeoff
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub enum ReasoningLevel {
+    /// No extended reasoning - fastest, for simple tasks
+    Off,
+    /// Low reasoning - quick analysis, basic inference
+    Low,
+    /// Medium reasoning - balanced (default)
+    #[default]
+    Medium,
+    /// High reasoning - deeper analysis, better quality
+    High,
+    /// Extra-high reasoning - maximum depth, slowest
+    Xhigh,
+    /// Thinking mode (Claude extended thinking)
+    Thinking,
+}
+
+impl ReasoningLevel {
+    /// Get request multiplier for cost estimation
+    pub fn cost_multiplier(&self) -> f32 {
+        match self {
+            Self::Off => 0.5,
+            Self::Low => 0.7,
+            Self::Medium => 1.0,
+            Self::High => 1.5,
+            Self::Xhigh => 2.0,
+            Self::Thinking => 2.5,
+        }
+    }
+
+    /// Get quality score (0-1)
+    pub fn quality_score(&self) -> f32 {
+        match self {
+            Self::Off => 0.5,
+            Self::Low => 0.6,
+            Self::Medium => 0.7,
+            Self::High => 0.8,
+            Self::Xhigh => 0.9,
+            Self::Thinking => 0.95,
+        }
+    }
+
+    /// Get speed score (0-1, higher = faster)
+    pub fn speed_score(&self) -> f32 {
+        match self {
+            Self::Off => 0.95,
+            Self::Low => 0.8,
+            Self::Medium => 0.65,
+            Self::High => 0.5,
+            Self::Xhigh => 0.35,
+            Self::Thinking => 0.3,
+        }
+    }
+}
+
+/// Auto model selection mode - determines model routing strategy
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub enum AutoModelMode {
+    /// Responsive - balance speed and quality (default)
+    #[default]
+    Responsive,
+    /// Cost-efficient - prefer cheaper/faster models
+    Efficient,
+    /// Genius - prefer highest quality models
+    Genius,
+    /// Manual - use explicitly specified model
+    Manual,
+}
+
+impl AutoModelMode {
+    /// Get recommended reasoning level for this mode
+    pub fn default_reasoning(&self) -> ReasoningLevel {
+        match self {
+            Self::Responsive => ReasoningLevel::Medium,
+            Self::Efficient => ReasoningLevel::Low,
+            Self::Genius => ReasoningLevel::High,
+            Self::Manual => ReasoningLevel::Medium,
+        }
+    }
+
+    /// Get model preferences for this mode
+    pub fn model_preferences(&self) -> Vec<&'static str> {
+        match self {
+            Self::Efficient => vec![
+                "claude-haiku", "gpt-4o-mini", "gemini-flash",
+                "qwen2.5-coder:1.5b", "llama3.2:1b"
+            ],
+            Self::Responsive => vec![
+                "claude-sonnet", "gpt-4o", "gemini-pro",
+                "qwen2.5-coder:7b", "llama3.2:3b"
+            ],
+            Self::Genius => vec![
+                "claude-opus", "gpt-4-turbo", "gemini-ultra",
+                "o1-preview", "claude-sonnet-thinking"
+            ],
+            Self::Manual => vec![],
+        }
+    }
+}
 
 // =============================================================================
 // REQUEST CLASSIFICATION
@@ -93,12 +197,200 @@ pub struct RoutingDecision {
     pub template_name: Option<String>,
     pub confidence: f32,
     pub reasoning: String,
+    /// Reasoning level for this request
+    #[serde(default)]
+    pub reasoning_level: ReasoningLevel,
+    /// Auto model mode used for selection
+    #[serde(default)]
+    pub auto_mode: AutoModelMode,
+}
+
+impl Default for RoutingDecision {
+    fn default() -> Self {
+        Self {
+            request_type: RequestType::Unknown,
+            processing_path: ProcessingPath::MicroModel,
+            model_recommendation: None,
+            template_name: None,
+            confidence: 0.5,
+            reasoning: String::new(),
+            reasoning_level: ReasoningLevel::default(),
+            auto_mode: AutoModelMode::default(),
+        }
+    }
+}
+
+impl RoutingDecision {
+    /// Create a new routing decision builder
+    pub fn builder() -> RoutingDecisionBuilder {
+        RoutingDecisionBuilder::default()
+    }
+
+    /// Create a new routing decision with reasoning level inference
+    pub fn with_reasoning(mut self, task_complexity: f32) -> Self {
+        self.reasoning_level = Self::infer_reasoning_level(task_complexity, &self.request_type);
+        self
+    }
+
+    /// Infer appropriate reasoning level from task complexity and type
+    pub fn infer_reasoning_level(complexity: f32, request_type: &RequestType) -> ReasoningLevel {
+        // High complexity tasks need more reasoning
+        let base_level = match complexity {
+            c if c < 0.3 => ReasoningLevel::Off,
+            c if c < 0.5 => ReasoningLevel::Low,
+            c if c < 0.7 => ReasoningLevel::Medium,
+            c if c < 0.85 => ReasoningLevel::High,
+            _ => ReasoningLevel::Xhigh,
+        };
+
+        // Certain task types always need higher reasoning
+        match request_type {
+            RequestType::BugFix | RequestType::Refactor => {
+                if base_level as u8 <= ReasoningLevel::Medium as u8 {
+                    ReasoningLevel::High
+                } else {
+                    base_level
+                }
+            }
+            RequestType::CodeReview | RequestType::ComplexGeneration => {
+                if base_level as u8 <= ReasoningLevel::High as u8 {
+                    ReasoningLevel::High
+                } else {
+                    ReasoningLevel::Xhigh
+                }
+            }
+            RequestType::ShellCommand | RequestType::FileOperation | RequestType::Navigation => {
+                ReasoningLevel::Off
+            }
+            _ => base_level,
+        }
+    }
+
+    /// Adjust for auto model mode
+    pub fn with_auto_mode(mut self, mode: AutoModelMode) -> Self {
+        self.auto_mode = mode;
+
+        // Adjust reasoning level based on mode
+        self.reasoning_level = match mode {
+            AutoModelMode::Efficient => {
+                // Cap at Medium for efficiency
+                if self.reasoning_level as u8 > ReasoningLevel::Medium as u8 {
+                    ReasoningLevel::Medium
+                } else {
+                    self.reasoning_level
+                }
+            }
+            AutoModelMode::Genius => {
+                // Boost to at least High
+                if (self.reasoning_level as u8) < ReasoningLevel::High as u8 {
+                    ReasoningLevel::High
+                } else {
+                    self.reasoning_level
+                }
+            }
+            _ => self.reasoning_level,
+        };
+
+        // Update model recommendation based on mode
+        let models = mode.model_preferences();
+        if !models.is_empty() && self.model_recommendation.is_none() {
+            self.model_recommendation = Some(models[0].to_string());
+        }
+
+        self
+    }
+
+    /// Get estimated response time based on reasoning level
+    pub fn estimated_latency_ms(&self) -> u32 {
+        let base = match self.processing_path {
+            ProcessingPath::Deterministic => 10,
+            ProcessingPath::TemplateWithFill => 200,
+            ProcessingPath::EmbeddingSearch => 150,
+            ProcessingPath::Conversational => 500,
+            ProcessingPath::MicroModel => 800,
+            ProcessingPath::FullModel => 2000,
+            ProcessingPath::ChatGPT | ProcessingPath::ClaudeBrowser => 3000,
+            _ => 1000,
+        };
+
+        // Scale by reasoning level
+        let multiplier = match self.reasoning_level {
+            ReasoningLevel::Off => 0.5,
+            ReasoningLevel::Low => 0.8,
+            ReasoningLevel::Medium => 1.0,
+            ReasoningLevel::High => 1.5,
+            ReasoningLevel::Xhigh => 2.5,
+            ReasoningLevel::Thinking => 4.0,
+        };
+
+        (base as f32 * multiplier) as u32
+    }
+}
+
+/// Builder pattern for RoutingDecision
+#[derive(Default)]
+pub struct RoutingDecisionBuilder {
+    decision: RoutingDecision,
+}
+
+impl RoutingDecisionBuilder {
+    pub fn request_type(mut self, rt: RequestType) -> Self {
+        self.decision.request_type = rt;
+        self
+    }
+
+    pub fn processing_path(mut self, pp: ProcessingPath) -> Self {
+        self.decision.processing_path = pp;
+        self
+    }
+
+    pub fn model(mut self, model: &str) -> Self {
+        self.decision.model_recommendation = Some(model.to_string());
+        self
+    }
+
+    pub fn template(mut self, template: &str) -> Self {
+        self.decision.template_name = Some(template.to_string());
+        self
+    }
+
+    pub fn confidence(mut self, c: f32) -> Self {
+        self.decision.confidence = c;
+        self
+    }
+
+    pub fn reasoning(mut self, r: &str) -> Self {
+        self.decision.reasoning = r.to_string();
+        self
+    }
+
+    pub fn reasoning_level(mut self, level: ReasoningLevel) -> Self {
+        self.decision.reasoning_level = level;
+        self
+    }
+
+    pub fn auto_mode(mut self, mode: AutoModelMode) -> Self {
+        self.decision.auto_mode = mode;
+        self
+    }
+
+    /// Build with automatic reasoning level inference
+    pub fn build_with_inference(mut self, complexity: f32) -> RoutingDecision {
+        self.decision.reasoning_level =
+            RoutingDecision::infer_reasoning_level(complexity, &self.decision.request_type);
+        self.decision
+    }
+
+    pub fn build(self) -> RoutingDecision {
+        self.decision
+    }
 }
 
 // =============================================================================
 // HYBRID ROUTER
 // =============================================================================
 
+#[allow(dead_code)]
 pub struct HybridRouter {
     // Keyword patterns for classification
     deterministic_patterns: Vec<(&'static str, RequestType)>,
@@ -119,7 +411,27 @@ impl HybridRouter {
 
     // Main routing function
     pub fn route(&self, request: &str) -> RoutingDecision {
+        self.route_with_mode(request, AutoModelMode::default())
+    }
+
+    /// Route with explicit auto model mode
+    pub fn route_with_mode(&self, request: &str, mode: AutoModelMode) -> RoutingDecision {
         let lower = request.to_lowercase();
+
+        // Priority 0: Exit/control commands (must be caught before conversational)
+        if lower.starts_with("exit") || lower.starts_with("tokens ") ||
+           lower.starts_with("limit ") || lower.starts_with("set tokens") {
+            return RoutingDecision {
+                request_type: RequestType::ShellCommand,
+                processing_path: ProcessingPath::Deterministic,
+                model_recommendation: None,
+                template_name: None,
+                confidence: 1.0,
+                reasoning: "Control command - exit/tokens".to_string(),
+                reasoning_level: ReasoningLevel::Off,
+                auto_mode: mode,
+            };
+        }
 
         // Priority 1: Check for deterministic (no AI needed)
         if let Some((req_type, confidence)) = self.match_deterministic(&lower) {
@@ -130,6 +442,8 @@ impl HybridRouter {
                 template_name: None,
                 confidence,
                 reasoning: "Matched deterministic pattern - no AI needed".to_string(),
+                reasoning_level: ReasoningLevel::Off,
+                auto_mode: mode,
             };
         }
 
@@ -143,6 +457,8 @@ impl HybridRouter {
                 template_name: None,
                 confidence: 0.9,
                 reasoning: "Conversational/status message - no tools needed".to_string(),
+                reasoning_level: ReasoningLevel::Low,
+                auto_mode: mode,
             };
         }
 
@@ -155,6 +471,8 @@ impl HybridRouter {
                 template_name: Some(template.to_string()),
                 confidence,
                 reasoning: "Template available - minimal AI for fill-in".to_string(),
+                reasoning_level: ReasoningLevel::Low,
+                auto_mode: mode,
             };
         }
 
@@ -167,31 +485,54 @@ impl HybridRouter {
                 template_name: None,
                 confidence,
                 reasoning: "Semantic search - embeddings only, no generation".to_string(),
+                reasoning_level: ReasoningLevel::Off,
+                auto_mode: mode,
             };
         }
 
-        // Priority 4: Check for AI-required tasks
+        // Priority 5: Check for AI-required tasks
         if let Some((req_type, model, confidence)) = self.match_ai(&lower) {
             // Check if task exceeds local model capabilities
             // Privacy check - if user wants privacy, use local models only
             let wants_privacy = lower.contains("private") || lower.contains("privately") || lower.contains("local");
 
-            let (path, reasoning) = if wants_privacy {
+            let (path, reasoning, reasoning_level) = if wants_privacy {
                 // Check if this is a conversational/creative request that wants privacy
                 if Self::is_creative_or_conversational(&lower) {
-                    (ProcessingPath::Conversational, "Private conversational mode - local model only".to_string())
+                    (ProcessingPath::Conversational, "Private conversational mode - local model only".to_string(), ReasoningLevel::Medium)
                 } else {
                     // Override external AI - use local Ollama for privacy
-                    (ProcessingPath::MicroModel, "Private mode - using local model only".to_string())
+                    (ProcessingPath::MicroModel, "Private mode - using local model only".to_string(), ReasoningLevel::Medium)
                 }
             } else if Self::requires_claude(&lower) {
-                (ProcessingPath::ClaudeBrowser, "Complex reasoning - routing to Claude".to_string())
+                // Claude tasks typically need higher reasoning
+                let level = if Self::is_complex(&lower) { ReasoningLevel::High } else { ReasoningLevel::Medium };
+                (ProcessingPath::ClaudeBrowser, "Complex reasoning - routing to Claude".to_string(), level)
             } else if Self::requires_chatgpt(&lower) {
-                (ProcessingPath::ChatGPT, "Creative/conversational task - routing to ChatGPT".to_string())
+                (ProcessingPath::ChatGPT, "Creative/conversational task - routing to ChatGPT".to_string(), ReasoningLevel::Medium)
             } else if Self::is_complex(&lower) {
-                (ProcessingPath::FullModel, "Complex task - using full model".to_string())
+                (ProcessingPath::FullModel, "Complex task - using full model".to_string(), ReasoningLevel::High)
             } else {
-                (ProcessingPath::MicroModel, "AI generation required".to_string())
+                (ProcessingPath::MicroModel, "AI generation required".to_string(), ReasoningLevel::Medium)
+            };
+
+            // Apply auto mode adjustments
+            let final_level = match mode {
+                AutoModelMode::Efficient => {
+                    if reasoning_level as u8 > ReasoningLevel::Medium as u8 {
+                        ReasoningLevel::Medium
+                    } else {
+                        reasoning_level
+                    }
+                }
+                AutoModelMode::Genius => {
+                    if (reasoning_level as u8) < ReasoningLevel::High as u8 {
+                        ReasoningLevel::High
+                    } else {
+                        reasoning_level
+                    }
+                }
+                _ => reasoning_level,
             };
 
             return RoutingDecision {
@@ -201,6 +542,8 @@ impl HybridRouter {
                 template_name: None,
                 confidence,
                 reasoning,
+                reasoning_level: final_level,
+                auto_mode: mode,
             };
         }
 
@@ -212,6 +555,8 @@ impl HybridRouter {
             template_name: None,
             confidence: 0.3,
             reasoning: "Could not classify - using micro model".to_string(),
+            reasoning_level: mode.default_reasoning(),
+            auto_mode: mode,
         }
     }
 
@@ -265,7 +610,22 @@ impl HybridRouter {
         // Check if the request matches conversational patterns
         // For status/brief queries, be more lenient with length
         let word_count = request.split_whitespace().count();
-        let matches_pattern = conversational_patterns.iter().any(|p| request.contains(p));
+
+        // Use word boundary matching to avoid false positives like "caching" matching "hi"
+        let matches_pattern = conversational_patterns.iter().any(|p| {
+            // For multi-word patterns, use contains (they're specific enough)
+            if p.contains(' ') {
+                request.contains(p)
+            } else {
+                // For single-word patterns, check word boundaries
+                let words: Vec<&str> = request.split_whitespace().collect();
+                words.iter().any(|word| {
+                    // Strip common punctuation from word for comparison
+                    let clean_word = word.trim_matches(|c: char| !c.is_alphanumeric());
+                    clean_word == *p
+                })
+            }
+        });
 
         // Status queries can be longer (up to 15 words)
         // Greetings should be short (up to 8 words)
@@ -739,5 +1099,85 @@ mod tests {
         let decision3 = router.route("what needs attention");
         println!("Attention query: {:?} -> {:?}", decision3.request_type, decision3.processing_path);
         assert_eq!(decision3.processing_path, ProcessingPath::Conversational);
+    }
+
+    // ==========================================================================
+    // REASONING LEVEL TESTS
+    // ==========================================================================
+
+    #[test]
+    fn test_reasoning_level_scores() {
+        assert!(ReasoningLevel::Off.speed_score() > ReasoningLevel::Xhigh.speed_score());
+        assert!(ReasoningLevel::Xhigh.quality_score() > ReasoningLevel::Off.quality_score());
+        assert!(ReasoningLevel::Xhigh.cost_multiplier() > ReasoningLevel::Low.cost_multiplier());
+    }
+
+    #[test]
+    fn test_auto_mode_reasoning_defaults() {
+        assert_eq!(AutoModelMode::Efficient.default_reasoning(), ReasoningLevel::Low);
+        assert_eq!(AutoModelMode::Genius.default_reasoning(), ReasoningLevel::High);
+        assert_eq!(AutoModelMode::Responsive.default_reasoning(), ReasoningLevel::Medium);
+    }
+
+    #[test]
+    fn test_routing_with_auto_modes() {
+        let router = HybridRouter::new();
+
+        // Efficient mode should cap reasoning
+        let decision = router.route_with_mode("refactor this complex function", AutoModelMode::Efficient);
+        assert!(decision.reasoning_level as u8 <= ReasoningLevel::Medium as u8);
+        assert_eq!(decision.auto_mode, AutoModelMode::Efficient);
+
+        // Genius mode should boost reasoning
+        let decision = router.route_with_mode("simple task", AutoModelMode::Genius);
+        assert!(decision.reasoning_level as u8 >= ReasoningLevel::High as u8 ||
+                decision.processing_path == ProcessingPath::Deterministic);
+    }
+
+    #[test]
+    fn test_reasoning_level_inference() {
+        // Bug fix should require High reasoning
+        let level = RoutingDecision::infer_reasoning_level(0.5, &RequestType::BugFix);
+        assert!(level as u8 >= ReasoningLevel::High as u8);
+
+        // Shell commands should be Off
+        let level = RoutingDecision::infer_reasoning_level(0.9, &RequestType::ShellCommand);
+        assert_eq!(level, ReasoningLevel::Off);
+
+        // High complexity should boost reasoning
+        let level = RoutingDecision::infer_reasoning_level(0.9, &RequestType::CodeGeneration);
+        assert!(level as u8 >= ReasoningLevel::High as u8);
+    }
+
+    #[test]
+    fn test_decision_builder() {
+        let decision = RoutingDecision::builder()
+            .request_type(RequestType::BugFix)
+            .processing_path(ProcessingPath::FullModel)
+            .model("claude-sonnet")
+            .confidence(0.9)
+            .reasoning("Testing builder")
+            .reasoning_level(ReasoningLevel::High)
+            .auto_mode(AutoModelMode::Responsive)
+            .build();
+
+        assert_eq!(decision.request_type, RequestType::BugFix);
+        assert_eq!(decision.reasoning_level, ReasoningLevel::High);
+        assert_eq!(decision.auto_mode, AutoModelMode::Responsive);
+    }
+
+    #[test]
+    fn test_estimated_latency() {
+        let fast = RoutingDecision::builder()
+            .processing_path(ProcessingPath::Deterministic)
+            .reasoning_level(ReasoningLevel::Off)
+            .build();
+
+        let slow = RoutingDecision::builder()
+            .processing_path(ProcessingPath::ClaudeBrowser)
+            .reasoning_level(ReasoningLevel::Thinking)
+            .build();
+
+        assert!(fast.estimated_latency_ms() < slow.estimated_latency_ms());
     }
 }

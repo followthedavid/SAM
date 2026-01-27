@@ -129,7 +129,7 @@ pub async fn query_ollama_chat(
     model: Option<String>,
     context: Option<String>,
 ) -> Result<String, String> {
-    let model_name = model.unwrap_or_else(|| "qwen2.5-coder:1.5b".to_string());
+    let model_name = model.unwrap_or_else(|| "sam-trained:latest".to_string());
     let client = reqwest::Client::new();
     let url = "http://localhost:11434/api/generate";
 
@@ -158,6 +158,88 @@ pub async fn query_ollama_chat(
         .map_err(|e| format!("Failed to parse response: {}", e))?;
 
     Ok(response.response)
+}
+
+/// Pre-warm a model by loading it into memory without generating text.
+/// This is useful when selecting a roleplay character so the model is ready
+/// before the user sends their first message.
+/// Returns a status object with loading state information.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PrewarmStatus {
+    pub model: String,
+    pub status: String,
+    pub loaded: bool,
+}
+
+#[tauri::command]
+pub async fn prewarm_model(
+    app_handle: AppHandle,
+    model: String,
+) -> Result<PrewarmStatus, String> {
+    // Emit loading started event
+    let _ = app_handle.emit_all("model-loading", serde_json::json!({
+        "model": &model,
+        "status": "loading"
+    }));
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(180))
+        .build()
+        .unwrap_or_else(|_| reqwest::Client::new());
+
+    // Use the generate endpoint with keep_alive to load the model
+    // Sending an empty prompt with num_predict=0 loads without generating
+    let request_body = serde_json::json!({
+        "model": &model,
+        "prompt": "",
+        "stream": false,
+        "options": {
+            "num_predict": 1
+        },
+        "keep_alive": "10m"
+    });
+
+    let result = client
+        .post("http://localhost:11434/api/generate")
+        .json(&request_body)
+        .send()
+        .await;
+
+    match result {
+        Ok(response) => {
+            if response.status().is_success() {
+                // Emit loading complete event
+                let _ = app_handle.emit_all("model-loading", serde_json::json!({
+                    "model": &model,
+                    "status": "ready"
+                }));
+
+                Ok(PrewarmStatus {
+                    model,
+                    status: "ready".to_string(),
+                    loaded: true,
+                })
+            } else {
+                let status = response.status();
+                let _ = app_handle.emit_all("model-loading", serde_json::json!({
+                    "model": &model,
+                    "status": "error",
+                    "error": format!("HTTP {}", status)
+                }));
+
+                Err(format!("Model loading failed with status: {}", status))
+            }
+        }
+        Err(e) => {
+            let _ = app_handle.emit_all("model-loading", serde_json::json!({
+                "model": &model,
+                "status": "error",
+                "error": e.to_string()
+            }));
+
+            Err(format!("Failed to load model: {}", e))
+        }
+    }
 }
 
 #[tauri::command]

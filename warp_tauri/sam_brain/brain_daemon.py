@@ -187,14 +187,14 @@ class BrainDaemon:
             try:
                 now = datetime.now()
 
-                # Check Ollama health
-                if not self.check_ollama_health():
-                    self.restart_ollama()
+                # NOTE: Ollama decommissioned 2026-01-18 - using MLX native inference
+                # check_ollama_health() and restart_ollama() no longer called
+                # MLX models load on-demand, no warming needed
 
-                # Warm Ollama model periodically
-                if (not self.last_warm or
-                    (now - self.last_warm).total_seconds() > CONFIG["ollama_warm_interval"]):
-                    self.warm_ollama()
+                # Warm MLX model periodically (optional - loads on first use anyway)
+                # if (not self.last_warm or
+                #     (now - self.last_warm).total_seconds() > CONFIG["ollama_warm_interval"]):
+                #     self.warm_mlx()
 
                 # Consolidate memory
                 if (not self.last_consolidate or

@@ -135,7 +135,9 @@ impl EmbeddingEngine {
             return Err("Directory does not exist".to_string());
         }
 
+        #[allow(unused_variables)]
         let mut files_indexed = 0;
+        #[allow(unused_variables)]
         let mut chunks_created = 0;
 
         // Walk directory

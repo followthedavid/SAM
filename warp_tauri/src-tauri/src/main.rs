@@ -20,6 +20,11 @@ mod phase1_6_tests;
 mod ollama;
 mod ssh_session;
 mod scaffolding;
+mod debug_server;
+mod structured_log;
+
+// Smart orchestrator commands (advanced small model architecture)
+use scaffolding::smart_orchestrator::{smart_process, smart_set_character, smart_clear_character};
 
 use commands::{
     spawn_pty, send_input, resize_pty, read_pty, close_pty, start_pty_output_stream,
@@ -112,10 +117,25 @@ use commands::{
     // Privacy & Task Execution
     execute_action,
     // Test Harness (headless batch testing)
-    test_run_suite, test_run_smoke, test_run_single, test_status, test_get_cases, test_run_custom,
+    // test_run_suite, test_run_smoke, test_run_single,
+    test_status, test_get_cases,
+    // test_run_custom,
+    // Character Library (roleplay character management)
+    cmd_list_archetypes, cmd_get_archetype, cmd_create_from_archetype,
+    cmd_parse_character_description, cmd_save_character, cmd_list_saved_characters,
+    cmd_get_character, cmd_delete_character, cmd_toggle_favorite, cmd_update_character,
+    cmd_update_character_traits, cmd_add_dialogue_example, cmd_get_character_prompt,
+    cmd_search_archetypes, cmd_get_archetypes_by_category, cmd_record_character_usage,
+    // Character Memory (persistent roleplay state)
+    cmd_get_character_memory, cmd_add_character_message, cmd_get_recent_character_context,
+    cmd_remember_character_fact, cmd_clear_character_history, cmd_delete_character_memory,
+    cmd_list_characters_with_memory, cmd_get_active_character, cmd_set_active_character,
+    cmd_clear_active_character,
+    // Ollama management
+    cmd_ollama_status, cmd_restart_ollama, cmd_warm_model, cmd_unload_model,
 };
 use session::{save_session, load_session};
-use ollama::{query_ollama_stream, query_ollama, query_ollama_chat, list_ollama_models};
+use ollama::{query_ollama_stream, query_ollama, query_ollama_chat, list_ollama_models, prewarm_model};
 
 // App version info command
 #[tauri::command]
@@ -325,6 +345,13 @@ fn main() {
                 bridge.start(app_handle).await;
             });
 
+            // Debug server disabled - uncomment if needed for testing
+            // tauri::async_runtime::spawn(async move {
+            //     if let Err(e) = debug_server::start_debug_server(9998).await {
+            //         eprintln!("[DEBUG_SERVER] Failed to start: {}", e);
+            //     }
+            // });
+
             // Auto-index current directory for semantic search
             std::thread::spawn(|| {
                 use crate::scaffolding::embeddings;
@@ -349,28 +376,35 @@ fn main() {
                 }
             });
 
-            // Pre-warm Ollama model to avoid 78+ second delay on first request
+            // Pre-warm Ollama models to avoid 70+ second delay on first request
+            // Model loading from disk takes ~70s, so we use 180s timeout and 30m keep_alive
             std::thread::spawn(|| {
-                eprintln!("[STARTUP] Pre-warming Ollama model...");
+                eprintln!("[STARTUP] Pre-warming Ollama models (this may take up to 2 minutes on first load)...");
                 let client = reqwest::blocking::Client::builder()
-                    .timeout(std::time::Duration::from_secs(120))
+                    .timeout(std::time::Duration::from_secs(180))
                     .build();
 
                 if let Ok(client) = client {
+                    // Warm sam-trained for chat/roleplay (fine-tuned with thousands of examples)
+                    // On 8GB RAM, only one model fits - sam-trained is primary
+                    // qwen2.5-coder will be loaded on-demand for coding tasks
                     let res = client
                         .post("http://localhost:11434/api/generate")
                         .json(&serde_json::json!({
-                            "model": "qwen2.5-coder:1.5b",
-                            "prompt": "hello",
+                            "model": "sam-trained:latest",
+                            "prompt": "I am SAM, ready to assist.",
                             "stream": false,
+                            "keep_alive": "30m",
                             "options": {"num_predict": 1}
                         }))
                         .send();
 
                     match res {
-                        Ok(_) => eprintln!("[STARTUP] Ollama model pre-warmed and ready"),
-                        Err(e) => eprintln!("[STARTUP] Ollama pre-warm failed (non-fatal): {}", e),
+                        Ok(_) => eprintln!("[STARTUP] sam-trained:latest pre-warmed (30m keep_alive)"),
+                        Err(e) => eprintln!("[STARTUP] sam-trained pre-warm failed: {}", e),
                     }
+
+                    eprintln!("[STARTUP] Ollama models ready");
                 }
             });
 
@@ -449,6 +483,30 @@ fn main() {
                                                             ));
                                                         }
                                                         json
+                                                    },
+                                                    "smart_process" => {
+                                                        let args = cmd.get("args").cloned().unwrap_or_default();
+                                                        let input = args.get("input").and_then(|v| v.as_str()).unwrap_or("hello");
+                                                        let task_type = args.get("task_type").and_then(|v| v.as_str()).map(|s| s.to_string());
+                                                        let character = args.get("character").and_then(|v| v.as_str()).map(|s| s.to_string());
+                                                        match crate::scaffolding::smart_orchestrator::smart_process(input.to_string(), task_type, character).await {
+                                                            Ok(result) => serde_json::json!({
+                                                                "success": true,
+                                                                "response": result,
+                                                                "timestamp": std::time::SystemTime::now()
+                                                                    .duration_since(std::time::UNIX_EPOCH)
+                                                                    .unwrap()
+                                                                    .as_millis()
+                                                            }),
+                                                            Err(e) => serde_json::json!({
+                                                                "success": false,
+                                                                "error": e,
+                                                                "timestamp": std::time::SystemTime::now()
+                                                                    .duration_since(std::time::UNIX_EPOCH)
+                                                                    .unwrap()
+                                                                    .as_millis()
+                                                            }),
+                                                        }
                                                     },
                                                     _ => serde_json::json!({
                                                         "error": format!("Unknown command: {}", command),
@@ -536,6 +594,7 @@ fn main() {
             query_ollama,
             query_ollama_chat,
             list_ollama_models,
+            prewarm_model,
             save_session,
             load_session,
             get_app_version,
@@ -742,13 +801,50 @@ fn main() {
             cmd_subagent_stats,
             // Privacy & Task Execution
             execute_action,
-            // Test Harness
-            test_run_suite,
-            test_run_smoke,
-            test_run_single,
+            // Test Harness (disabled - RwLock threading issues)
+            // test_run_suite,
+            // test_run_smoke,
+            // test_run_single,
             test_status,
             test_get_cases,
-            test_run_custom,
+            // test_run_custom,
+            // Character Library (roleplay character management)
+            cmd_list_archetypes,
+            cmd_get_archetype,
+            cmd_create_from_archetype,
+            cmd_parse_character_description,
+            cmd_save_character,
+            cmd_list_saved_characters,
+            cmd_get_character,
+            cmd_delete_character,
+            cmd_toggle_favorite,
+            cmd_update_character,
+            cmd_update_character_traits,
+            cmd_add_dialogue_example,
+            cmd_get_character_prompt,
+            cmd_search_archetypes,
+            cmd_get_archetypes_by_category,
+            cmd_record_character_usage,
+            // Character Memory (persistent roleplay state)
+            cmd_get_character_memory,
+            cmd_add_character_message,
+            cmd_get_recent_character_context,
+            cmd_remember_character_fact,
+            cmd_clear_character_history,
+            cmd_delete_character_memory,
+            cmd_list_characters_with_memory,
+            cmd_get_active_character,
+            cmd_set_active_character,
+            cmd_clear_active_character,
+            // Ollama management
+            cmd_ollama_status,
+            cmd_restart_ollama,
+            cmd_warm_model,
+            cmd_unload_model,
+            // Smart Orchestrator (advanced small model architecture)
+            smart_process,
+            smart_set_character,
+            smart_clear_character,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Tauri application");

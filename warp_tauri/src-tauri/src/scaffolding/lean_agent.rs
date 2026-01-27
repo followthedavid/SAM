@@ -10,7 +10,6 @@
 // 7. Self-verify before claiming done
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Phases for reverse engineering tasks
 /// IMPORTANT: "Complete" only when QUALITY PARITY is achieved

@@ -603,6 +603,150 @@ pub fn set_api_key(provider: &str, key: &str) -> Result<(), String> {
 }
 
 // =============================================================================
+// BROWSER BRIDGE FALLBACK
+// =============================================================================
+
+/// Queue a request for the browser bridge (fallback when no API keys)
+pub fn queue_browser_bridge(prompt: &str, provider: &str) -> Result<String, String> {
+    let queue_file = dirs::home_dir()
+        .map(|h| h.join(".sam_chatgpt_queue.json"))
+        .unwrap_or_else(|| std::path::PathBuf::from("/tmp/.sam_chatgpt_queue.json"));
+
+    // Generate task ID
+    let task_id = format!(
+        "task_{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+    );
+
+    // Load existing queue
+    let mut queue: Vec<serde_json::Value> = if queue_file.exists() {
+        std::fs::read_to_string(&queue_file)
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+
+    // Add new task
+    queue.push(serde_json::json!({
+        "id": task_id,
+        "prompt": prompt,
+        "provider": provider,
+        "status": "pending",
+        "created_at": chrono::Utc::now().to_rfc3339(),
+    }));
+
+    // Save queue
+    std::fs::write(&queue_file, serde_json::to_string_pretty(&queue).unwrap())
+        .map_err(|e| format!("Failed to write queue: {}", e))?;
+
+    eprintln!("[BRIDGE] Queued task {} for {}", task_id, provider);
+    Ok(task_id)
+}
+
+/// Check for browser bridge response
+pub fn check_bridge_response(task_id: &str) -> Option<String> {
+    let response_file = dirs::home_dir()
+        .map(|h| h.join(".sam_chatgpt_responses.json"))
+        .unwrap_or_else(|| std::path::PathBuf::from("/tmp/.sam_chatgpt_responses.json"));
+
+    if !response_file.exists() {
+        return None;
+    }
+
+    let responses: serde_json::Value = std::fs::read_to_string(&response_file)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default();
+
+    responses
+        .get(task_id)
+        .and_then(|r| r.get("response"))
+        .and_then(|s| s.as_str())
+        .map(|s| s.to_string())
+}
+
+/// Call browser bridge directly (spawns Node process)
+pub fn call_browser_bridge_sync(prompt: &str, provider: &str) -> Result<String, String> {
+    let bridge_path = std::env::current_dir()
+        .unwrap_or_default()
+        .join("ai_bridge.cjs");
+
+    // Fallback path
+    let bridge_path = if bridge_path.exists() {
+        bridge_path
+    } else {
+        dirs::home_dir()
+            .map(|h| h.join("ReverseLab/SAM/warp_tauri/ai_bridge.cjs"))
+            .unwrap_or(bridge_path)
+    };
+
+    if !bridge_path.exists() {
+        return Err("Bridge script not found. Run bridge daemon manually.".to_string());
+    }
+
+    let provider_arg = if provider == "claude" { "--claude" } else { "" };
+
+    let output = std::process::Command::new("node")
+        .arg(&bridge_path)
+        .arg("send")
+        .arg(prompt)
+        .arg(provider_arg)
+        .output()
+        .map_err(|e| format!("Failed to run bridge: {}", e))?;
+
+    if output.status.success() {
+        let result: serde_json::Value = serde_json::from_slice(&output.stdout)
+            .map_err(|e| format!("Failed to parse bridge output: {}", e))?;
+
+        if result.get("success").and_then(|v| v.as_bool()).unwrap_or(false) {
+            result
+                .get("response")
+                .and_then(|s| s.as_str())
+                .map(|s| s.to_string())
+                .ok_or_else(|| "No response in output".to_string())
+        } else {
+            Err(result
+                .get("error")
+                .and_then(|s| s.as_str())
+                .unwrap_or("Bridge failed")
+                .to_string())
+        }
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).to_string())
+    }
+}
+
+/// Auto-select best method: API if available, else browser bridge
+pub async fn call_ai_with_fallback(prompt: &str, system: Option<&str>) -> Result<String, String> {
+    let ai = UnifiedAI::new();
+
+    // Try API first if available
+    if ai.config.has_claude() || ai.config.has_openai() {
+        match call_ai(prompt, system).await {
+            Ok(response) => return Ok(response.content),
+            Err(e) => {
+                eprintln!("[AI] API call failed, trying browser bridge: {}", e.message);
+            }
+        }
+    }
+
+    // Fallback to browser bridge
+    eprintln!("[AI] No API keys configured, using browser bridge");
+    let full_prompt = if let Some(sys) = system {
+        format!("{}\n\n{}", sys, prompt)
+    } else {
+        prompt.to_string()
+    };
+
+    call_browser_bridge_sync(&full_prompt, "chatgpt")
+}
+
+// =============================================================================
 // TESTS
 // =============================================================================
 

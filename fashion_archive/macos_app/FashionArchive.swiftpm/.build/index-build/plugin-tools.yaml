@@ -1,0 +1,47 @@
+client:
+  name: basic
+  file-system: device-agnostic
+tools: {}
+targets:
+  "FashionArchive-arm64-apple-macosx26.0-debug.module": ["<FashionArchive-arm64-apple-macosx26.0-debug.module>"]
+  "PackageStructure": ["<PackageStructure>"]
+  "main": ["<FashionArchive-arm64-apple-macosx26.0-debug.module>"]
+  "test": ["<FashionArchive-arm64-apple-macosx26.0-debug.module>"]
+default: "main"
+nodes:
+  "/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/Sources/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+commands:
+  "/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/FashionArchive.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/Sources/FashionArchiveApp.swift","/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/Sources/Models.swift"]
+    outputs: ["/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/FashionArchive.build/sources"]
+    description: "Write auxiliary file /Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/FashionArchive.build/sources"
+
+  "/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/swift-version-62BF00628DC00FDC.txt":
+    tool: write-auxiliary-file
+    inputs: ["<swift-get-version>","/Volumes/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"]
+    outputs: ["/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/swift-version-62BF00628DC00FDC.txt"]
+    always-out-of-date: "true"
+    description: "Write auxiliary file /Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/swift-version-62BF00628DC00FDC.txt"
+
+  "<FashionArchive-arm64-apple-macosx26.0-debug.module>":
+    tool: phony
+    inputs: ["/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/Modules/FashionArchive.swiftmodule"]
+    outputs: ["<FashionArchive-arm64-apple-macosx26.0-debug.module>"]
+
+  "C.FashionArchive-arm64-apple-macosx26.0-debug.module":
+    tool: shell
+    inputs: ["/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/Sources/FashionArchiveApp.swift","/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/Sources/Models.swift","/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/swift-version-62BF00628DC00FDC.txt","/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/FashionArchive.build/sources"]
+    outputs: ["/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/Modules/FashionArchive.swiftmodule"]
+    description: "Compiling Swift Module 'FashionArchive' (2 sources)"
+    args: ["/Volumes/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-module-name","FashionArchive","-emit-dependencies","-emit-module","-emit-module-path","/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/Modules/FashionArchive.swiftmodule","-output-file-map","/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/FashionArchive.build/output-file-map.json","-parse-as-library","-incremental","@/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/FashionArchive.build/sources","-I","/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx14.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-Onone","-enable-testing","-j8","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-emit-objc-header","-emit-objc-header-path","/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/.build/index-build/arm64-apple-macosx/debug/FashionArchive.build/include/FashionArchive-Swift.h","-swift-version","5","-Xfrontend","-experimental-lazy-typecheck","-Xfrontend","-experimental-skip-all-function-bodies","-Xfrontend","-experimental-allow-module-with-compiler-errors","-Xfrontend","-empty-abi-descriptor","-plugin-path","/Volumes/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-F","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-F","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-I","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-Xcc","-F","-Xcc","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-F","-Xcc","/Volumes/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","fashionarchive_swiftpm"]
+
+  "PackageStructure":
+    tool: package-structure-tool
+    inputs: ["/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/Sources/","/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/Package.swift","/Users/davidquinton/ReverseLab/SAM/fashion_archive/macos_app/FashionArchive.swiftpm/Package.resolved"]
+    outputs: ["<PackageStructure>"]
+    description: "Planning build"
+    allow-missing-inputs: true
+

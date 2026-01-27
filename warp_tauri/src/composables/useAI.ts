@@ -4,6 +4,7 @@ import { useClaude, type AIMode } from './useClaude';
 import type { ExecutionTask } from './useCodeExecution';
 import { useScaffoldedAgent, type AgentEvent, type AgentConfig } from './useScaffoldedAgent';
 import { getOrchestrator } from './useOrchestrator';
+import { useCognitiveAPI } from './useCognitiveAPI';
 
 // Check if we're running in Tauri
 const isTauri = '__TAURI__' in window;
@@ -47,11 +48,10 @@ export interface AISession {
 
 const sessions = ref<Map<string, AISession>>(new Map());
 const availableModels = ref<string[]>([
-  'dolphin-llama3:8b',
-  'coder-uncensored:latest',
+  'sam-trained:latest',
+  'sam-brain:latest',
   'qwen2.5-coder:1.5b',
-  'tinydolphin:1.1b',
-  'stablelm2:1.6b',
+  'dolphin-llama3:8b',
 ]);
 
 export function useAI() {
@@ -727,6 +727,10 @@ User: "show system status"
         // Use Rust orchestrator for optimal routing
         return await sendPromptOrchestrator(tabId, prompt);
 
+      case 'sam':
+        // Use SAM cognitive backend (MLX + memory + personality)
+        return await sendPromptSAM(tabId, prompt);
+
       default:
         return await sendPrompt(tabId, prompt, model);
     }
@@ -784,6 +788,78 @@ User: "show system status"
     } catch (err) {
       addDebugLog(tabId, `[ORCHESTRATOR] Error: ${err}`);
       assistantMessage.content = `Error: ${err}`;
+      assistantMessage.streaming = false;
+    } finally {
+      session.isThinking = false;
+    }
+  }
+
+  // Send prompt to SAM cognitive backend (MLX + memory + personality)
+  async function sendPromptSAM(tabId: string, prompt: string) {
+    const session = getSession(tabId);
+
+    if (session.isThinking) {
+      addDebugLog(tabId, '[BLOCKED] Already processing a request');
+      return;
+    }
+
+    addDebugLog(tabId, `[SAM] Sending to cognitive backend`);
+
+    // Add user message
+    addMessage(tabId, { role: 'user', content: prompt });
+
+    // Create assistant message placeholder
+    const assistantMessage: AIMessage = {
+      id: uuidv4(),
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+      streaming: true,
+    };
+    session.messages.push(assistantMessage);
+    session.isThinking = true;
+
+    try {
+      const cognitiveAPI = useCognitiveAPI();
+
+      // Use streaming for real-time response
+      await new Promise<void>((resolve, reject) => {
+        cognitiveAPI.stream(
+          prompt,
+          (token: string) => {
+            // Append each token as it arrives
+            assistantMessage.content += token;
+          },
+          () => {
+            // Complete
+            assistantMessage.streaming = false;
+            addDebugLog(tabId, `[SAM] Streaming complete`);
+            resolve();
+          },
+          (err: string) => {
+            reject(new Error(err));
+          }
+        );
+      });
+
+    } catch (err) {
+      addDebugLog(tabId, `[SAM] Streaming error: ${err}`);
+
+      // Fallback to non-streaming
+      try {
+        const cognitiveAPI = useCognitiveAPI();
+        const result = await cognitiveAPI.process(prompt);
+
+        if (result && result.response) {
+          assistantMessage.content = result.response;
+          addDebugLog(tabId, `[SAM] Fallback successful, confidence: ${result.confidence}`);
+        } else {
+          assistantMessage.content = `SAM Error: No response received`;
+        }
+      } catch (fallbackErr) {
+        assistantMessage.content = `Error connecting to SAM: ${fallbackErr}`;
+      }
+
       assistantMessage.streaming = false;
     } finally {
       session.isThinking = false;

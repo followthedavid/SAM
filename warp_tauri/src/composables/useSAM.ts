@@ -32,6 +32,8 @@ import { useSAMMemory } from './useSAMMemory'
 import { useSAMPersonality } from './useSAMPersonality'
 import { useSAMVoice } from './useSAMVoice'
 import { useCharacterCustomization } from './useCharacterCustomization'
+// Cognitive API connection
+import { useCognitiveAPI, type CognitiveResponse } from './useCognitiveAPI'
 
 // ============================================================================
 // TYPES
@@ -105,6 +107,12 @@ export function useSAM() {
   const enhancedPersonality = useSAMPersonality()
   const voice = useSAMVoice()
   const characterCustomization = useCharacterCustomization()
+
+  // Cognitive API connection (Python backend)
+  const cognitiveAPI = useCognitiveAPI({
+    baseUrl: 'http://localhost:8765',
+    userId: 'david'
+  })
 
   // Configuration
   const config = ref<SAMConfig>(loadConfig())
@@ -351,7 +359,7 @@ export function useSAM() {
   }
 
   /**
-   * Generate a response (placeholder - integrate with LLM)
+   * Generate a response using the cognitive API
    */
   async function generateResponse(
     message: string,
@@ -359,13 +367,15 @@ export function useSAM() {
   ): Promise<string> {
     const lower = message.toLowerCase()
 
-    // Calendar queries
+    // Quick local responses for simple queries (no API call needed)
+
+    // Calendar queries - handled locally for speed
     if (lower.includes('schedule') || lower.includes('calendar') || lower.includes('meeting')) {
       const summary = calendar.getScheduleSummary()
       return summary || "Your schedule is clear. What would you like to do?"
     }
 
-    // Time queries
+    // Time queries - instant local response
     if (lower.includes('what time') || lower.includes('the time')) {
       const time = new Date().toLocaleTimeString('en-US', {
         hour: 'numeric',
@@ -374,12 +384,56 @@ export function useSAM() {
       return `It's ${time}.`
     }
 
-    // Relationship queries
+    // Relationship queries - use local data
     if (mentions.length > 0) {
       const person = mentions[0]
       const context = relationships.getPersonContext(person.id)
       return `About ${person.name}... ${context}`
     }
+
+    // Everything else goes to the cognitive API
+    try {
+      // Check if cognitive API is available
+      const isAvailable = await cognitiveAPI.ping()
+
+      if (!isAvailable) {
+        console.warn('[SAM] Cognitive API not available, using fallback')
+        return getFallbackResponse(message)
+      }
+
+      // Call the cognitive API
+      const result = await cognitiveAPI.process(message)
+
+      if (result && result.response) {
+        // Store confidence for mood adjustment
+        if (result.confidence < 0.5) {
+          status.mood = 'focused'  // Lower confidence = more careful
+        } else if (result.confidence > 0.8) {
+          status.mood = 'playful'  // High confidence = more playful
+        }
+
+        // Track if escalated to Claude
+        if (result.escalated) {
+          console.log('[SAM] Response was escalated to Claude')
+        }
+
+        return result.response
+      }
+
+      // API returned null/empty, use fallback
+      return getFallbackResponse(message)
+
+    } catch (e) {
+      console.error('[SAM] Cognitive API error:', e)
+      return getFallbackResponse(message)
+    }
+  }
+
+  /**
+   * Fallback responses when cognitive API is unavailable
+   */
+  function getFallbackResponse(message: string): string {
+    const lower = message.toLowerCase()
 
     // Learning queries
     if (lower.includes('what have you learned') || lower.includes('know about me')) {
@@ -401,6 +455,51 @@ export function useSAM() {
     ]
 
     return responses[Math.floor(Math.random() * responses.length)]
+  }
+
+  /**
+   * Stream a response token-by-token (for real-time display)
+   */
+  function streamResponse(
+    message: string,
+    onToken: (token: string) => void,
+    onComplete?: (fullResponse: string) => void,
+    onError?: (error: string) => void
+  ): () => void {
+    // Start streaming from cognitive API
+    return cognitiveAPI.stream(
+      message,
+      onToken,
+      (response) => {
+        // Add to conversation history
+        conversationHistory.value.push({
+          role: 'atlas',
+          content: response.response,
+          timestamp: new Date()
+        })
+        onComplete?.(response.response)
+      },
+      onError
+    )
+  }
+
+  /**
+   * Process an image and get a response
+   */
+  async function processImage(
+    imagePath: string,
+    query: string = 'What do you see in this image?'
+  ): Promise<string> {
+    try {
+      const result = await cognitiveAPI.processImage(imagePath, query)
+      if (result && result.response) {
+        return result.response
+      }
+      return "I couldn't process that image right now."
+    } catch (e) {
+      console.error('[SAM] Vision error:', e)
+      return "Having trouble with my vision system at the moment."
+    }
   }
 
   /**
@@ -648,6 +747,11 @@ export function useSAM() {
     memory,
     voice,
     character: characterCustomization,
+
+    // Cognitive API (Python backend connection)
+    cognitiveAPI,
+    streamResponse,
+    processImage,
 
     // Conversation
     conversationHistory

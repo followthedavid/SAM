@@ -111,6 +111,8 @@ const emit = defineEmits<{
   (e: 'open-preferences'): void
   (e: 'open-folder'): void
   (e: 'global-search'): void
+  // Dual Terminal
+  (e: 'dual-terminal'): void
 }>()
 
 const query = ref('')
@@ -165,6 +167,7 @@ const commands: Command[] = [
 
   // AI
   { id: 'toggle-ai', label: 'Toggle AI Overlay', icon: '◉', shortcut: '⌘⇧A', category: 'AI', action: () => emit('toggle-ai-overlay') },
+  { id: 'dual-terminal', label: 'Dual Terminal (Claude + SAM)', icon: '⚡', shortcut: '⌘⇧B', category: 'AI', action: () => emit('dual-terminal') },
 
   // Search
   { id: 'global-search', label: 'Search Tabs & Panes', icon: '🔍', shortcut: '⌘⇧F', category: 'Search', action: () => emit('global-search') },

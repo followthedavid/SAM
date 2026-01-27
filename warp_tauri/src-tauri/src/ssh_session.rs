@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
-use std::thread::{self, JoinHandle};
+use std::thread::JoinHandle;
 use ssh2::Session;
 use serde::{Deserialize, Serialize};
 
@@ -24,6 +24,7 @@ pub struct SshInfo {
     pub connected: bool,
 }
 
+#[allow(dead_code)]
 pub struct SshSession {
     session: Session,
     channel: ssh2::Channel,

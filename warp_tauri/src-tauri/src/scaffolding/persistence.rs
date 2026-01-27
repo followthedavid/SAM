@@ -4,8 +4,8 @@
 // Provides checkpoint/resume capability for long-running tasks.
 
 use serde::{Deserialize, Serialize};
-use std::fs::{self, File, OpenOptions};
-use std::io::{Read, Write, BufReader, BufWriter};
+use std::fs::{self, File};
+use std::io::{BufReader, BufWriter};
 use std::path::PathBuf;
 use chrono::{DateTime, Utc};
 
@@ -390,6 +390,193 @@ impl<'de> Deserialize<'de> for ProtectedFiles {
             paths: helper.paths,
             patterns: helper.patterns,
         })
+    }
+}
+
+// =============================================================================
+// CHARACTER MEMORY - Persistent roleplay state
+// =============================================================================
+
+/// A single message in character conversation history
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CharacterMessage {
+    pub role: String,  // "user" or "character"
+    pub content: String,
+    pub timestamp: DateTime<Utc>,
+}
+
+/// Persistent state for a character roleplay session
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CharacterMemory {
+    pub character_id: String,
+    pub character_name: String,
+    pub started_at: DateTime<Utc>,
+    pub last_active: DateTime<Utc>,
+    pub messages: Vec<CharacterMessage>,
+    /// Key facts the character should "remember"
+    pub remembered_facts: Vec<String>,
+    /// Custom traits or modifications the user made
+    pub custom_traits: Vec<String>,
+}
+
+impl CharacterMemory {
+    pub fn new(character_id: &str, character_name: &str) -> Self {
+        Self {
+            character_id: character_id.to_string(),
+            character_name: character_name.to_string(),
+            started_at: Utc::now(),
+            last_active: Utc::now(),
+            messages: Vec::new(),
+            remembered_facts: Vec::new(),
+            custom_traits: Vec::new(),
+        }
+    }
+
+    fn path(character_id: &str) -> PathBuf {
+        sam_dir().join("characters").join(format!("{}.json", character_id))
+    }
+
+    /// Save character memory to disk
+    pub fn save(&self) -> std::io::Result<()> {
+        ensure_dirs()?;
+        fs::create_dir_all(sam_dir().join("characters"))?;
+
+        let path = Self::path(&self.character_id);
+        let file = File::create(&path)?;
+        let writer = BufWriter::new(file);
+        serde_json::to_writer_pretty(writer, self)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        Ok(())
+    }
+
+    /// Load character memory from disk
+    pub fn load(character_id: &str) -> std::io::Result<Self> {
+        let path = Self::path(character_id);
+        let file = File::open(&path)?;
+        let reader = BufReader::new(file);
+        serde_json::from_reader(reader)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+
+    /// Check if memory exists for a character
+    pub fn exists(character_id: &str) -> bool {
+        Self::path(character_id).exists()
+    }
+
+    /// List all characters with saved memories
+    pub fn list_all() -> std::io::Result<Vec<String>> {
+        ensure_dirs()?;
+        fs::create_dir_all(sam_dir().join("characters"))?;
+
+        let path = sam_dir().join("characters");
+        let mut characters = Vec::new();
+        for entry in fs::read_dir(path)? {
+            let entry = entry?;
+            if let Some(name) = entry.path().file_stem() {
+                characters.push(name.to_string_lossy().to_string());
+            }
+        }
+        Ok(characters)
+    }
+
+    /// Add a message to history
+    pub fn add_message(&mut self, role: &str, content: &str) {
+        self.messages.push(CharacterMessage {
+            role: role.to_string(),
+            content: content.to_string(),
+            timestamp: Utc::now(),
+        });
+        self.last_active = Utc::now();
+
+        // Keep last 100 messages max
+        if self.messages.len() > 100 {
+            self.messages = self.messages.split_off(self.messages.len() - 100);
+        }
+
+        let _ = self.save();
+    }
+
+    /// Add a fact the character should remember
+    pub fn remember_fact(&mut self, fact: &str) {
+        if !self.remembered_facts.contains(&fact.to_string()) {
+            self.remembered_facts.push(fact.to_string());
+            let _ = self.save();
+        }
+    }
+
+    /// Get recent context for prompt building (last N messages)
+    pub fn recent_context(&self, count: usize) -> Vec<&CharacterMessage> {
+        let start = if self.messages.len() > count {
+            self.messages.len() - count
+        } else {
+            0
+        };
+        self.messages[start..].iter().collect()
+    }
+
+    /// Clear conversation history but keep remembered facts
+    pub fn clear_history(&mut self) {
+        self.messages.clear();
+        let _ = self.save();
+    }
+
+    /// Delete all memory for this character
+    pub fn delete(character_id: &str) -> std::io::Result<()> {
+        let path = Self::path(character_id);
+        if path.exists() {
+            fs::remove_file(path)?;
+        }
+        Ok(())
+    }
+}
+
+/// Global active character state
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ActiveCharacterState {
+    pub active_character_id: Option<String>,
+    pub active_character_name: Option<String>,
+}
+
+impl ActiveCharacterState {
+    fn path() -> PathBuf {
+        sam_dir().join("active_character.json")
+    }
+
+    /// Save active character state
+    pub fn save(&self) -> std::io::Result<()> {
+        ensure_dirs()?;
+        let path = Self::path();
+        let file = File::create(&path)?;
+        let writer = BufWriter::new(file);
+        serde_json::to_writer_pretty(writer, self)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        Ok(())
+    }
+
+    /// Load active character state
+    pub fn load() -> std::io::Result<Self> {
+        let path = Self::path();
+        if !path.exists() {
+            return Ok(Self::default());
+        }
+        let file = File::open(&path)?;
+        let reader = BufReader::new(file);
+        serde_json::from_reader(reader)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+
+    /// Set active character
+    pub fn set_active(&mut self, id: &str, name: &str) {
+        self.active_character_id = Some(id.to_string());
+        self.active_character_name = Some(name.to_string());
+        let _ = self.save();
+    }
+
+    /// Clear active character
+    pub fn clear(&mut self) {
+        self.active_character_id = None;
+        self.active_character_name = None;
+        let _ = self.save();
     }
 }
 

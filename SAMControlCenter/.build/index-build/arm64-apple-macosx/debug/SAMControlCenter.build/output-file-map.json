@@ -1,0 +1,19 @@
+{
+  "": {
+    "swift-dependencies": "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/master.swiftdeps"
+  },
+  "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/Sources/ContentView.swift": {
+    "dependencies": "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/ContentView.d",
+    "object": "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/ContentView.swift.o",
+    "swiftmodule": "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/ContentView~partial.swiftmodule",
+    "swift-dependencies": "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/ContentView.swiftdeps",
+    "diagnostics": "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/ContentView.dia"
+  },
+  "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/Sources/SAMControlCenterApp.swift": {
+    "dependencies": "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/SAMControlCenterApp.d",
+    "object": "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/SAMControlCenterApp.swift.o",
+    "swiftmodule": "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/SAMControlCenterApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/SAMControlCenterApp.swiftdeps",
+    "diagnostics": "/Users/davidquinton/ReverseLab/SAM/SAMControlCenter/.build/index-build/arm64-apple-macosx/debug/SAMControlCenter.build/SAMControlCenterApp.dia"
+  }
+}

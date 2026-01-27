@@ -3,6 +3,8 @@
 // This module implements techniques to make local LLMs perform
 // at near-Claude levels through structured prompting and validation.
 
+#![allow(unused_imports)]  // Re-exports for public API
+
 pub mod json_validator;
 pub mod chain_of_thought;
 pub mod examples;
@@ -53,6 +55,25 @@ pub mod task_executor;
 pub mod privacy_logger;
 pub mod external_ai;
 pub mod test_harness;
+pub mod character_library;
+pub mod smart_orchestrator;
+pub mod settings_sync;
+pub mod integrations;
+pub mod notifications;
+pub mod terminal_blocks;
+pub mod syntax_highlight;
+pub mod warp_bridge;
+pub mod multi_window;
+pub mod ssh_warpify;
+pub mod fullscreen_apps;
+pub mod voice_input;
+pub mod audio_bell;
+pub mod keyboard_shortcuts;
+pub mod command_suggest;
+pub mod notebooks;
+pub mod sticky_commands;
+pub mod link_detector;
+pub mod team;
 
 // Re-export main types
 pub use json_validator::{ToolCall, ToolCallValidator, ValidationError};
@@ -68,7 +89,7 @@ pub use tool_cache::{ToolCache, CacheConfig, CachedResult};
 pub use ollama_agent::{OllamaAgent, OllamaAgentConfig, AgentEvent, StreamingConfig};
 pub use self_correction::{SelfCorrectionEngine, SelfCorrectionConfig, ValidationResult as CorrectionResult};
 pub use lean_agent::{LeanState, TaskPhase, OutputParser, DefaultActions, build_atomic_prompt};
-pub use persistence::{PersistentTask, TaskStatus, FileBackup, ProtectedFiles};
+pub use persistence::{PersistentTask, TaskStatus, FileBackup, ProtectedFiles, CharacterMemory, CharacterMessage, ActiveCharacterState};
 pub use safe_executor::{SafeExecutor, ExecutionResult, run_autonomous_task};
 pub use guaranteed_success::{GuaranteedSuccess, AtomicAction, ParsedAction, GuaranteedPrompt, PhasePrompts};
 pub use unified_agent::{UnifiedAgent, UnifiedConfig, AgentMode, UnifiedEvent};
@@ -102,3 +123,21 @@ pub use autonomy::{AutonomyController, AutonomyLevel, AutonomyConfig, ToolPermis
 pub use subagents::{SubagentManager, Subagent, AgentSpecialization, SubagentStatus, SubTask as SubagentTask, TaskContext, SubagentResult, DelegationPlan, PlanStatus as DelegationPlanStatus, SubagentConfig, subagents, create_plan_sync as create_delegation_plan, execute_plan_sync as execute_delegation_plan, get_plan as get_delegation_plan, cancel_plan as cancel_delegation_plan};
 pub use external_ai::{AIConfig, ChatMessage, AIResponse, AIError, AIProvider, UnifiedAI, ClaudeClient, OpenAIClient, check_ai_status, call_claude, call_openai, call_ai, set_api_key};
 pub use test_harness::{TestCase, TestResult, TestSummary, run_single_test, run_test_suite, run_smoke_test, get_default_test_suite, format_results_terminal, format_results_json, is_test_running, get_last_summary, run_and_store_tests};
+pub use character_library::{SavedCharacter, CharacterArchetype, CharacterLibrary, DialogueExample, character_library, parse_natural_language};
+pub use settings_sync::{SettingsSync, SyncCategory, SyncSetting, SyncConfig, SyncBackend, SyncStatus, SyncResult, SyncError, SyncConflict, ConflictResolution, get_sync, set as sync_set, get as sync_get, sync};
+pub use integrations::{IntegrationManager, Integration, IntegrationType, SlackIntegration, LinearIntegration, IntegrationConfig, IntegrationEvent, integrations as integration_manager};
+pub use notifications::{NotificationManager, Notification, NotificationType, NotificationPriority, NotificationConfig, NotificationRule, notifications, notify, command_started, command_completed, check_long_running, agent_event, unread_count};
+pub use terminal_blocks::{BlockManager, Block, BlockState, BlockFilter, BlockEvent, blocks, start_block, append_output, complete_block, all_blocks, search_blocks};
+pub use syntax_highlight::{SyntaxHighlighter, HighlightedCommand, HighlightSpan, TokenType, Theme, ThemeColors, dark_theme, light_theme, monokai_theme};
+pub use warp_bridge::{SecretRedactorBridge, SecretCategory, RedactionResult, RedactorConfig, Completion as WarpCompletion, CompletionType, CommandSpec, FlagSpec, CompletionBridge, redactor, redact, redact_with_info, contains_secrets, complete as complete_command, add_to_history as add_command_history};
+pub use multi_window::{WindowManager, Window, WindowPosition, WindowSize, WindowState, WindowOptions, SavedLayout, WindowLayout, WindowEvent, windows, create_window, close_window, focus_window, window_count};
+pub use ssh_warpify::{SshWarpifyManager, SshSession, SshState, WarpifyConfig, WarpifyCapabilities, SshEvent, SubshellDetector, ssh_manager, register_ssh, warpify, detect_subshell};
+pub use fullscreen_apps::{FullScreenManager, FullScreenApp, AppState, AppPadding, KeyboardMode as FullScreenKeyboardMode, FullScreenConfig, fullscreen, in_fullscreen, enter_alt_screen, leave_alt_screen, detect_app};
+pub use voice_input::{VoiceInputManager, VoiceProvider, VoiceState, VoiceMode, Transcription, VoiceConfig, VoiceCommand, voice, start_listening, stop_listening, is_listening, cancel as cancel_voice, parse_voice_command};
+pub use audio_bell::{SoundManager, SoundType, SoundConfig, sounds, bell, error as bell_error, success as bell_success, notification as bell_notification, mute as mute_sounds, unmute as unmute_sounds, process_output as process_bell_output};
+pub use keyboard_shortcuts::{ShortcutManager, Shortcut, Modifier as KeyModifier, Action as ShortcutAction, Binding, Category as ShortcutCategory, KeyboardMode, shortcuts, get_action, get_shortcut};
+pub use command_suggest::{CommandSuggester, Suggestion as CommandSuggestion, CommandContext, SuggestionReason, SuggesterStats, suggester, record as record_command, suggest as suggest_commands, correct_typo};
+pub use notebooks::{NotebookManager, Notebook, Cell, CellType, CellState, CellOutput, OutputType, CellMetadata, NotebookMetadata, NotebookEvent, ExecutionRequest, notebooks, create as create_notebook, add_code, add_markdown, execute as execute_cell};
+pub use sticky_commands::{StickyManager, StickyCommand, StickyFolder, StickyUpdate, UseResult, stickies, add as add_sticky, pin, use_command, search as search_stickies};
+pub use link_detector::{LinkDetector, DetectedLink, LinkType, LinkConfig, CustomPattern, detect as detect_links, add_pattern as add_link_pattern, set_issue_template};
+pub use team::{TeamManager, Team, TeamMember, TeamRole, TeamSettings, SharedItem, SharedItemType, Share, SharingPermission, ActivityEvent, ActivityType, CurrentUser, teams, set_user, create_team, share_with_team};

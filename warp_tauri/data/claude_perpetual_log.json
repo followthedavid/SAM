@@ -1,0 +1,350 @@
+[
+  {
+    "id": "log-1768329337182-twfk6gajv",
+    "timestamp": "2026-01-13T18:35:37.182Z",
+    "type": "goal",
+    "content": "New goal: Test goal [Priority: medium]",
+    "status": "pending",
+    "goalId": "410deb1c-031d-4474-9587-f52abd20fdcc"
+  },
+  {
+    "id": "log-1768329337186-efw6rnfuy",
+    "timestamp": "2026-01-13T18:35:37.186Z",
+    "type": "goal",
+    "content": "New goal: Goal 1 [Priority: high]",
+    "status": "pending",
+    "goalId": "82d4281d-6147-47e2-bd15-2d500e2a2838"
+  },
+  {
+    "id": "log-1768329337186-jhnn4yxty",
+    "timestamp": "2026-01-13T18:35:37.186Z",
+    "type": "goal",
+    "content": "New goal: Goal 2 [Priority: low]",
+    "status": "pending",
+    "goalId": "4fcf98c6-a567-4c9a-83a0-58d2a31338cb"
+  },
+  {
+    "id": "log-1768329337193-jy5qfhpvh",
+    "timestamp": "2026-01-13T18:35:37.193Z",
+    "type": "goal",
+    "content": "New goal: Low priority [Priority: low]",
+    "status": "pending",
+    "goalId": "632258b3-16ec-4324-b152-7bea0fe4f0ed"
+  },
+  {
+    "id": "log-1768329337193-grfjqou3f",
+    "timestamp": "2026-01-13T18:35:37.193Z",
+    "type": "goal",
+    "content": "New goal: Critical task [Priority: critical]",
+    "status": "pending",
+    "goalId": "b544b374-ae5a-4ad1-bc14-7b73e7355ec7"
+  },
+  {
+    "id": "log-1768329337198-52577r1oq",
+    "timestamp": "2026-01-13T18:35:37.198Z",
+    "type": "goal",
+    "content": "New goal: Medium task [Priority: medium]",
+    "status": "pending",
+    "goalId": "6b9c805d-ad41-42f0-b661-b388643b23ae"
+  },
+  {
+    "id": "log-1768329337200-qxz20slbq",
+    "timestamp": "2026-01-13T18:35:37.200Z",
+    "type": "goal",
+    "content": "New goal: Persistent goal [Priority: high]",
+    "status": "pending",
+    "goalId": "5633db9a-099c-49d7-bf2f-d755799dcb14"
+  },
+  {
+    "id": "log-1768329337207-fkkusyjvy",
+    "timestamp": "2026-01-13T18:35:37.207Z",
+    "type": "goal",
+    "content": "New goal: Goal 1 [Priority: medium]",
+    "status": "pending",
+    "goalId": "80c02f63-2b93-4a39-91de-91706f2472df"
+  },
+  {
+    "id": "log-1768329337207-2x7eqj35t",
+    "timestamp": "2026-01-13T18:35:37.207Z",
+    "type": "goal",
+    "content": "New goal: Goal 2 [Priority: high]",
+    "status": "pending",
+    "goalId": "1c5aa830-ac42-49d8-a023-2edbaf0a9f75"
+  },
+  {
+    "id": "log-1768329337208-989qc3273",
+    "timestamp": "2026-01-13T18:35:37.208Z",
+    "type": "goal",
+    "content": "Test log entry",
+    "status": "pending"
+  },
+  {
+    "id": "log-1768329337219-ptl96p38o",
+    "timestamp": "2026-01-13T18:35:37.219Z",
+    "type": "goal",
+    "content": "New goal: Test without Claude [Priority: low]",
+    "status": "pending",
+    "goalId": "5669e342-6bfa-4568-a17d-acf3d9a5fcba"
+  },
+  {
+    "id": "log-1768506136062-xy5hmkox7",
+    "timestamp": "2026-01-15T19:42:16.062Z",
+    "type": "goal",
+    "content": "New goal: Test goal [Priority: medium]",
+    "status": "pending",
+    "goalId": "f19e154b-27c8-475a-ab2f-885b234a5078"
+  },
+  {
+    "id": "log-1768506136065-g1d7r64d8",
+    "timestamp": "2026-01-15T19:42:16.065Z",
+    "type": "goal",
+    "content": "New goal: Goal 1 [Priority: high]",
+    "status": "pending",
+    "goalId": "26d5f8d0-d277-4975-8667-962e1dcb2d9a"
+  },
+  {
+    "id": "log-1768506136065-0ateifr1m",
+    "timestamp": "2026-01-15T19:42:16.065Z",
+    "type": "goal",
+    "content": "New goal: Goal 2 [Priority: low]",
+    "status": "pending",
+    "goalId": "f5cc975f-9276-4826-a3a7-dbe48bef849f"
+  },
+  {
+    "id": "log-1768506136071-x9s7r91bs",
+    "timestamp": "2026-01-15T19:42:16.071Z",
+    "type": "goal",
+    "content": "New goal: Low priority [Priority: low]",
+    "status": "pending",
+    "goalId": "567f6bf4-9259-4a9a-9699-a544a5804ee8"
+  },
+  {
+    "id": "log-1768506136072-wsrerasmj",
+    "timestamp": "2026-01-15T19:42:16.072Z",
+    "type": "goal",
+    "content": "New goal: Critical task [Priority: critical]",
+    "status": "pending",
+    "goalId": "d9cb81e4-531e-4cfb-ada8-c4c7c40bfc81"
+  },
+  {
+    "id": "log-1768506136072-jvp7v7cgn",
+    "timestamp": "2026-01-15T19:42:16.072Z",
+    "type": "goal",
+    "content": "New goal: Medium task [Priority: medium]",
+    "status": "pending",
+    "goalId": "3f852897-933c-4e85-92ab-4a4766ad3e41"
+  },
+  {
+    "id": "log-1768506136073-dbxc2y0xc",
+    "timestamp": "2026-01-15T19:42:16.073Z",
+    "type": "goal",
+    "content": "New goal: Persistent goal [Priority: high]",
+    "status": "pending",
+    "goalId": "86b76831-e1ea-4e33-90f5-c4c761ffdeb9"
+  },
+  {
+    "id": "log-1768506136079-vbwe4vfgx",
+    "timestamp": "2026-01-15T19:42:16.079Z",
+    "type": "goal",
+    "content": "New goal: Goal 1 [Priority: medium]",
+    "status": "pending",
+    "goalId": "a8021f7d-e6ac-445f-9161-f9fae817d889"
+  },
+  {
+    "id": "log-1768506136079-wai0c7eya",
+    "timestamp": "2026-01-15T19:42:16.079Z",
+    "type": "goal",
+    "content": "New goal: Goal 2 [Priority: high]",
+    "status": "pending",
+    "goalId": "25ffe313-7707-4b43-8b08-6b2e60d37155"
+  },
+  {
+    "id": "log-1768506136082-10lvmw6d2",
+    "timestamp": "2026-01-15T19:42:16.082Z",
+    "type": "goal",
+    "content": "Test log entry",
+    "status": "pending"
+  },
+  {
+    "id": "log-1768506136085-z5da5bayx",
+    "timestamp": "2026-01-15T19:42:16.085Z",
+    "type": "goal",
+    "content": "New goal: Test without Claude [Priority: low]",
+    "status": "pending",
+    "goalId": "65797b8e-36c1-4222-8d51-b263d04c5ef6"
+  },
+  {
+    "id": "log-1768506700883-v7kn8oe79",
+    "timestamp": "2026-01-15T19:51:40.883Z",
+    "type": "goal",
+    "content": "New goal: Test goal [Priority: medium]",
+    "status": "pending",
+    "goalId": "a96205e6-9bbc-45fe-963a-b62d48896107"
+  },
+  {
+    "id": "log-1768506700887-2lu8ueuvc",
+    "timestamp": "2026-01-15T19:51:40.887Z",
+    "type": "goal",
+    "content": "New goal: Goal 1 [Priority: high]",
+    "status": "pending",
+    "goalId": "f2ec6e2d-0170-4ae9-9f48-1001beaaf924"
+  },
+  {
+    "id": "log-1768506700887-mk36xu2a8",
+    "timestamp": "2026-01-15T19:51:40.887Z",
+    "type": "goal",
+    "content": "New goal: Goal 2 [Priority: low]",
+    "status": "pending",
+    "goalId": "a065b84c-961d-4d73-841a-6ee129fa8e3b"
+  },
+  {
+    "id": "log-1768506700896-ekb5yrodu",
+    "timestamp": "2026-01-15T19:51:40.896Z",
+    "type": "goal",
+    "content": "New goal: Low priority [Priority: low]",
+    "status": "pending",
+    "goalId": "a1b91d5a-ba4f-4b2e-8ed2-4a3d58421173"
+  },
+  {
+    "id": "log-1768506700896-c9ju52fy2",
+    "timestamp": "2026-01-15T19:51:40.896Z",
+    "type": "goal",
+    "content": "New goal: Critical task [Priority: critical]",
+    "status": "pending",
+    "goalId": "a41a6875-e009-47fd-9ec7-82a2acbbdcb4"
+  },
+  {
+    "id": "log-1768506700897-aqy33wtz7",
+    "timestamp": "2026-01-15T19:51:40.897Z",
+    "type": "goal",
+    "content": "New goal: Medium task [Priority: medium]",
+    "status": "pending",
+    "goalId": "1d0f048f-a54e-4644-81d3-5c91d3fb8e17"
+  },
+  {
+    "id": "log-1768506700898-qf3hywzqw",
+    "timestamp": "2026-01-15T19:51:40.898Z",
+    "type": "goal",
+    "content": "New goal: Persistent goal [Priority: high]",
+    "status": "pending",
+    "goalId": "9595dcba-212e-4428-a3c9-387a149192c8"
+  },
+  {
+    "id": "log-1768506700903-1ybzwk1um",
+    "timestamp": "2026-01-15T19:51:40.903Z",
+    "type": "goal",
+    "content": "New goal: Goal 1 [Priority: medium]",
+    "status": "pending",
+    "goalId": "92d9ceeb-59cc-4f3e-8870-f69192dcd066"
+  },
+  {
+    "id": "log-1768506700903-pbrrrhxpf",
+    "timestamp": "2026-01-15T19:51:40.903Z",
+    "type": "goal",
+    "content": "New goal: Goal 2 [Priority: high]",
+    "status": "pending",
+    "goalId": "3245ad76-084a-48f6-9bd4-1ffadec9ab00"
+  },
+  {
+    "id": "log-1768506700906-5p4ajispj",
+    "timestamp": "2026-01-15T19:51:40.906Z",
+    "type": "goal",
+    "content": "Test log entry",
+    "status": "pending"
+  },
+  {
+    "id": "log-1768506700913-ic6cmf5bf",
+    "timestamp": "2026-01-15T19:51:40.913Z",
+    "type": "goal",
+    "content": "New goal: Test without Claude [Priority: low]",
+    "status": "pending",
+    "goalId": "7ee679f7-73bc-46d4-afe5-c987ddfd1947"
+  },
+  {
+    "id": "log-1768506737479-lg8ji7qyv",
+    "timestamp": "2026-01-15T19:52:17.479Z",
+    "type": "goal",
+    "content": "New goal: Test goal [Priority: medium]",
+    "status": "pending",
+    "goalId": "96fe64c3-41aa-43a0-9f73-fdc377387629"
+  },
+  {
+    "id": "log-1768506737481-uvdqu1xdr",
+    "timestamp": "2026-01-15T19:52:17.481Z",
+    "type": "goal",
+    "content": "New goal: Goal 1 [Priority: high]",
+    "status": "pending",
+    "goalId": "007c6667-4be4-4dfc-9bd3-5ba0d1e9dfdd"
+  },
+  {
+    "id": "log-1768506737482-ym0m1i55x",
+    "timestamp": "2026-01-15T19:52:17.482Z",
+    "type": "goal",
+    "content": "New goal: Goal 2 [Priority: low]",
+    "status": "pending",
+    "goalId": "2dfab655-0f66-4504-a0ca-4ab179acf86c"
+  },
+  {
+    "id": "log-1768506737489-3p2by4vv6",
+    "timestamp": "2026-01-15T19:52:17.489Z",
+    "type": "goal",
+    "content": "New goal: Low priority [Priority: low]",
+    "status": "pending",
+    "goalId": "d5011dc6-aa78-4e16-a443-ddd7be81bfe2"
+  },
+  {
+    "id": "log-1768506737489-deztqwwfy",
+    "timestamp": "2026-01-15T19:52:17.489Z",
+    "type": "goal",
+    "content": "New goal: Critical task [Priority: critical]",
+    "status": "pending",
+    "goalId": "12df305e-4657-4ceb-98d6-e386a5971d83"
+  },
+  {
+    "id": "log-1768506737489-8kc7lpvyp",
+    "timestamp": "2026-01-15T19:52:17.489Z",
+    "type": "goal",
+    "content": "New goal: Medium task [Priority: medium]",
+    "status": "pending",
+    "goalId": "426daab6-db57-488a-9ea2-da096e5af5a5"
+  },
+  {
+    "id": "log-1768506737491-oxkx6n6px",
+    "timestamp": "2026-01-15T19:52:17.491Z",
+    "type": "goal",
+    "content": "New goal: Persistent goal [Priority: high]",
+    "status": "pending",
+    "goalId": "1de89c7d-fcaa-485e-9767-c242a18a8b04"
+  },
+  {
+    "id": "log-1768506737496-mio07kj2n",
+    "timestamp": "2026-01-15T19:52:17.496Z",
+    "type": "goal",
+    "content": "New goal: Goal 1 [Priority: medium]",
+    "status": "pending",
+    "goalId": "6416501e-7458-4436-a7d4-07094b89bfcd"
+  },
+  {
+    "id": "log-1768506737496-5cv05jo1q",
+    "timestamp": "2026-01-15T19:52:17.496Z",
+    "type": "goal",
+    "content": "New goal: Goal 2 [Priority: high]",
+    "status": "pending",
+    "goalId": "ca29fc82-66a9-4d2d-a2df-ecfce5e20dac"
+  },
+  {
+    "id": "log-1768506737497-2viv8kzht",
+    "timestamp": "2026-01-15T19:52:17.497Z",
+    "type": "goal",
+    "content": "Test log entry",
+    "status": "pending"
+  },
+  {
+    "id": "log-1768506737503-77k37cq6x",
+    "timestamp": "2026-01-15T19:52:17.503Z",
+    "type": "goal",
+    "content": "New goal: Test without Claude [Priority: low]",
+    "status": "pending",
+    "goalId": "4a8361ad-756e-489f-8803-ca36fb72b079"
+  }
+]

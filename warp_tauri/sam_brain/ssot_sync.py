@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
 """
-SAM SSOT Sync - Keep SAM's knowledge synced with the external SSOT.
+SAM SSOT Sync - Bidirectional sync between Evolution Tracker and SSOT Documentation
 
 The SSOT (Single Source of Truth) lives on /Volumes/Plex/SSOT and contains:
-- Project inventories
+- Project inventories and documentation
 - Session contexts
 - Cross-LLM knowledge
 - Exhaustive system documentation
+- Progress timelines (auto-generated)
 
-This module keeps SAM in sync with that knowledge.
+This module keeps SAM and the Evolution Tracker in sync with SSOT:
+- Reads project state from SSOT docs
+- Writes progress updates back to docs
+- Maintains "Progress Timeline" sections in project files
+- Updates PROJECT_OVERLAPS.md with integration status
 """
 
 import os
+import re
 import json
 import hashlib
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Optional
-from dataclasses import dataclass
+from typing import Dict, List, Optional, Any
+from dataclasses import dataclass, field
 
 # Paths
 SSOT_PATH = Path("/Volumes/Plex/SSOT")
@@ -30,6 +36,25 @@ class SyncState:
     last_sync: str
     file_hashes: Dict[str, str]
     imported_files: List[str]
+
+
+@dataclass
+class ProjectDocInfo:
+    """Information parsed from a project's SSOT doc"""
+    id: str
+    name: str
+    category: str
+    current_progress: float
+    status: str
+    file_path: Path
+    description: str = ""
+    dependencies: List[str] = field(default_factory=list)
+    integrations: List[str] = field(default_factory=list)
+
+
+# Additional paths for projects
+PROJECTS_DIR = SSOT_PATH / "projects"
+OVERLAPS_FILE = SSOT_PATH / "PROJECT_OVERLAPS.md"
 
 
 class SSOTSync:
@@ -224,6 +249,376 @@ class SSOTSync:
             "ssot_files": len(self.get_ssot_files()) if self.ssot_available else 0
         }
 
+    # ===== Evolution Tracker Integration =====
+
+    def _get_tracker(self):
+        """Lazy load evolution tracker"""
+        try:
+            from evolution_tracker import EvolutionTracker
+            return EvolutionTracker()
+        except ImportError:
+            return None
+
+    def discover_project_docs(self) -> List[Path]:
+        """Find all project documentation files in SSOT"""
+        if not self.ssot_available:
+            return []
+
+        project_files = []
+
+        # Look in projects directory
+        if PROJECTS_DIR.exists():
+            project_files.extend(PROJECTS_DIR.glob("*.md"))
+
+        # Also check for project docs in root
+        root_project_patterns = ["SAM_*.md", "*_PROJECT.md", "PROJECT_*.md"]
+        for pattern in root_project_patterns:
+            project_files.extend(SSOT_PATH.glob(pattern))
+
+        return sorted(set(project_files))
+
+    def parse_project_doc(self, filepath: Path) -> Optional[ProjectDocInfo]:
+        """Parse a project markdown file for key information"""
+        try:
+            content = filepath.read_text()
+        except Exception as e:
+            print(f"Error reading {filepath}: {e}")
+            return None
+
+        # Extract project name from title (first # heading)
+        name_match = re.search(r'^#\s+(.+?)(?:\n|$)', content, re.MULTILINE)
+        name = name_match.group(1).strip() if name_match else filepath.stem
+
+        # Generate ID from filename
+        project_id = filepath.stem.upper().replace(" ", "_").replace("-", "_")
+
+        # Detect category
+        category = self._detect_category(content, name)
+
+        # Extract progress and status
+        progress = self._extract_progress(content)
+        status = self._extract_status(content)
+
+        # Extract description (first paragraph after title)
+        desc_match = re.search(r'^#\s+.+?\n\n(.+?)(?:\n\n|\n#)', content, re.MULTILINE | re.DOTALL)
+        description = desc_match.group(1).strip()[:500] if desc_match else ""
+
+        return ProjectDocInfo(
+            id=project_id,
+            name=name,
+            category=category,
+            current_progress=progress,
+            status=status,
+            file_path=filepath,
+            description=description,
+            dependencies=self._extract_dependencies(content),
+            integrations=self._extract_integrations(content)
+        )
+
+    def _detect_category(self, content: str, name: str) -> str:
+        """Detect project category from content and name"""
+        content_lower = content.lower()
+        name_lower = name.lower()
+
+        # SAM's own systems get 'sam' category
+        if "sam_brain" in name_lower or "sam brain" in name_lower:
+            return "sam"
+        if "orchestrat" in name_lower:
+            return "brain"
+
+        category_keywords = {
+            "sam": ["self-improvement", "sam's evolution", "core system"],
+            "brain": ["routing", "orchestrat", "model selection", "ai backend"],
+            "visual": ["image", "comfyui", "stable diffusion", "lora", "visual"],
+            "voice": ["voice", "tts", "speech", "rvc", "audio"],
+            "content": ["content", "media", "video", "animation", "creative"],
+            "platform": ["platform", "infrastructure", "server", "deployment", "api"],
+        }
+
+        for cat, keywords in category_keywords.items():
+            if any(kw in content_lower for kw in keywords):
+                return cat
+
+        return "platform"
+
+    def _extract_progress(self, content: str) -> float:
+        """Extract progress percentage from document"""
+        patterns = [
+            r'progress[:\s]+(\d+(?:\.\d+)?)\s*%',
+            r'(\d+(?:\.\d+)?)\s*%\s+complete',
+            r'completion[:\s]+(\d+(?:\.\d+)?)\s*%',
+            r'\|\s*Progress\s*\|\s*(\d+(?:\.\d+)?)\s*%',
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, content, re.IGNORECASE)
+            if match:
+                return float(match.group(1)) / 100.0
+
+        status = self._extract_status(content)
+        status_progress = {
+            "not_started": 0.0, "planning": 0.1, "in_progress": 0.5,
+            "testing": 0.8, "completed": 1.0, "maintenance": 1.0,
+        }
+        return status_progress.get(status, 0.3)
+
+    def _extract_status(self, content: str) -> str:
+        """Extract project status from document"""
+        patterns = [
+            r'status[:\s]+(\w+)',
+            r'\|\s*Status\s*\|\s*(\w+)',
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, content, re.IGNORECASE)
+            if match:
+                status = match.group(1).lower()
+                if "progress" in status or "active" in status:
+                    return "in_progress"
+                elif "complete" in status or "done" in status:
+                    return "completed"
+                elif "plan" in status:
+                    return "planning"
+                return status
+
+        return "in_progress"
+
+    def _extract_dependencies(self, content: str) -> List[str]:
+        """Extract project dependencies from document"""
+        dep_section = re.search(
+            r'##?\s*Dependencies\s*\n(.*?)(?=\n##|\n#|\Z)',
+            content, re.IGNORECASE | re.DOTALL
+        )
+        if dep_section:
+            return re.findall(r'[-*]\s+(.+?)(?:\n|$)', dep_section.group(1))
+        return []
+
+    def _extract_integrations(self, content: str) -> List[str]:
+        """Extract integrations from document"""
+        int_section = re.search(
+            r'##?\s*Integrations?\s*\n(.*?)(?=\n##|\n#|\Z)',
+            content, re.IGNORECASE | re.DOTALL
+        )
+        if int_section:
+            return re.findall(r'[-*]\s+(.+?)(?:\n|$)', int_section.group(1))
+        return []
+
+    def sync_from_ssot_to_tracker(self) -> Dict[str, Any]:
+        """Read all SSOT docs and update evolution tracker"""
+        tracker = self._get_tracker()
+        if not tracker:
+            return {"success": False, "error": "Evolution tracker not available"}
+
+        project_docs = self.discover_project_docs()
+        synced = 0
+        errors = []
+
+        for doc_path in project_docs:
+            info = self.parse_project_doc(doc_path)
+            if info:
+                try:
+                    tracker.add_or_update_project(
+                        project_id=info.id,
+                        name=info.name,
+                        category=info.category,
+                        current_progress=info.current_progress,
+                        ssot_path=str(info.file_path)
+                    )
+                    synced += 1
+                except Exception as e:
+                    errors.append(f"{info.id}: {e}")
+
+        return {"success": True, "synced": synced, "total_docs": len(project_docs), "errors": errors}
+
+    def sync_from_tracker_to_ssot(self, project_id: Optional[str] = None) -> Dict[str, Any]:
+        """Update SSOT docs with progress from evolution tracker"""
+        tracker = self._get_tracker()
+        if not tracker:
+            return {"success": False, "error": "Evolution tracker not available"}
+
+        if project_id:
+            projects = [tracker.get_project(project_id)]
+            projects = [p for p in projects if p]
+        else:
+            projects = tracker.get_all_projects()
+
+        updated = 0
+        errors = []
+
+        for project in projects:
+            if not hasattr(project, 'ssot_path') or not project.ssot_path:
+                continue
+            if not Path(project.ssot_path).exists():
+                continue
+
+            try:
+                self._update_project_doc_with_progress(project, tracker)
+                updated += 1
+            except Exception as e:
+                errors.append(f"{project.id}: {e}")
+
+        return {"success": True, "updated": updated, "total_projects": len(projects), "errors": errors}
+
+    def _update_project_doc_with_progress(self, project, tracker) -> None:
+        """Update a single project's SSOT doc with progress timeline"""
+        filepath = Path(project.ssot_path)
+        content = filepath.read_text()
+
+        # Get progress history from tracker
+        history = tracker.get_progress_history(project.id) if hasattr(tracker, 'get_progress_history') else []
+
+        # Format progress timeline
+        timeline_section = self._format_progress_timeline(project, history)
+
+        # Check if Progress Timeline section exists
+        timeline_pattern = r'(##?\s*Progress Timeline\s*\n)(.*?)(?=\n##|\n#|\Z)'
+        match = re.search(timeline_pattern, content, re.IGNORECASE | re.DOTALL)
+
+        if match:
+            new_content = content[:match.start()] + timeline_section + content[match.end():]
+        else:
+            # Add before ## References or at end
+            ref_match = re.search(r'\n##?\s*References', content, re.IGNORECASE)
+            if ref_match:
+                new_content = content[:ref_match.start()] + "\n" + timeline_section + content[ref_match.start():]
+            else:
+                new_content = content.rstrip() + "\n\n" + timeline_section
+
+        filepath.write_text(new_content)
+
+    def _format_progress_timeline(self, project, history: list) -> str:
+        """Format progress history as markdown timeline"""
+        lines = ["## Progress Timeline\n"]
+        lines.append(f"*Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M')}*\n")
+
+        progress_val = project.current_progress if hasattr(project, 'current_progress') else 0
+        lines.append(f"**Current Progress:** {progress_val * 100:.0f}%\n")
+
+        if history:
+            lines.append("\n| Date | Progress | Milestone |")
+            lines.append("|------|----------|-----------|")
+
+            for entry in history[-10:]:
+                date = entry.recorded_at[:10] if hasattr(entry, 'recorded_at') else "Unknown"
+                progress = f"{entry.progress * 100:.0f}%" if hasattr(entry, 'progress') else "?"
+                milestone = getattr(entry, 'milestone', None) or "-"
+                lines.append(f"| {date} | {progress} | {milestone} |")
+        else:
+            lines.append("\n*No progress history recorded yet.*")
+
+        lines.append("\n")
+        return "\n".join(lines)
+
+    def update_project_overlaps(self) -> Dict[str, Any]:
+        """Update PROJECT_OVERLAPS.md with current integration status"""
+        tracker = self._get_tracker()
+        if not tracker:
+            return {"success": False, "error": "Evolution tracker not available"}
+
+        if not OVERLAPS_FILE.exists():
+            return {"success": False, "error": f"Overlaps file not found: {OVERLAPS_FILE}"}
+
+        # Get relationships if method exists
+        if not hasattr(tracker, 'get_all_relationships'):
+            return {"success": False, "error": "Tracker doesn't support relationships"}
+
+        relationships = tracker.get_all_relationships()
+
+        connected = [r for r in relationships if getattr(r, 'status', '') == "connected"]
+        planned = [r for r in relationships if getattr(r, 'status', '') == "planned"]
+        blocked = [r for r in relationships if getattr(r, 'status', '') == "blocked"]
+
+        content = OVERLAPS_FILE.read_text()
+        status_section = self._format_integration_status(connected, planned, blocked)
+
+        status_pattern = r'(##?\s*Integration Status\s*\n)(.*?)(?=\n##|\n#|\Z)'
+        match = re.search(status_pattern, content, re.IGNORECASE | re.DOTALL)
+
+        if match:
+            new_content = content[:match.start()] + status_section + content[match.end():]
+        else:
+            new_content = content.rstrip() + "\n\n" + status_section
+
+        OVERLAPS_FILE.write_text(new_content)
+
+        return {
+            "success": True,
+            "connected": len(connected),
+            "planned": len(planned),
+            "blocked": len(blocked)
+        }
+
+    def _format_integration_status(self, connected: list, planned: list, blocked: list) -> str:
+        """Format integration status as markdown"""
+        lines = ["## Integration Status\n"]
+        lines.append(f"*Auto-generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}*\n")
+
+        if connected:
+            lines.append("\n### Connected")
+            for r in connected:
+                lines.append(f"- {r.source_project} ↔ {r.target_project} ({r.relationship_type})")
+
+        if planned:
+            lines.append("\n### Planned")
+            for r in planned:
+                lines.append(f"- {r.source_project} → {r.target_project} ({r.relationship_type})")
+
+        if blocked:
+            lines.append("\n### Blocked")
+            for r in blocked:
+                lines.append(f"- {r.source_project} ✗ {r.target_project} ({r.relationship_type})")
+
+        if not connected and not planned and not blocked:
+            lines.append("\n*No integration relationships tracked yet.*")
+
+        lines.append("\n")
+        return "\n".join(lines)
+
+    def full_evolution_sync(self) -> Dict[str, Any]:
+        """Perform full bidirectional sync between tracker and SSOT"""
+        results = {
+            "from_ssot": self.sync_from_ssot_to_tracker(),
+            "to_ssot": self.sync_from_tracker_to_ssot(),
+            "overlaps": self.update_project_overlaps(),
+            "timestamp": datetime.now().isoformat()
+        }
+
+        results["success"] = all(
+            r.get("success", False) for r in [
+                results["from_ssot"],
+                results["to_ssot"],
+                results["overlaps"]
+            ]
+        )
+
+        return results
+
+    def get_evolution_sync_status(self) -> Dict[str, Any]:
+        """Get current sync status between tracker and SSOT"""
+        tracker = self._get_tracker()
+        if not tracker:
+            return {"synced": False, "error": "Tracker not available"}
+
+        project_docs = self.discover_project_docs()
+        db_projects = tracker.get_all_projects() if hasattr(tracker, 'get_all_projects') else []
+
+        doc_ids = set()
+        for p in project_docs:
+            info = self.parse_project_doc(p)
+            if info:
+                doc_ids.add(info.id)
+
+        db_ids = {p.id for p in db_projects}
+
+        return {
+            "synced": doc_ids == db_ids,
+            "docs_only": list(doc_ids - db_ids),
+            "db_only": list(db_ids - doc_ids),
+            "both": list(doc_ids & db_ids),
+            "total_docs": len(project_docs),
+            "total_db": len(db_projects)
+        }
+
 
 # Global instance
 _sync = None
@@ -253,12 +648,23 @@ if __name__ == "__main__":
     ssot = SSOTSync()
 
     if len(sys.argv) < 2:
-        print("SAM SSOT Sync")
-        print("-" * 40)
+        print("SAM SSOT Sync - Bidirectional sync with Evolution Tracker")
+        print("-" * 55)
         status = ssot.status()
         for k, v in status.items():
             print(f"  {k}: {v}")
-        print("\nCommands: sync, status, export, files")
+        print("\nBasic Commands:")
+        print("  sync          - Full sync with SSOT")
+        print("  status        - Get sync status")
+        print("  export        - Export SAM state to SSOT")
+        print("  files         - List SSOT files")
+        print("\nEvolution Tracker Commands:")
+        print("  discover      - List discovered project docs")
+        print("  from-ssot     - Sync from SSOT docs to tracker")
+        print("  to-ssot       - Sync from tracker to SSOT docs")
+        print("  overlaps      - Update PROJECT_OVERLAPS.md")
+        print("  evolution     - Full bidirectional evolution sync")
+        print("  evolution-status - Show evolution sync status")
         sys.exit(0)
 
     cmd = sys.argv[1]
@@ -285,5 +691,63 @@ if __name__ == "__main__":
         if len(files) > 20:
             print(f"  ... and {len(files) - 20} more")
 
+    elif cmd == "discover":
+        docs = ssot.discover_project_docs()
+        print(f"Found {len(docs)} project documents:\n")
+        for doc in docs:
+            info = ssot.parse_project_doc(doc)
+            if info:
+                print(f"  {info.id}: {info.name} ({info.category}) - {info.current_progress*100:.0f}%")
+            else:
+                print(f"  {doc.name}: (parse error)")
+
+    elif cmd == "from-ssot":
+        result = ssot.sync_from_ssot_to_tracker()
+        if result["success"]:
+            print(f"Synced {result['synced']}/{result['total_docs']} projects from SSOT")
+            if result.get("errors"):
+                print(f"Errors: {result['errors']}")
+        else:
+            print(f"Sync failed: {result.get('error')}")
+
+    elif cmd == "to-ssot":
+        result = ssot.sync_from_tracker_to_ssot()
+        if result["success"]:
+            print(f"Updated {result['updated']}/{result['total_projects']} SSOT docs")
+            if result.get("errors"):
+                print(f"Errors: {result['errors']}")
+        else:
+            print(f"Sync failed: {result.get('error')}")
+
+    elif cmd == "overlaps":
+        result = ssot.update_project_overlaps()
+        if result["success"]:
+            print("Updated PROJECT_OVERLAPS.md")
+            print(f"  Connected: {result['connected']}")
+            print(f"  Planned: {result['planned']}")
+            print(f"  Blocked: {result['blocked']}")
+        else:
+            print(f"Update failed: {result.get('error')}")
+
+    elif cmd == "evolution":
+        result = ssot.full_evolution_sync()
+        print(f"Full evolution sync {'succeeded' if result['success'] else 'had errors'}")
+        print(f"  From SSOT: {result['from_ssot'].get('synced', 0)} synced")
+        print(f"  To SSOT: {result['to_ssot'].get('updated', 0)} updated")
+        print(f"  Timestamp: {result['timestamp']}")
+
+    elif cmd == "evolution-status":
+        status = ssot.get_evolution_sync_status()
+        if status.get("synced"):
+            print("SSOT and tracker are in sync")
+        else:
+            print("SSOT and tracker are NOT in sync")
+            if status.get("docs_only"):
+                print(f"  Only in SSOT: {status['docs_only']}")
+            if status.get("db_only"):
+                print(f"  Only in tracker: {status['db_only']}")
+        print(f"  Docs: {status.get('total_docs', 0)}, DB: {status.get('total_db', 0)}")
+
     else:
         print(f"Unknown command: {cmd}")
+        sys.exit(1)

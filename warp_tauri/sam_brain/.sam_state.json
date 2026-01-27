@@ -1,0 +1,22 @@
+{
+  "name": "SAM",
+  "version": "0.3.0",
+  "last_scan_time": "",
+  "last_assessment_time": "",
+  "last_learning_update": "2026-01-12T17:16:24.084215",
+  "projects_tracked": 17,
+  "improvements_pending": 5318,
+  "improvements_completed": 10,
+  "current_level": 0,
+  "level_name": "Starting",
+  "memory_online": true,
+  "evolution_online": true,
+  "detector_online": false,
+  "ssot_online": true,
+  "total_feedback_entries": 2,
+  "success_rate": 1.0,
+  "avg_impact": 0.0,
+  "pending_suggestions": [],
+  "blocked_items": [],
+  "urgent_items": []
+}

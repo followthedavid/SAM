@@ -1,36 +1,36 @@
 {
   "last_run": {
-    "scan_projects": "2026-01-06T11:12:23.925811",
-    "export_projects": "2026-01-06T11:12:24.200022",
-    "cleanup_memory": "2026-01-06T11:12:24.200864",
-    "cleanup_training": "2026-01-06T11:12:24.202490",
-    "health_check": "2026-01-06T21:13:10.118093",
-    "update_stats": "2026-01-06T17:12:57.000950"
+    "scan_projects": "2026-01-22T22:03:57.874707",
+    "export_projects": "2026-01-22T22:03:58.473606",
+    "cleanup_memory": "2026-01-20T11:16:45.733241",
+    "cleanup_training": "2026-01-20T11:16:45.740231",
+    "health_check": "2026-01-23T14:04:29.782718",
+    "update_stats": "2026-01-23T10:04:18.661810"
   },
   "stats": {
     "scan_projects": {
       "last_result": "Error: Command '['python3', '/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/project_scanner.py']' timed out after 300 seconds",
-      "last_run": "2026-01-06T11:12:23.925852"
+      "last_run": "2026-01-22T22:03:57.874741"
     },
     "export_projects": {
       "last_result": "Exported 50 quality projects to /Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/projects.json",
-      "last_run": "2026-01-06T11:12:24.200031"
+      "last_run": "2026-01-22T22:03:58.473624"
     },
     "cleanup_memory": {
       "last_result": "No memory file",
-      "last_run": "2026-01-06T11:12:24.200886"
+      "last_run": "2026-01-20T11:16:45.733259"
     },
     "cleanup_training": {
       "last_result": "No training data",
-      "last_run": "2026-01-06T11:12:24.202495"
+      "last_run": "2026-01-20T11:16:45.740237"
     },
     "health_check": {
-      "last_result": "Ollama: OK, Disk: OK (24.8GB free), Projects: 50",
-      "last_run": "2026-01-06T21:13:10.118108"
+      "last_result": "Ollama: DOWN, Disk: LOW (8.9GB free), Projects: 50",
+      "last_run": "2026-01-23T14:04:29.782730"
     },
     "update_stats": {
       "last_result": "Stats updated: 0 interactions, 50 projects",
-      "last_run": "2026-01-06T17:12:57.000959"
+      "last_run": "2026-01-23T10:04:18.661816"
     }
   }
 }

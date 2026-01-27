@@ -59,6 +59,7 @@ pub struct PrivacyLogger {
 }
 
 /// Encrypted entry for ephemeral storage
+#[allow(dead_code)]
 struct EncryptedEntry {
     nonce: [u8; 12],
     ciphertext: Vec<u8>,

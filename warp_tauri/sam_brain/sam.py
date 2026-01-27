@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
 SAM - Smart Assistant Manager
-Fast routing + direct execution + browser bridge for complex tasks
+Fast routing + direct execution + MLX inference + Claude escalation learning
 
 Usage:
   sam "list files in src"           → Executes locally (instant)
   sam "git status"                  → Executes locally (instant)
-  sam "implement login feature"     → Routes to ChatGPT/Claude (browser)
+  sam "explain this code"           → MLX inference (local LLM)
+  sam "implement login feature"     → Escalates to Claude + learns
   sam --project ~/myapp "explain"   → With project context
 """
 
@@ -21,7 +22,116 @@ from datetime import datetime
 from typing import Optional, Tuple
 
 # Configuration
+BRAIN_PATH = Path(__file__).parent
 BRIDGE_QUEUE = Path.home() / ".sam_chatgpt_queue.json"
+ESCALATION_LOG = BRAIN_PATH / "data" / "escalations.jsonl"
+ADAPTER_PATH = BRAIN_PATH / "models" / "chatgpt_trained" / "adapters"
+MODEL_ID = "mlx-community/Qwen2.5-Coder-1.5B-Instruct-4bit"
+
+# Ensure directories exist
+ESCALATION_LOG.parent.mkdir(parents=True, exist_ok=True)
+
+# MLX model (lazy loaded)
+_mlx_model = None
+_mlx_tokenizer = None
+_mlx_generate = None
+
+def get_mlx():
+    """Lazy load MLX model."""
+    global _mlx_model, _mlx_tokenizer, _mlx_generate
+    if _mlx_model is None:
+        try:
+            from mlx_lm import load, generate
+            if ADAPTER_PATH.exists():
+                _mlx_model, _mlx_tokenizer = load(MODEL_ID, adapter_path=str(ADAPTER_PATH))
+            else:
+                _mlx_model, _mlx_tokenizer = load(MODEL_ID)
+            _mlx_generate = generate
+        except ImportError:
+            return None, None, None
+    return _mlx_model, _mlx_tokenizer, _mlx_generate
+
+
+def mlx_respond(query: str, context: str = "") -> Optional[str]:
+    """Get response from local MLX model."""
+    model, tokenizer, generate = get_mlx()
+    if model is None:
+        return None
+
+    system = "You are SAM, a helpful coding assistant. Be direct and concise."
+    user_msg = query
+    if context:
+        user_msg = f"Context:\n{context[:1500]}\n\nQuestion: {query}"
+
+    prompt = f"<|im_start|>system\n{system}<|im_end|>\n<|im_start|>user\n{user_msg}<|im_end|>\n<|im_start|>assistant\n"
+
+    response = generate(model, tokenizer, prompt=prompt, max_tokens=500, verbose=False)
+    if "<|im_end|>" in response:
+        response = response.split("<|im_end|>")[0]
+    return response.strip()
+
+
+def log_escalation(query: str, handler: str, response: str = None):
+    """Log escalation for later training."""
+    entry = {
+        "timestamp": datetime.now().isoformat(),
+        "query": query,
+        "handler": handler,
+        "response": response,
+        "learned": False
+    }
+    with open(ESCALATION_LOG, 'a') as f:
+        f.write(json.dumps(entry) + '\n')
+
+
+def learn_from_claude_history():
+    """Extract training data from recent Claude Code sessions."""
+    claude_dir = Path.home() / ".claude"
+    if not claude_dir.exists():
+        return 0
+
+    training_data = []
+
+    # Find recent history files
+    for history_file in claude_dir.glob("**/history.jsonl"):
+        try:
+            with open(history_file) as f:
+                messages = []
+                for line in f:
+                    if line.strip():
+                        msg = json.loads(line)
+                        messages.append(msg)
+
+                # Pair user/assistant messages
+                for i in range(0, len(messages) - 1, 2):
+                    if i + 1 < len(messages):
+                        user_msg = messages[i]
+                        asst_msg = messages[i + 1]
+
+                        user_text = user_msg.get("message", {}).get("content", "")
+                        asst_text = asst_msg.get("message", {}).get("content", "")
+
+                        if isinstance(user_text, list):
+                            user_text = " ".join(t.get("text", "") for t in user_text if isinstance(t, dict))
+                        if isinstance(asst_text, list):
+                            asst_text = " ".join(t.get("text", "") for t in asst_text if isinstance(t, dict))
+
+                        if user_text and asst_text and len(asst_text) > 50:
+                            training_data.append({
+                                "instruction": user_text[:1000],
+                                "response": asst_text[:2000]
+                            })
+        except Exception as e:
+            continue
+
+    # Save new training data
+    if training_data:
+        output_path = BRAIN_PATH / "data" / "claude_learned.jsonl"
+        with open(output_path, 'a') as f:
+            for item in training_data[-100:]:  # Last 100 examples
+                f.write(json.dumps(item) + '\n')
+
+    return len(training_data)
 
 # ============== ROUTING (regex, instant) ==============
 
@@ -33,30 +143,47 @@ LOCAL_PATTERNS = [
     (r'\b(search|find|grep)\b.*(for|code|file|pattern)', 'search'),
 ]
 
-EXTERNAL_PATTERNS = [
-    (r'\b(implement|create|build|write|add)\b.*\b(feature|function|class|component)', 'implement'),
-    (r'\b(debug|fix|solve|why)\b.*\b(error|bug|crash|fail|issue)', 'debug'),
+# MLX can handle these - use local LLM
+MLX_PATTERNS = [
     (r'\b(explain|understand|how|what)\b.*\b(work|does|code|function)', 'explain'),
-    (r'\b(refactor|improve|optimize|clean)', 'refactor'),
+    (r'\b(what|how|why|when)\b.+\?', 'question'),
+    (r'\b(write|create)\b.*\b(function|code|script)\b', 'code_gen'),
+    (r'\b(help|assist)\b', 'help'),
+]
+
+# These need Claude escalation - SAM learns from the response
+ESCALATION_PATTERNS = [
+    (r'\b(implement|create|build|add)\b.*\b(feature|system|component)', 'implement'),
+    (r'\b(debug|fix|solve)\b.*\b(error|bug|crash|fail|issue)', 'debug'),
+    (r'\b(refactor|improve|optimize|redesign)', 'refactor'),
+    (r'\b(architecture|design|plan)\b', 'design'),
+    (r'\b(multi.?file|across|entire|all)\b', 'multi_file'),
 ]
 
 def route(query: str) -> Tuple[str, str]:
-    """Route query to handler. Returns (handler, reason)."""
+    """Route query to handler. Returns (handler_type, handler)."""
     q = query.lower()
 
+    # 1. Check for direct local commands (instant, no LLM)
     for pattern, handler in LOCAL_PATTERNS:
         if re.search(pattern, q):
             return ('local', handler)
 
-    for pattern, handler in EXTERNAL_PATTERNS:
+    # 2. Check for MLX-handleable queries (local LLM)
+    for pattern, handler in MLX_PATTERNS:
         if re.search(pattern, q):
-            return ('external', handler)
+            return ('mlx', handler)
 
-    # Default: try local first for short queries
-    if len(query.split()) < 10:
-        return ('local', 'short_query')
+    # 3. Check for escalation patterns (needs Claude, SAM learns)
+    for pattern, handler in ESCALATION_PATTERNS:
+        if re.search(pattern, q):
+            return ('escalate', handler)
 
-    return ('external', 'complex')
+    # 4. Default: short queries → MLX, long/complex → escalate
+    if len(query.split()) < 15:
+        return ('mlx', 'general')
+
+    return ('escalate', 'complex')
 
 # ============== LOCAL EXECUTION (no LLM) ==============
 
@@ -206,16 +333,46 @@ def sam(query: str, project_path: str = ".") -> str:
     handler_type, handler = route(query)
 
     if handler_type == 'local':
-        print(f"[SAM] Local: {handler}")
+        print(f"[SAM] Local: {handler}", file=sys.stderr)
         return execute_local(query, handler, project_path)
-    else:
-        print(f"[SAM] External: {handler}")
+
+    elif handler_type == 'mlx':
+        print(f"[SAM] MLX: {handler}", file=sys.stderr)
+        # Get context if file mentioned
+        context = ""
+        file_match = re.search(r'([^\s]+\.(py|js|rs|ts|json|md))', query)
+        if file_match:
+            filepath = Path(project_path) / file_match.group(1)
+            if filepath.exists():
+                context = filepath.read_text()[:2000]
+
+        response = mlx_respond(query, context)
+        if response:
+            return response
+        else:
+            # Fallback to escalation if MLX fails
+            print(f"[SAM] MLX unavailable, escalating", file=sys.stderr)
+            handler_type = 'escalate'
+
+    if handler_type == 'escalate':
+        print(f"[SAM] Escalate to Claude: {handler}", file=sys.stderr)
+        # Log this for learning later
+        log_escalation(query, handler)
+
         # Get project context
         context = ""
         readme = Path(project_path) / "README.md"
         if readme.exists():
             context = readme.read_text()[:500]
-        return queue_external(query, context)
+
+        # Open Claude Code terminal with the query
+        return f"""[SAM needs Claude for this - {handler}]
+
+Run in Claude Code:
+  {query}
+
+SAM will learn from Claude's response automatically.
+(Auto-learner daemon captures ~/.claude/ history)"""
 
 def main():
     if len(sys.argv) < 2:
@@ -224,18 +381,19 @@ SAM - Smart Assistant Manager
 =============================
 
 Usage:
-  sam "list files"              → Shows files (local, instant)
-  sam "read main.py"            → Shows file content (local)
-  sam "git status"              → Git status (local)
-  sam "run npm test"            → Runs command (local)
-  sam "search TODO"             → Searches code (local)
-  sam "implement login"         → Routes to ChatGPT (browser)
-  sam "debug api error"         → Routes to ChatGPT (browser)
+  sam "list files"              → Local exec (instant)
+  sam "read main.py"            → File content (instant)
+  sam "git status"              → Git command (instant)
+  sam "what does X do?"         → MLX inference (local LLM)
+  sam "explain this code"       → MLX inference (local LLM)
+  sam "implement feature"       → Escalate to Claude (learns)
+  sam "debug this error"        → Escalate to Claude (learns)
 
 Options:
   --project <path>              → Set project context
-  --check <id>                  → Check bridge response
+  --learn                       → Learn from Claude history NOW
   --status                      → Show SAM status
+  --train                       → Trigger training with new data
 """)
         return
 
@@ -250,13 +408,41 @@ Options:
     if "--status" in args:
         print("SAM Status")
         print("=" * 40)
-        # Check bridge queue
-        if BRIDGE_QUEUE.exists():
-            queue = json.load(open(BRIDGE_QUEUE))
-            pending = [q for q in queue if q.get('status') == 'pending']
-            print(f"Pending requests: {len(pending)}")
-        else:
-            print("Bridge queue: empty")
+
+        # Check MLX model
+        model, _, _ = get_mlx()
+        print(f"MLX Model: {'Loaded' if model else 'Not loaded'}")
+        print(f"Adapter: {'Yes' if ADAPTER_PATH.exists() else 'No'}")
+
+        # Check escalation log
+        if ESCALATION_LOG.exists():
+            with open(ESCALATION_LOG) as f:
+                count = sum(1 for _ in f)
+            print(f"Escalations logged: {count}")
+
+        # Check training data
+        training_file = BRAIN_PATH / "data" / "claude_learned.jsonl"
+        if training_file.exists():
+            with open(training_file) as f:
+                count = sum(1 for _ in f)
+            print(f"Training examples: {count}")
+
+        # Auto-learner daemon
+        result = subprocess.run(["launchctl", "list", "com.sam.autolearner"],
+                               capture_output=True, text=True)
+        print(f"Auto-learner: {'Running' if result.returncode == 0 else 'Stopped'}")
+        return
+
+    if "--learn" in args:
+        print("Learning from Claude history...")
+        count = learn_from_claude_history()
+        print(f"Extracted {count} training examples")
+        return
+
+    if "--train" in args:
+        print("Triggering training with new data...")
+        # Run accelerated training
+        subprocess.run(["python3", str(BRAIN_PATH / "accelerate.py"), "train"])
         return
 
     if "--check" in args:

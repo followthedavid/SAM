@@ -13,8 +13,8 @@
         "library"
       ],
       "notes": "",
-      "last_accessed": "",
-      "access_count": 0,
+      "last_accessed": "2026-01-18T16:05:51.721905",
+      "access_count": 4,
       "added_at": "2026-01-06T15:28:27.374955",
       "color": ""
     },
@@ -31,8 +31,8 @@
         "go"
       ],
       "notes": "",
-      "last_accessed": "",
-      "access_count": 0,
+      "last_accessed": "2026-01-18T16:05:51.242084",
+      "access_count": 2,
       "added_at": "2026-01-06T15:28:27.378486",
       "color": ""
     },
@@ -325,8 +325,10 @@
     }
   },
   "recent": [
-    "/Users/davidquinton/ReverseLab/SAM"
+    "/Users/davidquinton/ReverseLab/SAM",
+    "/Users/davidquinton/Projects/RVC/rvc-webui",
+    "/Users/davidquinton/Projects/SAM/voice/rvc"
   ],
   "max_recent": 20,
-  "updated_at": "2026-01-06T15:28:27.441314"
+  "updated_at": "2026-01-24T19:01:41.643189"
 }

@@ -10,10 +10,9 @@
       </div>
       <div class="header-actions">
         <select v-model="selectedModel" class="model-select">
-          <option value="qwen2.5-coder:1.5b">Qwen2.5 Coder 1.5B (Fast)</option>
-          <option value="tinydolphin:1.1b">TinyDolphin 1.1B (Uncensored)</option>
-          <option value="coder-uncensored:latest">Coder Uncensored 1.5B</option>
-          <option value="stablelm2:1.6b">StableLM2 1.6B</option>
+          <option value="sam-trained:latest">SAM Trained (Primary)</option>
+          <option value="sam-brain:latest">SAM Brain (Fallback)</option>
+          <option value="qwen2.5-coder:1.5b">Qwen2.5 Coder 1.5B (Code)</option>
         </select>
         <button @click="clearChat" class="action-btn" title="Clear chat">
           🗑️

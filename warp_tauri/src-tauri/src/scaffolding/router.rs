@@ -20,12 +20,13 @@ pub enum ModelType {
 
 impl ModelType {
     /// Get the Ollama model name for this type
-    /// Updated to use installed models: dolphin-llama3:8b, qwen2.5-coder:1.5b
+    /// sam-trained is primary (fine-tuned with thousands of examples)
+    /// qwen2.5-coder only for code-specific tasks
     pub fn model_name(&self) -> &'static str {
         match self {
-            Self::Fast => "qwen2.5-coder:1.5b",
-            Self::Balanced => "dolphin-llama3:8b",
-            Self::Powerful => "dolphin-llama3:8b",
+            Self::Fast => "sam-trained:latest",
+            Self::Balanced => "sam-trained:latest",
+            Self::Powerful => "sam-trained:latest",
             Self::Code => "qwen2.5-coder:1.5b",
         }
     }
@@ -33,10 +34,10 @@ impl ModelType {
     /// Get fallback model if primary not available
     pub fn fallback(&self) -> &'static str {
         match self {
-            Self::Fast => "dolphin-llama3:8b",
-            Self::Balanced => "qwen2.5-coder:1.5b",
-            Self::Powerful => "dolphin-llama3:8b",
-            Self::Code => "dolphin-llama3:8b",
+            Self::Fast => "sam-brain:latest",
+            Self::Balanced => "sam-brain:latest",
+            Self::Powerful => "sam-brain:latest",
+            Self::Code => "sam-trained:latest",
         }
     }
 }

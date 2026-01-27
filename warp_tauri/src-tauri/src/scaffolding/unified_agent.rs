@@ -15,7 +15,6 @@ use tokio::sync::mpsc;
 use crate::scaffolding::guaranteed_success::{GuaranteedSuccess, PhasePrompts};
 use crate::scaffolding::safe_executor::SafeExecutor;
 use crate::scaffolding::persistence::TaskStatus;
-use crate::scaffolding::lean_agent::TaskPhase;
 
 /// Agent operating mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -55,7 +54,7 @@ impl Default for UnifiedConfig {
     fn default() -> Self {
         Self {
             ollama_url: "http://localhost:11434".to_string(),
-            model: "tinydolphin:1.1b".to_string(),
+            model: "sam-trained:latest".to_string(),
             mode: AgentMode::Hybrid,
             max_iterations: 50,
             iteration_delay_ms: 500,
@@ -267,7 +266,7 @@ impl UnifiedAgent {
     }
 
     /// Get action from LLM with scaffolding
-    async fn get_llm_action(&self, phase: &str, last_output: Option<&str>) -> Result<(String, String), String> {
+    async fn get_llm_action(&self, phase: &str, _last_output: Option<&str>) -> Result<(String, String), String> {
         // Get phase-specific prompt (super constrained)
         let work_dir = self.executor.summary()["work_dir"]
             .as_str()

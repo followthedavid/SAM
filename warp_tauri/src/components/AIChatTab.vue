@@ -11,6 +11,7 @@
 
         <label class="model-label" style="margin-left: 16px;">AI Mode:</label>
         <select v-model="aiMode" @change="handleModeChange" class="model-selector mode-selector">
+          <option value="sam">🧠 SAM (Cognitive)</option>
           <option value="local">🏠 Local Only</option>
           <option value="agent">🤖 Agent Mode</option>
           <option value="orchestrator">⚡ Orchestrator</option>
@@ -45,6 +46,7 @@
           :content="msg.content"
           :timestamp="msg.timestamp"
           :streaming="msg.streaming"
+          :image="msg.image"
         />
 
         <!-- Show execution steps if present -->
@@ -112,7 +114,7 @@
       </div>
     </div>
     <BatchPanel />
-    <InputArea @send="handleSend" />
+    <InputArea @send="handleSendWithImage" />
   </div>
 </template>
 
@@ -144,7 +146,7 @@ const showDebug = ref(false)  // Hide debug panel by default now
 const showClaudeSettings = ref(false)
 const showPlan = ref(false)
 const selectedModel = ref('coder-uncensored:latest')
-const aiMode = ref<'local' | 'agent' | 'claude' | 'auto' | 'hybrid' | 'orchestrator'>('orchestrator')  // Default to orchestrator - auto-routes to best model
+const aiMode = ref<'local' | 'agent' | 'claude' | 'auto' | 'hybrid' | 'orchestrator' | 'sam'>('sam')  // Default to SAM cognitive mode
 const claudeApiKey = ref('')
 const claudeError = ref('')
 const executionMode = ref(true) // Default to ON so code execution works out of the box
@@ -192,6 +194,63 @@ watch([messages, isThinking], () => {
     }
   })
 }, { deep: true })
+
+// Phase 3: Vision in Chat - Handle messages with optional images
+interface ImageData {
+  file: File | null
+  path: string | null
+  preview: string
+  base64?: string
+}
+
+async function handleSendWithImage(message: string, image?: ImageData) {
+  if (image?.base64) {
+    // Image attached - process with vision API first
+    console.log('[AIChatTab] Image attached, processing with vision API')
+
+    // Add user message with image indicator
+    addMessage(props.tab.id, {
+      role: 'user',
+      content: `📷 ${message}`,
+      image: image.preview // Store preview URL for display
+    })
+
+    // Create assistant message for vision response
+    const assistantMessage = addMessage(props.tab.id, {
+      role: 'assistant',
+      content: '🔍 Analyzing image...',
+      streaming: true
+    })
+
+    try {
+      // Call vision API
+      const response = await fetch('http://localhost:8765/api/vision/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_base64: image.base64,
+          prompt: message
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        assistantMessage.content = data.description || data.response || 'Image analyzed.'
+        assistantMessage.streaming = false
+      } else {
+        assistantMessage.content = '❌ Failed to analyze image. Vision API error.'
+        assistantMessage.streaming = false
+      }
+    } catch (error) {
+      console.error('[AIChatTab] Vision API error:', error)
+      assistantMessage.content = `❌ Vision API error: ${error}`
+      assistantMessage.streaming = false
+    }
+  } else {
+    // No image, use regular message handling
+    await handleSend(message)
+  }
+}
 
 async function handleSend(message: string) {
   console.log('[AIChatTab] handleSend called, aiMode:', aiMode.value, 'executionMode:', executionMode.value)

@@ -47,7 +47,7 @@ export class ContextManager {
     this.maxShortTermMessages = options.maxShortTermMessages ?? 6;
     this.maxTokensPerFile = options.maxTokensPerFile ?? 500;
     this.maxRelevantFiles = options.maxRelevantFiles ?? 3;
-    this.summarizeModel = options.summarizeModel ?? 'tinydolphin:1.1b';
+    this.summarizeModel = options.summarizeModel ?? 'sam-trained:latest';
 
     this.state = {
       shortTerm: [],

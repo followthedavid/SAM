@@ -68,18 +68,18 @@ export class ModelRouter {
    * Register built-in model configurations
    */
   private registerBuiltinModels(): void {
-    // Tiny models - fast classification and simple tasks
+    // SAM's primary model - fine-tuned with thousands of examples
     this.registerModel({
-      name: 'tinydolphin:1.1b',
-      tier: 'tiny',
-      strengths: ['classification', 'summarization', 'uncensored', 'general'],
-      contextWindow: 2048,
+      name: 'sam-trained:latest',
+      tier: 'small',
+      strengths: ['classification', 'summarization', 'uncensored', 'general', 'roleplay', 'chat'],
+      contextWindow: 4096,
       avgResponseTime: 2000,
-      successRate: 0.7,
+      successRate: 0.9,
       isLocal: true
     });
 
-    // Small coding models - primary workhorses
+    // Coding model - for code-specific tasks
     this.registerModel({
       name: 'qwen2.5-coder:1.5b',
       tier: 'small',
@@ -90,10 +90,11 @@ export class ModelRouter {
       isLocal: true
     });
 
+    // Fallback SAM model
     this.registerModel({
-      name: 'tinydolphin:1.1b',
+      name: 'sam-brain:latest',
       tier: 'small',
-      strengths: ['code_generation', 'general'],
+      strengths: ['code_generation', 'general', 'chat'],
       contextWindow: 4096,
       avgResponseTime: 4500,
       successRate: 0.80,

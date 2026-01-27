@@ -65,6 +65,7 @@
       :isVisible="showCommandPalette"
       @close="showCommandPalette = false"
       @command="handleCommand"
+      @dual-terminal="showDualTerminal = true"
     />
 
     <!-- Toast Notifications -->
@@ -131,13 +132,92 @@
       </div>
     </Teleport>
 
-    <!-- Global Chat Panel -->
-    <ChatPanel
-      v-if="showChat"
-      :projectId="chatProjectId"
-      :projectName="chatProjectName"
-      @close="showChat = false"
+    <!-- Global Chat Container (Multi-chat system) -->
+    <ChatContainer />
+
+    <!-- Model Loading Overlay -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="modelLoading" class="model-loading-overlay">
+          <div class="model-loading-card">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">{{ modelLoadingStatus }}</div>
+            <div class="loading-hint">This may take a minute for large models...</div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Character Selector Modal -->
+    <Teleport to="body">
+      <div v-if="showCharacterSelector" class="modal-overlay character-modal-overlay" @click.self="showCharacterSelector = false">
+        <div class="character-selector-modal">
+          <div class="modal-header">
+            <h2>🎭 Character Library</h2>
+            <button class="close-btn" @click="showCharacterSelector = false">×</button>
+          </div>
+          <RoleplayCharacters
+            :visible="true"
+            @selectCharacter="handleCharacterSelect"
+            @close="showCharacterSelector = false"
+          />
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Character Creator Modal -->
+    <Teleport to="body">
+      <CharacterCreator
+        v-if="showCharacterCreator"
+        :visible="showCharacterCreator"
+        @close="showCharacterCreator = false"
+      />
+    </Teleport>
+
+    <!-- Status Bar -->
+    <StatusBar
+      :currentDirectory="currentDirectory"
+      :gitBranch="gitBranch"
+      :gitDirty="gitDirty"
+      :aiEnabled="aiEnabled"
+      :modelName="modelName"
+      @openCharacterLibrary="showCharacterSelector = true"
+      @openCharacterCreator="showCharacterCreator = true"
+      @selectCharacter="handleCharacterSelect"
     />
+
+    <!-- Dual Terminal View (Claude Code + SAM Bridge) -->
+    <Teleport to="body">
+      <div v-if="showDualTerminal" class="dual-terminal-overlay">
+        <div class="dual-terminal-header">
+          <span class="dt-title">Dual Terminal: Claude Code + SAM</span>
+          <button class="dt-close" @click="showDualTerminal = false">×</button>
+        </div>
+        <DualTerminalView />
+      </div>
+    </Teleport>
+
+    <!-- Downloads Dashboard (⌘⇧D) -->
+    <Teleport to="body">
+      <div v-if="showDownloadsDashboard" class="downloads-overlay">
+        <div class="downloads-header">
+          <span class="dl-title">Downloads & Media Services</span>
+          <button class="dl-close" @click="showDownloadsDashboard = false">×</button>
+        </div>
+        <DownloadsDashboard />
+      </div>
+    </Teleport>
+
+    <!-- Scraper Dashboard (⌘⇧S) -->
+    <Teleport to="body">
+      <div v-if="showScraperDashboard" class="scraper-overlay">
+        <div class="scraper-header">
+          <span class="scraper-title">📊 Content Pipeline</span>
+          <button class="scraper-close" @click="showScraperDashboard = false">×</button>
+        </div>
+        <ScraperDashboard />
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -152,14 +232,22 @@ import ToastContainer from './components/ToastContainer.vue'
 const TopicGrid = defineAsyncComponent(() => import('./components/TopicGrid.vue'))
 const CommandPalette = defineAsyncComponent(() => import('./components/CommandPalette.vue'))
 const ActivityLog = defineAsyncComponent(() => import('./components/ActivityLog.vue'))
-const ChatPanel = defineAsyncComponent(() => import('./components/ChatPanel.vue'))
+const ChatContainer = defineAsyncComponent(() => import('./components/ChatContainer.vue'))
+const RoleplayCharacters = defineAsyncComponent(() => import('./components/RoleplayCharacters.vue'))
+const CharacterCreator = defineAsyncComponent(() => import('./components/CharacterCreator.vue'))
+const StatusBar = defineAsyncComponent(() => import('./components/StatusBar.vue'))
+const DualTerminalView = defineAsyncComponent(() => import('./components/DualTerminalView.vue'))
+const DownloadsDashboard = defineAsyncComponent(() => import('./components/DownloadsDashboard.vue'))
+const ScraperDashboard = defineAsyncComponent(() => import('./components/ScraperDashboard.vue'))
 
 // Composables
 import { useToast } from './composables/useToast'
 import { useActivityLog } from './composables/useActivityLog'
 import { useProjectStore } from './stores/projectStore'
+import { useConversations } from './composables/useConversations'
 
 const toast = useToast()
+const { createRoleplay } = useConversations()
 const { entries: activityEntries, summary: activitySummary, logActivity } = useActivityLog()
 const projectStore = useProjectStore()
 
@@ -170,10 +258,22 @@ const showProgress = ref(false)
 const showMorningBrief = ref(false)
 const showCommandPalette = ref(false)
 const expandedProjectId = ref<string | null>(null)
-const showChat = ref(false)
-const chatProjectId = ref<string | null>(null)
-const chatProjectName = ref<string | null>(null)
 const showAddProject = ref(false)
+const showCharacterSelector = ref(false)
+const showCharacterCreator = ref(false)
+const showDualTerminal = ref(false)
+const showDownloadsDashboard = ref(false)
+const showScraperDashboard = ref(false)
+const selectedCharacter = ref<any>(null)
+const modelLoading = ref(false)
+const modelLoadingStatus = ref('')
+
+// Status bar state
+const currentDirectory = ref('')
+const gitBranch = ref<string | null>(null)
+const gitDirty = ref(false)
+const aiEnabled = ref(true)
+const modelName = ref('sam-trained:latest')
 const viewMode = ref<'projects' | 'chats'>('projects')
 const newProjectName = ref('')
 const newProjectIcon = ref('📁')
@@ -266,23 +366,9 @@ function handleSearchFromGrid(query: string) {
 }
 
 async function handleNaturalLanguage(query: string) {
-  // Open chat panel and let ChatPanel handle the message
-  showChat.value = true
-  chatProjectId.value = expandedProjectId.value
-
-  // Find project name if we have an expanded project
-  if (expandedProjectId.value) {
-    const projects = projectStore.projects.value || []
-    const project = projects.find(p => p.id === expandedProjectId.value)
-    chatProjectName.value = project?.name || null
-  } else {
-    chatProjectName.value = null
-  }
-
-  // The ChatPanel will handle the actual message sending
-  // We just need to pass the initial query - but ChatPanel needs to receive it
-  // For now, just open the chat - user can re-type or we enhance later
-  toast.info('Opening chat - type your message there')
+  // With multi-chat system, just inform user to use the chat panel
+  // The ChatContainer is always visible in the corner
+  toast.info('Use the chat panel to ask questions')
 }
 
 function handleCommand(command: string) {
@@ -300,6 +386,11 @@ function handleCommand(command: string) {
     case '24h':
       showProgress.value = !showProgress.value
       break
+    case 'characters':
+    case 'roleplay':
+    case 'character':
+      showCharacterSelector.value = true
+      break
     default:
       handleNaturalLanguage(command)
   }
@@ -310,9 +401,8 @@ function handleExpandProject(projectId: string) {
 }
 
 function handleOpenProjectChat(projectId: string, projectName: string) {
-  chatProjectId.value = projectId
-  chatProjectName.value = projectName
-  showChat.value = true
+  // With multi-chat system, users create chats from the ChatContainer sidebar
+  toast.info(`Open the chat panel to discuss ${projectName}`)
 }
 
 function handleDeleteProject(projectId: string) {
@@ -369,6 +459,27 @@ function confirmAddProject() {
   })
 
   showAddProject.value = false
+}
+
+// Character selection handler
+async function handleCharacterSelect(character: any) {
+  selectedCharacter.value = character
+  showCharacterSelector.value = false
+
+  // Create a new roleplay conversation with the selected character
+  if (character) {
+    const conv = createRoleplay(character.name)
+    // Store character traits in the conversation for context
+    if (character.traits && conv) {
+      conv.character = `${character.name} (${character.traits.join(', ')})`
+    }
+    toast.success(`Started roleplay with ${character.name}`)
+  }
+}
+
+// Open character selector (can be called from command palette)
+function openCharacterSelector() {
+  showCharacterSelector.value = true
 }
 
 async function handleApproveTask(task: any) {
@@ -490,11 +601,35 @@ function handleKeyDown(event: KeyboardEvent) {
   // ⌘K: Focus search / Command palette
   if (cmdOrCtrl && event.key === 'k') {
     event.preventDefault()
-    if (document.activeElement === searchInput.value) {
-      showCommandPalette.value = true
-    } else {
-      searchInput.value?.focus()
-    }
+    showCommandPalette.value = true
+    return
+  }
+
+  // ⌘⇧C: Open character library
+  if (cmdOrCtrl && event.shiftKey && event.key === 'C') {
+    event.preventDefault()
+    showCharacterSelector.value = true
+    return
+  }
+
+  // ⌘⇧B: Open Dual Terminal (Claude + SAM Bridge)
+  if (cmdOrCtrl && event.shiftKey && event.key === 'B') {
+    event.preventDefault()
+    showDualTerminal.value = true
+    return
+  }
+
+  // ⌘⇧D: Open Downloads Dashboard
+  if (cmdOrCtrl && event.shiftKey && event.key === 'D') {
+    event.preventDefault()
+    showDownloadsDashboard.value = true
+    return
+  }
+
+  // ⌘⇧S: Open Scraper Dashboard
+  if (cmdOrCtrl && event.shiftKey && event.key === 'S') {
+    event.preventDefault()
+    showScraperDashboard.value = true
     return
   }
 
@@ -531,10 +666,14 @@ function handleKeyDown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     if (showCommandPalette.value) {
       showCommandPalette.value = false
+    } else if (showScraperDashboard.value) {
+      showScraperDashboard.value = false
+    } else if (showDownloadsDashboard.value) {
+      showDownloadsDashboard.value = false
+    } else if (showDualTerminal.value) {
+      showDualTerminal.value = false
     } else if (showMorningBrief.value) {
       showMorningBrief.value = false
-    } else if (showChat.value) {
-      showChat.value = false
     } else if (showProgress.value) {
       showProgress.value = false
     } else if (viewMode.value === 'chats') {
@@ -555,6 +694,14 @@ function handleKeyDown(event: KeyboardEvent) {
 
 onMounted(async () => {
   window.addEventListener('keydown', handleKeyDown)
+
+  // Initialize status bar data
+  try {
+    const cwd = await invoke<string>('cmd_get_cwd')
+    currentDirectory.value = cwd
+  } catch (e) {
+    currentDirectory.value = '~'
+  }
 
   // Load projects from SSOT
   await projectStore.loadProjects()
@@ -1169,6 +1316,56 @@ html, body, #app {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
+/* Character Selector Modal */
+.character-modal-overlay {
+  z-index: 2000;
+}
+
+.character-selector-modal {
+  background: linear-gradient(180deg, #1c1c24 0%, #16161e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  width: 95%;
+  max-width: 900px;
+  max-height: 85vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.character-selector-modal .modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.character-selector-modal .modal-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.character-selector-modal .close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 24px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.character-selector-modal .close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
 .form-group {
   margin-bottom: 20px;
 }
@@ -1285,5 +1482,217 @@ html, body, #app {
 .create-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(227, 82, 5, 0.4);
+}
+
+/* Model Loading Overlay */
+.model-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(8px);
+}
+
+.model-loading-card {
+  background: linear-gradient(180deg, #1c1c24 0%, #16161e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 40px 60px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #E35205;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.loading-hint {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* ==========================================================================
+   DUAL TERMINAL OVERLAY
+   ========================================================================== */
+
+.dual-terminal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #0d1117;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+}
+
+.dual-terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  -webkit-app-region: drag;
+}
+
+.dt-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #58a6ff;
+}
+
+.dt-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-app-region: no-drag;
+}
+
+.dt-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   DOWNLOADS DASHBOARD OVERLAY
+   ========================================================================== */
+
+.downloads-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #1a1a2e;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+}
+
+.downloads-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #252542;
+  border-bottom: 1px solid #333;
+  -webkit-app-region: drag;
+}
+
+.dl-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a9eff;
+}
+
+.dl-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-app-region: no-drag;
+}
+
+.dl-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   SCRAPER DASHBOARD OVERLAY
+   ========================================================================== */
+
+.scraper-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16162a 100%);
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.scraper-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  -webkit-app-region: drag;
+}
+
+.scraper-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f5f5f7;
+}
+
+.scraper-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-app-region: no-drag;
+}
+
+.scraper-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
 }
 </style>

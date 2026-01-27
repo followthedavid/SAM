@@ -9,7 +9,672 @@
         "project": "SAM",
         "query": "list files in SAM"
       }
+    },
+    {
+      "id": "0531e399e943",
+      "content": "StashDB GraphQL API client for querying scenes, performers, and studios. Use stashdb_query.py from salvaged/stash_scripts/ for Stash Enhancement integration.",
+      "entry_type": "solution",
+      "timestamp": "2026-01-12T14:42:25.911621",
+      "metadata": {
+        "tags": [
+          "stash",
+          "graphql",
+          "api"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "546bee4f9edd",
+      "content": "Image categorization with OpenCV face detection and image hashing. Use image_categorizer.py for promo/behind_scenes/photoshoot sorting. Requires: PIL, imagehash, cv2.",
+      "entry_type": "solution",
+      "timestamp": "2026-01-12T14:42:38.272308",
+      "metadata": {
+        "tags": [
+          "opencv",
+          "image",
+          "categorization"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "8641633e7c8a",
+      "content": "Memory relationships pattern: SQLite table linking memories together. Schema: relationships(source_id, target_id, relationship_type, metadata). From salvaged/memory_core/memory_manager.py.",
+      "entry_type": "solution",
+      "timestamp": "2026-01-12T14:42:38.274081",
+      "metadata": {
+        "tags": [
+          "memory",
+          "sqlite",
+          "relationships"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "ae62f5eec518",
+      "content": "External memory scanning pattern: Iterate through Claude/ChatGPT/Warp export paths, extract insights from .json/.md files, store in database. From salvaged/ai_24_7_system/local_ai_orchestrator.py.",
+      "entry_type": "solution",
+      "timestamp": "2026-01-12T14:42:38.276631",
+      "metadata": {
+        "tags": [
+          "memory",
+          "import",
+          "external"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "eac24bcd948e",
+      "content": "ChatGPT Manager system has orchestrator, memory_manager, batch_queue, resource_monitor, phone_control, improvement_system. 15 scripts at salvaged/chatgpt_manager/.",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:42:38.279335",
+      "metadata": {
+        "tags": [
+          "chatgpt",
+          "automation",
+          "patterns"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "e4cc8d4134e5",
+      "content": "Knowledge stream JSONL format with relationships field. Can import using: id, timestamp, source, entry_type, content, metadata, relationships. Sample at salvaged/memory_data/knowledge_stream.jsonl.",
+      "entry_type": "solution",
+      "timestamp": "2026-01-12T14:42:38.280782",
+      "metadata": {
+        "tags": [
+          "jsonl",
+          "import",
+          "format"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "71fe78c8735a",
+      "content": "Task priority calculation: base 10, +5 per dependency, +3 per blocking task, +2 * completion_rate. From local_ai_orchestrator.py.",
+      "entry_type": "solution",
+      "timestamp": "2026-01-12T14:42:38.281772",
+      "metadata": {
+        "tags": [
+          "tasks",
+          "priority",
+          "algorithm"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "7885f483c7a4",
+      "content": "Chat categorization schema with 30 topics: Code_Development, System_Optimization, Data_Analysis, Health_Medical, etc. From unified_chats/.",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:42:38.283296",
+      "metadata": {
+        "tags": [
+          "chat",
+          "categories",
+          "organization"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "35060fcab47a",
+      "content": "SAM Brain: Local AI orchestrator with CHAT/ROLEPLAY/CODE/REASON/IMAGE routing via Ollama",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:42:38.284614",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "4c3b07246cbf",
+      "content": "SAM Terminal: Warp-based interface for SAM interactions",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:42:38.285609",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "058b8a3b85ec",
+      "content": "RVC Voice: Voice cloning with Dustin Steele model for SAM's voice",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:42:38.286584",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "efc25133ac01",
+      "content": "Character Pipeline: Daz3D automation for character generation",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:42:38.287534",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "24af27c301af",
+      "content": "Stash Enhancement: Media organization with StashDB integration",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:42:38.288561",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "a9f0209e2b25",
+      "content": "ComfyUI LoRA: Image generation with athletic men LoRA models",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:42:38.289296",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "48b6e5630db2",
+      "content": "Account Automation: Browser automation with Playwright",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:42:38.290312",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "eaf8dee22422",
+      "content": "iOS Companion: Swift app for HomeKit/watchOS/tvOS integration",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:42:38.291639",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "68d8f47c3d16",
+      "content": "Training data: /Volumes/David External/SAM_Backup/all_training.jsonl (37GB, 78M lines)",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:42:38.292810",
+      "metadata": {
+        "category": "location",
+        "source": "bootstrap"
+      }
+    },
+    {
+      "id": "a2d52995097c",
+      "content": "Salvaged scripts: /Volumes/Plex/SSOT/salvaged/ (115 scripts in 8 folders)",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:42:38.293957",
+      "metadata": {
+        "category": "location",
+        "source": "bootstrap"
+      }
+    },
+    {
+      "id": "1280e8766f2f",
+      "content": "SSOT documentation: /Volumes/Plex/SSOT/projects/ (20+ project docs)",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:42:38.295240",
+      "metadata": {
+        "category": "location",
+        "source": "bootstrap"
+      }
+    },
+    {
+      "id": "74bed3d86a44",
+      "content": "SAM source code: /Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:42:38.296444",
+      "metadata": {
+        "category": "location",
+        "source": "bootstrap"
+      }
+    },
+    {
+      "id": "e51cf6fc34b9",
+      "content": "{\"type\": \"health_check\"}",
+      "entry_type": "context",
+      "timestamp": "2026-01-12T14:42:38.471670",
+      "metadata": {
+        "source": "knowledge_stream",
+        "original_id": "stream_20250908074745_bb1b7bde"
+      }
+    },
+    {
+      "id": "905707dc8c1f",
+      "content": "{\"type\": \"health_check\"}",
+      "entry_type": "context",
+      "timestamp": "2026-01-12T14:43:08.481484",
+      "metadata": {
+        "source": "knowledge_stream",
+        "original_id": "stream_20250908074810_abd3c8f9"
+      }
+    },
+    {
+      "id": "a6fd077eebbd",
+      "content": "{\"type\": \"test\", \"content\": \"Test entry\"}",
+      "entry_type": "context",
+      "timestamp": "2026-01-12T14:43:38.490020",
+      "metadata": {
+        "source": "knowledge_stream",
+        "original_id": "stream_20250908074955_fdab7e38"
+      }
+    },
+    {
+      "id": "1aff8aa29825",
+      "content": "{\"type\": \"health_check\"}",
+      "entry_type": "context",
+      "timestamp": "2026-01-12T14:44:00.876838",
+      "metadata": {
+        "source": "knowledge_stream",
+        "original_id": "stream_20250908074955_9f5554cd"
+      }
+    },
+    {
+      "id": "52c150771693",
+      "content": "StashDB GraphQL API client for querying scenes, performers, and studios. Use stashdb_query.py from salvaged/stash_scripts/ for Stash Enhancement integration.",
+      "entry_type": "solution",
+      "timestamp": "2026-01-12T14:46:34.606080",
+      "metadata": {
+        "tags": [
+          "stash",
+          "graphql",
+          "api"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "ef084872638c",
+      "content": "Image categorization with OpenCV face detection and image hashing. Use image_categorizer.py for promo/behind_scenes/photoshoot sorting. Requires: PIL, imagehash, cv2.",
+      "entry_type": "solution",
+      "timestamp": "2026-01-12T14:46:42.407833",
+      "metadata": {
+        "tags": [
+          "opencv",
+          "image",
+          "categorization"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "03ef254fdcb6",
+      "content": "Memory relationships pattern: SQLite table linking memories together. Schema: relationships(source_id, target_id, relationship_type, metadata). From salvaged/memory_core/memory_manager.py.",
+      "entry_type": "solution",
+      "timestamp": "2026-01-12T14:46:42.579242",
+      "metadata": {
+        "tags": [
+          "memory",
+          "sqlite",
+          "relationships"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "28b3d23af666",
+      "content": "External memory scanning pattern: Iterate through Claude/ChatGPT/Warp export paths, extract insights from .json/.md files, store in database. From salvaged/ai_24_7_system/local_ai_orchestrator.py.",
+      "entry_type": "solution",
+      "timestamp": "2026-01-12T14:46:43.325372",
+      "metadata": {
+        "tags": [
+          "memory",
+          "import",
+          "external"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "aa81bb4bdd24",
+      "content": "ChatGPT Manager system has orchestrator, memory_manager, batch_queue, resource_monitor, phone_control, improvement_system. 15 scripts at salvaged/chatgpt_manager/.",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:46:44.013557",
+      "metadata": {
+        "tags": [
+          "chatgpt",
+          "automation",
+          "patterns"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "b6ea042fcb1e",
+      "content": "Knowledge stream JSONL format with relationships field. Can import using: id, timestamp, source, entry_type, content, metadata, relationships. Sample at salvaged/memory_data/knowledge_stream.jsonl.",
+      "entry_type": "solution",
+      "timestamp": "2026-01-12T14:46:46.095731",
+      "metadata": {
+        "tags": [
+          "jsonl",
+          "import",
+          "format"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "6b87c3c922ca",
+      "content": "Task priority calculation: base 10, +5 per dependency, +3 per blocking task, +2 * completion_rate. From local_ai_orchestrator.py.",
+      "entry_type": "solution",
+      "timestamp": "2026-01-12T14:46:47.649852",
+      "metadata": {
+        "tags": [
+          "tasks",
+          "priority",
+          "algorithm"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "b5c8d08ae79d",
+      "content": "Chat categorization schema with 30 topics: Code_Development, System_Optimization, Data_Analysis, Health_Medical, etc. From unified_chats/.",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:46:54.275879",
+      "metadata": {
+        "tags": [
+          "chat",
+          "categories",
+          "organization"
+        ],
+        "source": "salvaged"
+      }
+    },
+    {
+      "id": "f217f83b170d",
+      "content": "SAM Brain: Local AI orchestrator with CHAT/ROLEPLAY/CODE/REASON/IMAGE routing via Ollama",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:46:57.016502",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "827c6df28c41",
+      "content": "SAM Terminal: Warp-based interface for SAM interactions",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:46:58.709867",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "ac9779a6bb6a",
+      "content": "RVC Voice: Voice cloning with Dustin Steele model for SAM's voice",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:47:00.568601",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "7b634fc805a7",
+      "content": "Character Pipeline: Daz3D automation for character generation",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:47:01.536861",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "7d567c8ada67",
+      "content": "Stash Enhancement: Media organization with StashDB integration",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:47:02.968547",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "4bfaa6f7fea6",
+      "content": "ComfyUI LoRA: Image generation with athletic men LoRA models",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:47:04.948658",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "f9f4f29ce7df",
+      "content": "Account Automation: Browser automation with Playwright",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:47:08.417892",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "7d5bb89658af",
+      "content": "iOS Companion: Swift app for HomeKit/watchOS/tvOS integration",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:47:10.236959",
+      "metadata": {
+        "category": "project",
+        "source": "ssot"
+      }
+    },
+    {
+      "id": "24ce8eb45c2c",
+      "content": "Training data: /Volumes/David External/SAM_Backup/all_training.jsonl (37GB, 78M lines)",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:47:12.356139",
+      "metadata": {
+        "category": "location",
+        "source": "bootstrap"
+      }
+    },
+    {
+      "id": "36aaba9b4b94",
+      "content": "Salvaged scripts: /Volumes/Plex/SSOT/salvaged/ (115 scripts in 8 folders)",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:47:13.782624",
+      "metadata": {
+        "category": "location",
+        "source": "bootstrap"
+      }
+    },
+    {
+      "id": "5278fe38e560",
+      "content": "SSOT documentation: /Volumes/Plex/SSOT/projects/ (20+ project docs)",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:47:16.060708",
+      "metadata": {
+        "category": "location",
+        "source": "bootstrap"
+      }
+    },
+    {
+      "id": "caa06b41a1f2",
+      "content": "SAM source code: /Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/",
+      "entry_type": "note",
+      "timestamp": "2026-01-12T14:47:17.417326",
+      "metadata": {
+        "category": "location",
+        "source": "bootstrap"
+      }
+    },
+    {
+      "id": "fbb0d99e1e8c",
+      "content": "{\"type\": \"health_check\"}",
+      "entry_type": "context",
+      "timestamp": "2026-01-12T14:47:35.451812",
+      "metadata": {
+        "source": "knowledge_stream",
+        "original_id": "stream_20250908074745_bb1b7bde"
+      }
+    },
+    {
+      "id": "7d6ef209be54",
+      "content": "{\"type\": \"health_check\"}",
+      "entry_type": "context",
+      "timestamp": "2026-01-12T14:47:38.729715",
+      "metadata": {
+        "source": "knowledge_stream",
+        "original_id": "stream_20250908074810_abd3c8f9"
+      }
+    },
+    {
+      "id": "50289e183cae",
+      "content": "{\"type\": \"test\", \"content\": \"Test entry\"}",
+      "entry_type": "context",
+      "timestamp": "2026-01-12T14:47:40.696338",
+      "metadata": {
+        "source": "knowledge_stream",
+        "original_id": "stream_20250908074955_fdab7e38"
+      }
+    },
+    {
+      "id": "102b13d3c8b0",
+      "content": "{\"type\": \"health_check\"}",
+      "entry_type": "context",
+      "timestamp": "2026-01-12T14:47:42.582753",
+      "metadata": {
+        "source": "knowledge_stream",
+        "original_id": "stream_20250908074955_9f5554cd"
+      }
+    },
+    {
+      "id": "d83e3605a1ed",
+      "content": "Improvement Feedback:\nProject: ORCHESTRATOR\nType: integration\nDescription: Missing: | From | To | What's Needed | Status |\nOutcome: Success\nSuccess: True\nImpact Score: 0.7\nLessons Learned: Documentation improvements are quick wins",
+      "entry_type": "improvement_feedback",
+      "timestamp": "2026-01-12T17:15:53.955121",
+      "metadata": {
+        "improvement_id": "imp_20260112171519_dddccfe9",
+        "project_id": "ORCHESTRATOR",
+        "improvement_type": "integration",
+        "success": true,
+        "impact_score": 0.7,
+        "lessons_learned": "Documentation improvements are quick wins"
+      }
+    },
+    {
+      "id": "30e400e46104",
+      "content": "Improvement Feedback:\nProject: SAM\nType: documentation\nDescription: Missing docstring for def 'run_command'\nOutcome: Success\nSuccess: True\nImpact Score: 0.8\nLessons Learned: Type-specific patterns are valuable",
+      "entry_type": "improvement_feedback",
+      "timestamp": "2026-01-12T17:16:24.086529",
+      "metadata": {
+        "improvement_id": "imp_20260112171536_4c61d754",
+        "project_id": "SAM",
+        "improvement_type": "documentation",
+        "success": true,
+        "impact_score": 0.8,
+        "lessons_learned": "Type-specific patterns are valuable"
+      }
+    },
+    {
+      "id": "7671ccfb2550",
+      "content": "This is a test memory for SAM about MLX embeddings",
+      "entry_type": "note",
+      "timestamp": "2026-01-18T15:38:36.187919",
+      "metadata": {
+        "source": "test"
+      }
+    },
+    {
+      "id": "2b2954bdecd2",
+      "content": "Testing MLX native embeddings on M2 Silicon for SAM brain",
+      "entry_type": "note",
+      "timestamp": "2026-01-18T15:38:58.279635",
+      "metadata": {
+        "source": "test"
+      }
+    },
+    {
+      "id": "182ee9c40342",
+      "content": "Testing MLX native embeddings on M2 Silicon for SAM brain",
+      "entry_type": "note",
+      "timestamp": "2026-01-18T15:39:23.198040",
+      "metadata": {
+        "source": "test"
+      }
+    },
+    {
+      "id": "489096c3bf61",
+      "content": "This is about Python programming and machine learning",
+      "entry_type": "code",
+      "timestamp": "2026-01-18T15:39:30.358153",
+      "metadata": {
+        "lang": "python"
+      }
+    },
+    {
+      "id": "e69f041a70ee",
+      "content": "SAM uses MLX for native M2 Silicon inference",
+      "entry_type": "note",
+      "timestamp": "2026-01-18T15:39:40.811434",
+      "metadata": {}
+    },
+    {
+      "id": "e5b6ea6c2e5d",
+      "content": "Q: hello, how are you?\nA: Use: list files, read <file>, git status, run <cmd>, search for <pattern>",
+      "entry_type": "interaction",
+      "timestamp": "2026-01-18T16:05:50.780286",
+      "metadata": {
+        "project": "rvc-webui",
+        "query": "hello, how are you?"
+      }
+    },
+    {
+      "id": "0671b6cc25a8",
+      "content": "Q: voice training status\nA: Use: list files, read <file>, git status, run <cmd>, search for <pattern>",
+      "entry_type": "interaction",
+      "timestamp": "2026-01-18T16:05:51.247098",
+      "metadata": {
+        "project": "rvc",
+        "query": "voice training status"
+      }
+    },
+    {
+      "id": "4995a689726e",
+      "content": "Q: write a hello world in python\nA: Use: list files, read <file>, git status, run <cmd>, search for <pattern>",
+      "entry_type": "interaction",
+      "timestamp": "2026-01-18T16:05:51.724599",
+      "metadata": {
+        "project": "rvc-webui",
+        "query": "write a hello world in python"
+      }
+    },
+    {
+      "id": "34ea7ef0f3d2",
+      "content": "Q: Hello SAM how are you\nA: Use: list files, read <file>, git status, run <cmd>, search for <pattern>",
+      "entry_type": "interaction",
+      "timestamp": "2026-01-20T07:51:24.370960",
+      "metadata": {
+        "project": "SAM",
+        "query": "Hello SAM how are you"
+      }
+    },
+    {
+      "id": "d22a0af2505a",
+      "content": "Q: explain the current build status of SAM\nA: Use: list files, read <file>, git status, run <cmd>, search for <pattern>",
+      "entry_type": "interaction",
+      "timestamp": "2026-01-24T19:01:41.805085",
+      "metadata": {
+        "project": "SAM",
+        "query": "explain the current build status of SAM"
+      }
     }
   ],
-  "updated_at": "2026-01-06T11:42:17.490582"
+  "updated_at": "2026-01-24T19:01:41.805313"
 }

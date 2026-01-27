@@ -390,10 +390,11 @@ const recentActivity = computed<Activity[]>(() => {
   for (const project of (filteredProjects.value || [])) {
     // Running tasks
     for (const task of (project.runningTasks || [])) {
+      const taskName = task.description || task.name || 'Running'
       activities.push({
-        id: `${project.id}-task-${task.name}`,
+        id: `${project.id}-task-${task.id}`,
         icon: '⚡',
-        text: `${project.name}: ${task.name}`,
+        text: `${project.name}: ${taskName}`,
         time: 'now',
         projectId: project.id
       })
@@ -1801,6 +1802,19 @@ function handleDeleteProject() {
   }
 }
 
+/* Hide stats on narrow windows to prioritize project names */
+@media (max-width: 900px) {
+  .widget-stats .stat:nth-child(n+2) {
+    display: none;
+  }
+}
+
+@media (max-width: 750px) {
+  .widget-stats {
+    display: none;
+  }
+}
+
 /* Density variants */
 .grid-compact {
   grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
@@ -2076,7 +2090,7 @@ function handleDeleteProject() {
 
 .widget-content {
   flex: 1;
-  min-width: 0;
+  min-width: 140px; /* Guarantee space for project names */
 }
 
 .widget-title {
@@ -2107,8 +2121,10 @@ function handleDeleteProject() {
 .widget-stats {
   display: flex;
   gap: 8px;
-  flex-shrink: 0;
+  flex-shrink: 1; /* Allow shrinking to give title priority */
+  min-width: 0; /* Enable truncation */
   align-items: center;
+  overflow: hidden;
 }
 
 .widget-stats .stat {

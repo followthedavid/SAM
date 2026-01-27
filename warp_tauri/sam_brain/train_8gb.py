@@ -168,8 +168,8 @@ def train_lora():
             model=model,
             tokenizer=tokenizer,
             args=training_args,
-            train_dataset=load_dataset(str(train_path)),
-            val_dataset=load_dataset(str(val_path)),
+            train_dataset=load_dataset(str(train_path), tokenizer),
+            val_dataset=load_dataset(str(val_path), tokenizer),
             lora_config=lora_config,
         )
 
@@ -240,8 +240,8 @@ def quick_test():
             model=model,
             tokenizer=tokenizer,
             args=training_args,
-            train_dataset=load_dataset(str(train_path)),
-            val_dataset=load_dataset(str(val_path)),
+            train_dataset=load_dataset(str(train_path), tokenizer),
+            val_dataset=load_dataset(str(val_path), tokenizer),
             lora_config=lora_config,
         )
         print("\n✓ Quick test passed! GPU training works.")

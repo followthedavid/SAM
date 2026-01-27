@@ -3,7 +3,6 @@
 // Integrates the scaffolding system with Ollama to provide
 // Claude-like agentic capabilities with local models.
 
-use std::sync::{Arc, Mutex};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use futures_util::StreamExt;
@@ -73,7 +72,7 @@ impl Default for OllamaAgentConfig {
     fn default() -> Self {
         Self {
             ollama_url: "http://localhost:11434".to_string(),
-            default_model: "qwen2.5-coder:1.5b".to_string(),  // Fast model for 8GB RAM
+            default_model: "sam-trained:latest".to_string(),  // Fine-tuned with thousands of examples
             loop_config: LoopConfig::default(),
             context_config: ContextConfig::default(),
             cache_config: CacheConfig::default(),
@@ -87,7 +86,7 @@ impl OllamaAgentConfig {
     pub fn for_slow_models() -> Self {
         Self {
             ollama_url: "http://localhost:11434".to_string(),
-            default_model: "qwen2.5-coder:1.5b".to_string(),  // Fast model for 8GB RAM
+            default_model: "sam-trained:latest".to_string(),  // Fine-tuned with thousands of examples
             loop_config: LoopConfig::thorough(),  // More iterations allowed
             context_config: ContextConfig::default(),
             cache_config: CacheConfig::default(),
@@ -446,7 +445,7 @@ impl OllamaAgent {
         // Process streaming response
         let mut stream = response.bytes_stream();
         let mut full_response = String::new();
-        let mut last_chunk_time = std::time::Instant::now();
+        let mut _last_chunk_time = std::time::Instant::now();
         let start_time = std::time::Instant::now();
         let mut last_progress_len = 0;
 
@@ -487,7 +486,7 @@ impl OllamaAgent {
 
             match chunk_result {
                 Ok(Some(Ok(bytes))) => {
-                    last_chunk_time = std::time::Instant::now();
+                    _last_chunk_time = std::time::Instant::now();
 
                     // Parse the streaming JSON response
                     if let Ok(text) = std::str::from_utf8(&bytes) {
@@ -624,7 +623,7 @@ EXAMPLE:
         let trimmed = raw.trim();
 
         // First pass: basic structural fixes
-        let mut response = trimmed.to_string();
+        let response = trimmed.to_string();
 
         // If already has proper format, validate it
         if response.contains("<thinking>") && (response.contains("<action>") || response.contains("<answer>")) {
@@ -683,6 +682,7 @@ EXAMPLE:
     }
 
     /// Run multi-pass correction on a problematic response
+    #[allow(dead_code)]
     async fn multi_pass_correction(
         &self,
         original_response: &str,

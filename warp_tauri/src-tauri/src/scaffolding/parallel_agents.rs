@@ -103,6 +103,7 @@ pub struct ParallelExecutor {
     worktree_manager: WorktreeManager,
 }
 
+#[allow(dead_code)]
 struct AgentHandle {
     task_id: String,
     cancel_tx: mpsc::Sender<()>,

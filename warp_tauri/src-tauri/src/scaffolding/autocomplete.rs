@@ -86,6 +86,7 @@ pub struct AutoCompleteEngine {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct CodeSnippet {
     trigger: String,
     content: String,
