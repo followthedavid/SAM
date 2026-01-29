@@ -339,7 +339,7 @@ pub async fn ai_query_stream(
 
     // Check if Ollama is available
     let client = reqwest::Client::new();
-    let ollama_url = "http://localhost:11434/api/chat";
+    let ollama_url = "http://localhost:8765/api/query";
 
     // Use sam-trained as primary model (fine-tuned with thousands of examples)
     let payload = serde_json::json!({
@@ -1682,7 +1682,7 @@ pub async fn get_ai_completion(
         }
     });
 
-    let response = client.post("http://localhost:11434/api/generate")
+    let response = client.post("http://localhost:8765/api/query")
         .json(&body)
         .send()
         .await
@@ -2206,7 +2206,7 @@ pub async fn ai_query_stream_internal(
     }
 
     let client = reqwest::Client::new();
-    let ollama_url = "http://localhost:11434/api/chat";
+    let ollama_url = "http://localhost:8765/api/query";
 
     // Use sam-trained as primary model (fine-tuned with thousands of examples)
     let payload = serde_json::json!({
@@ -3789,159 +3789,26 @@ struct AgentSession {
 }
 
 /// Start a new scaffolded agent session for a task
+/// Ollama decommissioned 2026-01-18 - use sam_api.py (MLX) instead
 #[tauri::command]
 pub async fn start_agent_task(
-    app: tauri::AppHandle,
-    task: String,
-    config: Option<serde_json::Value>,
+    _app: tauri::AppHandle,
+    _task: String,
+    _config: Option<serde_json::Value>,
 ) -> Result<u64, String> {
-    use crate::scaffolding::{OllamaAgent, OllamaAgentConfig, LoopConfig, AgentEvent};
-
-    eprintln!("[AGENT_TASK] ========================================");
-    eprintln!("[AGENT_TASK] START_AGENT_TASK CALLED!");
-    eprintln!("[AGENT_TASK] Task: {}", task);
-    eprintln!("[AGENT_TASK] Config: {:?}", config);
-    eprintln!("[AGENT_TASK] ========================================");
-
-    let session_id = NEXT_AGENT_ID.fetch_add(1, AtomicOrdering::SeqCst);
-
-    // Parse config or use defaults
-    let agent_config = if let Some(cfg) = config {
-        let loop_config = if cfg.get("thorough").and_then(|v| v.as_bool()).unwrap_or(false) {
-            LoopConfig::thorough()
-        } else if cfg.get("fast").and_then(|v| v.as_bool()).unwrap_or(false) {
-            LoopConfig::fast()
-        } else {
-            LoopConfig::default()
-        };
-
-        OllamaAgentConfig {
-            ollama_url: cfg.get("ollama_url")
-                .and_then(|v| v.as_str())
-                .unwrap_or("http://localhost:11434")
-                .to_string(),
-            default_model: cfg.get("model")
-                .and_then(|v| v.as_str())
-                .unwrap_or("dolphin-llama3:8b")
-                .to_string(),
-            loop_config,
-            ..Default::default()
-        }
-    } else {
-        OllamaAgentConfig::default()
-    };
-
-    // Store session
-    {
-        let mut sessions = AGENT_SESSIONS.lock().unwrap();
-        sessions.insert(session_id, AgentSession {
-            id: session_id,
-            task: task.clone(),
-            created_at: chrono::Utc::now(),
-        });
-    }
-
-    // Create event channel
-    let (tx, mut rx) = mpsc::channel::<AgentEvent>(100);
-
-    // Spawn task to forward events to frontend
-    let app_clone = app.clone();
-    let event_name = format!("agent://{}", session_id);
-    tokio::spawn(async move {
-        while let Some(event) = rx.recv().await {
-            let _ = app_clone.emit_all(&event_name, &event);
-        }
-    });
-
-    // Spawn agent task
-    let app_for_agent = app.clone();
-    tokio::spawn(async move {
-        let mut agent = OllamaAgent::new(agent_config);
-
-        // Try to refresh available models
-        if let Err(e) = agent.refresh_models().await {
-            eprintln!("[Agent {}] Failed to refresh models: {}", session_id, e);
-        }
-
-        // Process the task
-        match agent.process_task(task, tx).await {
-            Ok(result) => {
-                eprintln!("[Agent {}] Completed: {}", session_id, result);
-                let _ = app_for_agent.emit_all(
-                    &format!("agent://{}/done", session_id),
-                    serde_json::json!({"success": true, "result": result})
-                );
-            }
-            Err(error) => {
-                eprintln!("[Agent {}] Failed: {}", session_id, error);
-                let _ = app_for_agent.emit_all(
-                    &format!("agent://{}/done", session_id),
-                    serde_json::json!({"success": false, "error": error})
-                );
-            }
-        }
-
-        // Cleanup session
-        let mut sessions = AGENT_SESSIONS.lock().unwrap();
-        sessions.remove(&session_id);
-    });
-
-    Ok(session_id)
+    Err("Agent tasks via Ollama decommissioned. Use sam_api.py (MLX).".to_string())
 }
 
-/// List available Ollama models
+/// List available AI models (Ollama decommissioned, now MLX)
 #[tauri::command]
 pub async fn list_agent_models() -> Result<Vec<String>, String> {
-    let client = reqwest::Client::new();
-    let url = "http://localhost:11434/api/tags";
-
-    let response = client
-        .get(url)
-        .send()
-        .await
-        .map_err(|e| format!("Failed to get models: {}", e))?
-        .json::<serde_json::Value>()
-        .await
-        .map_err(|e| format!("Failed to parse models: {}", e))?;
-
-    let models = response["models"]
-        .as_array()
-        .ok_or("No models found")?
-        .iter()
-        .filter_map(|m| m["name"].as_str().map(String::from))
-        .collect();
-
-    Ok(models)
+    Ok(vec!["mlx:qwen2.5-1.5b+sam-lora".to_string()])
 }
 
-/// Check if Ollama is running
+/// Check AI status (Ollama decommissioned, now MLX via sam_api.py port 8765)
 #[tauri::command]
 pub async fn check_ollama_status() -> Result<serde_json::Value, String> {
-    let client = reqwest::Client::new();
-
-    match client.get("http://localhost:11434/api/tags").send().await {
-        Ok(response) => {
-            if response.status().is_success() {
-                let models: serde_json::Value = response.json().await.unwrap_or_default();
-                let model_count = models["models"].as_array().map(|a| a.len()).unwrap_or(0);
-                Ok(serde_json::json!({
-                    "running": true,
-                    "model_count": model_count
-                }))
-            } else {
-                Ok(serde_json::json!({
-                    "running": false,
-                    "error": "Ollama returned error status"
-                }))
-            }
-        }
-        Err(e) => {
-            Ok(serde_json::json!({
-                "running": false,
-                "error": format!("Cannot connect to Ollama: {}", e)
-            }))
-        }
-    }
+    Ok(serde_json::json!({"running": false, "decommissioned": true, "replacement": "MLX via sam_api.py port 8765"}))
 }
 
 /// Execute a single tool (for testing or manual use)
@@ -4116,13 +3983,13 @@ pub async fn start_unified_task(
         };
 
         UnifiedConfig {
-            ollama_url: cfg.get("ollama_url")
+            ai_url: cfg.get("ai_url")
                 .and_then(|v| v.as_str())
-                .unwrap_or("http://localhost:11434")
+                .unwrap_or("http://localhost:8765")
                 .to_string(),
             model: cfg.get("model")
                 .and_then(|v| v.as_str())
-                .unwrap_or("sam-trained:latest")
+                .unwrap_or("qwen2.5-1.5b+sam-lora")
                 .to_string(),
             mode,
             max_iterations: cfg.get("max_iterations")
@@ -6955,127 +6822,32 @@ pub struct OllamaStatus {
     pub current_model: Option<String>,
 }
 
-/// Check if Ollama is running and get available models
+/// Ollama decommissioned 2026-01-18 - stub for API compat
 #[tauri::command]
 pub async fn cmd_ollama_status() -> Result<OllamaStatus, String> {
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(5))
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    match client.get("http://localhost:11434/api/tags").send().await {
-        Ok(resp) => {
-            if let Ok(json) = resp.json::<serde_json::Value>().await {
-                let models: Vec<String> = json["models"]
-                    .as_array()
-                    .map(|arr| arr.iter()
-                        .filter_map(|m| m["name"].as_str().map(|s| s.to_string()))
-                        .collect())
-                    .unwrap_or_default();
-
-                Ok(OllamaStatus {
-                    running: true,
-                    models,
-                    current_model: None,
-                })
-            } else {
-                Ok(OllamaStatus {
-                    running: true,
-                    models: vec![],
-                    current_model: None,
-                })
-            }
-        }
-        Err(_) => Ok(OllamaStatus {
-            running: false,
-            models: vec![],
-            current_model: None,
-        })
-    }
+    Ok(OllamaStatus {
+        running: false,
+        models: vec![],
+        current_model: None,
+    })
 }
 
-/// Restart Ollama service
+/// Ollama decommissioned 2026-01-18
 #[tauri::command]
 pub async fn cmd_restart_ollama() -> Result<String, String> {
-    use std::process::Command;
-
-    // Kill existing Ollama process
-    let _ = Command::new("pkill")
-        .args(["-9", "ollama"])
-        .output();
-
-    // Wait for process to die
-    std::thread::sleep(std::time::Duration::from_secs(2));
-
-    // Start Ollama in background
-    let result = Command::new("sh")
-        .args(["-c", "nohup ollama serve > /dev/null 2>&1 &"])
-        .output()
-        .map_err(|e| format!("Failed to start Ollama: {}", e))?;
-
-    if !result.status.success() {
-        return Err("Failed to start Ollama".to_string());
-    }
-
-    // Wait for startup
-    std::thread::sleep(std::time::Duration::from_secs(3));
-
-    // Verify it's running
-    let status = cmd_ollama_status().await?;
-    if status.running {
-        Ok(format!("Ollama restarted. {} models available.", status.models.len()))
-    } else {
-        Err("Ollama failed to start".to_string())
-    }
+    Err("Ollama decommissioned 2026-01-18.".to_string())
 }
 
-/// Pre-warm a model so it's ready for fast responses
+/// Ollama decommissioned 2026-01-18
 #[tauri::command]
-pub async fn cmd_warm_model(model: String) -> Result<String, String> {
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(60))
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    let resp = client
-        .post("http://localhost:11434/api/generate")
-        .json(&serde_json::json!({
-            "model": model,
-            "prompt": "hi",
-            "stream": false,
-            "keep_alive": "10m",
-            "options": {"num_predict": 1}
-        }))
-        .send()
-        .await
-        .map_err(|e| format!("Failed to warm model: {}", e))?;
-
-    if resp.status().is_success() {
-        Ok(format!("Model '{}' warmed and will stay loaded for 10 minutes", model))
-    } else {
-        Err(format!("Failed to warm model: HTTP {}", resp.status()))
-    }
+pub async fn cmd_warm_model(_model: String) -> Result<String, String> {
+    Err("Ollama decommissioned.".to_string())
 }
 
-/// Unload a model to free memory
+/// Ollama decommissioned 2026-01-18
 #[tauri::command]
-pub async fn cmd_unload_model(model: String) -> Result<String, String> {
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    let _ = client
-        .post("http://localhost:11434/api/generate")
-        .json(&serde_json::json!({
-            "model": model,
-            "prompt": "",
-            "keep_alive": "0"
-        }))
-        .send()
-        .await;
-
-    Ok(format!("Model '{}' unloaded", model))
+pub async fn cmd_unload_model(_model: String) -> Result<String, String> {
+    Err("Ollama decommissioned.".to_string())
 }
 
 #[cfg(test)]

@@ -17,7 +17,7 @@ mod plan_store;
 mod monitoring;
 mod scheduler;
 mod phase1_6_tests;
-mod ollama;
+
 mod ssh_session;
 mod scaffolding;
 mod debug_server;
@@ -50,6 +50,8 @@ use commands::{
     glob_files, grep_files,
     // Scaffolded agent commands
     start_agent_task, list_agent_models, check_ollama_status, execute_agent_tool,
+    // Ollama management (LEGACY stubs - Ollama decommissioned 2026-01-18)
+    cmd_ollama_status, cmd_restart_ollama, cmd_warm_model, cmd_unload_model,
     // Unified agent commands (24/7 guaranteed success)
     start_unified_task, resume_unified_task, list_unified_tasks, get_unified_task_status,
     // Intelligence engine (instant, no AI latency)
@@ -131,11 +133,9 @@ use commands::{
     cmd_remember_character_fact, cmd_clear_character_history, cmd_delete_character_memory,
     cmd_list_characters_with_memory, cmd_get_active_character, cmd_set_active_character,
     cmd_clear_active_character,
-    // Ollama management (LEGACY - Ollama decommissioned 2026-01-18, kept for API compat)
-    cmd_ollama_status, cmd_restart_ollama, cmd_warm_model, cmd_unload_model,
 };
 use session::{save_session, load_session};
-use ollama::{query_ollama_stream, query_ollama, query_ollama_chat, list_ollama_models, prewarm_model};
+
 
 // App version info command
 #[tauri::command]
@@ -598,11 +598,7 @@ fn main() {
             start_scheduler,
             stop_scheduler,
             run_phase1_6_auto,
-            query_ollama_stream,
-            query_ollama,
-            query_ollama_chat,
-            list_ollama_models,
-            prewarm_model,
+            // Ollama commands removed (decommissioned 2026-01-18, now MLX via sam_api.py)
             save_session,
             load_session,
             get_app_version,
@@ -844,7 +840,7 @@ fn main() {
             cmd_get_active_character,
             cmd_set_active_character,
             cmd_clear_active_character,
-            // Ollama management
+            // Ollama management (stubs - decommissioned 2026-01-18)
             cmd_ollama_status,
             cmd_restart_ollama,
             cmd_warm_model,

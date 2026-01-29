@@ -13,6 +13,23 @@ use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
 
 // =============================================================================
+// MLX QUERY (replaces Ollama, decommissioned 2026-01-18)
+// =============================================================================
+
+async fn query_mlx(prompt: &str) -> Result<String, String> {
+    let client = reqwest::Client::new();
+    let resp = client.post("http://localhost:8765/api/query")
+        .json(&serde_json::json!({"query": prompt}))
+        .send().await
+        .map_err(|e| format!("MLX request failed: {}", e))?;
+    let json: serde_json::Value = resp.json().await
+        .map_err(|e| format!("Failed to parse: {}", e))?;
+    json.get("response").and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .ok_or_else(|| "No response".to_string())
+}
+
+// =============================================================================
 // TYPES
 // =============================================================================
 
@@ -304,12 +321,8 @@ impl ParallelExecutor {
         _working_dir: &PathBuf,
         model: Option<&str>,
     ) -> Result<(String, Vec<String>), String> {
-        // In production, this would call the unified agent
-        // For now, we use a direct Ollama call
-
-        use crate::ollama::query_ollama;
-
-        let model_name = model.unwrap_or("qwen2.5-coder:1.5b");
+        // Execute via MLX sam_api.py (Ollama decommissioned 2026-01-18)
+        let _model_name = model.unwrap_or("qwen2.5-1.5b+sam-lora");
 
         // Build a simple atomic prompt
         let full_prompt = format!(
@@ -317,10 +330,8 @@ impl ParallelExecutor {
             prompt
         );
 
-        let response = query_ollama(
-            full_prompt,
-            Some(model_name.to_string()),
-        ).await.map_err(|e| format!("Ollama error: {}", e))?;
+        let response = query_mlx(&full_prompt).await
+            .map_err(|e| format!("MLX error: {}", e))?;
 
         Ok((response, vec![]))
     }

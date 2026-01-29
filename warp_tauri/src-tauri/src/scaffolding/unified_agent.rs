@@ -36,8 +36,8 @@ impl Default for AgentMode {
 /// Configuration for the unified agent
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnifiedConfig {
-    /// Ollama URL
-    pub ollama_url: String,
+    /// AI API URL (MLX via sam_api.py)
+    pub ai_url: String,
     /// Model to use
     pub model: String,
     /// Operating mode
@@ -53,8 +53,8 @@ pub struct UnifiedConfig {
 impl Default for UnifiedConfig {
     fn default() -> Self {
         Self {
-            ollama_url: "http://localhost:11434".to_string(),
-            model: "sam-trained:latest".to_string(),
+            ai_url: "http://localhost:8765".to_string(),
+            model: "qwen2.5-1.5b+sam-lora".to_string(),
             mode: AgentMode::Hybrid,
             max_iterations: 50,
             iteration_delay_ms: 500,
@@ -275,8 +275,8 @@ impl UnifiedAgent {
 
         let prompt = PhasePrompts::for_phase(phase, &work_dir, None);
 
-        // Call Ollama with minimal tokens
-        let response = self.call_ollama(&prompt.prompt, prompt.max_tokens).await?;
+        // Call MLX with minimal tokens
+        let response = self.call_ai(&prompt.prompt, prompt.max_tokens).await?;
 
         // Parse response (with aggressive fallbacks)
         let parsed = self.scaffolding.parse_response(&response);
@@ -292,9 +292,9 @@ impl UnifiedAgent {
         Ok((command, parsed.action.id.clone()))
     }
 
-    /// Call Ollama API
-    async fn call_ollama(&self, prompt: &str, max_tokens: u32) -> Result<String, String> {
-        let url = format!("{}/api/generate", self.config.ollama_url);
+    /// Call AI API (MLX via sam_api.py)
+    async fn call_ai(&self, prompt: &str, max_tokens: u32) -> Result<String, String> {
+        let url = format!("{}/api/query", self.config.ai_url);
 
         let request = serde_json::json!({
             "model": self.config.model,

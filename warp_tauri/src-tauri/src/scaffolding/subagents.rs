@@ -12,6 +12,23 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 // =============================================================================
+// MLX QUERY (replaces Ollama, decommissioned 2026-01-18)
+// =============================================================================
+
+async fn query_mlx(prompt: &str) -> Result<String, String> {
+    let client = reqwest::Client::new();
+    let resp = client.post("http://localhost:8765/api/query")
+        .json(&serde_json::json!({"query": prompt}))
+        .send().await
+        .map_err(|e| format!("MLX request failed: {}", e))?;
+    let json: serde_json::Value = resp.json().await
+        .map_err(|e| format!("Failed to parse: {}", e))?;
+    json.get("response").and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .ok_or_else(|| "No response".to_string())
+}
+
+// =============================================================================
 // TYPES
 // =============================================================================
 
@@ -369,10 +386,8 @@ impl SubagentManager {
         // Build specialized prompt based on agent type
         let prompt = self.build_specialized_prompt(agent.specialization, task);
 
-        // Execute using direct Ollama call
-        use crate::ollama::query_ollama;
-
-        match query_ollama(prompt, Some(self.config.model.clone())).await {
+        // Execute using MLX via sam_api.py (Ollama decommissioned 2026-01-18)
+        match query_mlx(&prompt).await {
             Ok(response) => {
                 // Parse the response to extract any file modifications mentioned
                 let files_modified = self.extract_files_from_response(&response);

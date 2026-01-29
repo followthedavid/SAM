@@ -220,7 +220,7 @@ impl ModelSwapper {
 
         // Send minimal request to load model
         let response = client
-            .post("http://localhost:11434/api/generate")
+            .post("http://localhost:8765/api/query")
             .json(&serde_json::json!({
                 "model": model,
                 "prompt": "",
@@ -246,7 +246,7 @@ impl ModelSwapper {
 
         let client = reqwest::Client::new();
         let _ = client
-            .post("http://localhost:11434/api/generate")
+            .post("http://localhost:8765/api/query")
             .json(&serde_json::json!({
                 "model": model,
                 "keep_alive": "0"
@@ -867,7 +867,7 @@ impl SmartOrchestrator {
         };
 
         let response = client
-            .post("http://localhost:11434/api/generate")
+            .post("http://localhost:8765/api/query")
             .json(&serde_json::json!({
                 "model": model,
                 "prompt": prompt,

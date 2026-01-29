@@ -724,7 +724,7 @@ async fn handle_conversational(input: &str, ctx: &OrchestratorContext, _routing_
     // keep_alive: "30m" keeps model loaded for 30 minutes to prevent reload delays
     let response = if is_roleplay_mode {
         client
-            .post("http://localhost:11434/api/generate")
+            .post("http://localhost:8765/api/query")
             .json(&serde_json::json!({
                 "model": model,
                 "system": system_prompt,
@@ -739,7 +739,7 @@ async fn handle_conversational(input: &str, ctx: &OrchestratorContext, _routing_
     } else {
         let prompt = format!("{}\n\n{}", system_prompt, input);
         client
-            .post("http://localhost:11434/api/generate")
+            .post("http://localhost:8765/api/query")
             .json(&serde_json::json!({
                 "model": model,
                 "prompt": prompt,
@@ -2717,7 +2717,7 @@ async fn unload_model(model_name: &str) -> Result<(), String> {
     // Call Ollama to unload the model using async client (blocking client panics in async context)
     let client = reqwest::Client::new();
     let _ = client
-        .post("http://localhost:11434/api/generate")
+        .post("http://localhost:8765/api/query")
         .json(&json!({
             "model": model_name,
             "keep_alive": 0
@@ -2816,7 +2816,7 @@ async fn call_ollama_for_fill(
 
     let client = reqwest::Client::new();
     let response = client
-        .post("http://localhost:11434/api/generate")
+        .post("http://localhost:8765/api/query")
         .json(&json!({
             "model": model,
             "prompt": prompt,
@@ -2924,7 +2924,7 @@ async fn call_ollama_with_tools(
 ) -> Result<(String, Vec<ToolCall>), String> {
     let client = reqwest::Client::new();
     let response = client
-        .post("http://localhost:11434/api/generate")
+        .post("http://localhost:8765/api/query")
         .json(&json!({
             "model": model,
             "prompt": prompt,

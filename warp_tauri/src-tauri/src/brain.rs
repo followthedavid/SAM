@@ -28,7 +28,7 @@ pub struct BrainStatus {
     pub project_count: u32,
     pub active_projects: u32,
     pub memory_entries: u32,
-    pub ollama_model: String,
+    pub mlx_model: String,
     pub style_profile_loaded: bool,
 }
 
@@ -51,7 +51,7 @@ pub fn get_brain_status() -> Result<BrainStatus, String> {
             project_count: 0,
             active_projects: 0,
             memory_entries: 0,
-            ollama_model: "none".to_string(),
+            mlx_model: "qwen2.5-1.5b+sam-lora".to_string(),
             style_profile_loaded: false,
         });
     }
@@ -72,13 +72,7 @@ pub fn get_brain_status() -> Result<BrainStatus, String> {
             .count() as u32
     }).unwrap_or(0);
 
-    // Check Ollama model
-    let ollama_check = Command::new("ollama")
-        .args(["list"])
-        .output()
-        .map(|o| String::from_utf8_lossy(&o.stdout).contains("sam-coder"))
-        .unwrap_or(false);
-
+    // MLX model (Ollama decommissioned 2026-01-18)
     // Check style profile
     let style_path = PathBuf::from(BRAIN_DIR)
         .join("training_data")
@@ -88,7 +82,7 @@ pub fn get_brain_status() -> Result<BrainStatus, String> {
         project_count,
         active_projects,
         memory_entries: 0, // TODO: integrate semantic memory
-        ollama_model: if ollama_check { "sam-coder".to_string() } else { "none".to_string() },
+        mlx_model: "qwen2.5-1.5b+sam-lora".to_string(),
         style_profile_loaded: style_path.exists(),
     })
 }
@@ -172,7 +166,7 @@ pub fn get_project_categories() -> Result<Vec<CategoryInfo>, String> {
     Ok(categories)
 }
 
-/// Generate code using sam-coder model
+/// Generate code using MLX via sam_api.py (Ollama decommissioned 2026-01-18)
 #[tauri::command]
 pub async fn generate_code(prompt: String, context: Option<String>) -> Result<String, String> {
     let full_prompt = if let Some(ctx) = context {
@@ -181,16 +175,21 @@ pub async fn generate_code(prompt: String, context: Option<String>) -> Result<St
         prompt
     };
 
-    let output = Command::new("ollama")
-        .args(["run", "sam-coder", &full_prompt])
-        .output()
-        .map_err(|e| format!("Failed to run sam-coder: {}", e))?;
+    let client = reqwest::Client::new();
+    let resp = client.post("http://localhost:8765/api/query")
+        .json(&serde_json::json!({"query": full_prompt}))
+        .send()
+        .await
+        .map_err(|e| format!("MLX request failed: {}", e))?;
 
-    if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
-    } else {
-        Err(String::from_utf8_lossy(&output.stderr).to_string())
-    }
+    let json: serde_json::Value = resp.json()
+        .await
+        .map_err(|e| format!("Failed to parse response: {}", e))?;
+
+    json.get("response")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .ok_or_else(|| "No response from MLX".to_string())
 }
 
 /// Get starred/favorite projects

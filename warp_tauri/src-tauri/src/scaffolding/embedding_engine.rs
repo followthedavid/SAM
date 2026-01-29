@@ -79,7 +79,7 @@ pub struct EmbeddingEngine {
     chunks: Vec<EmbeddedChunk>,
     file_hashes: HashMap<String, String>,  // Track file changes
     index_path: PathBuf,
-    ollama_available: bool,
+    mlx_available: bool,
 }
 
 impl EmbeddingEngine {
@@ -91,7 +91,7 @@ impl EmbeddingEngine {
             chunks: Vec::new(),
             file_hashes: HashMap::new(),
             index_path,
-            ollama_available: false,
+            mlx_available: false,
         };
 
         engine.load_index();
@@ -438,9 +438,9 @@ impl EmbeddingEngine {
         // Extract keywords as fallback
         let keywords = Self::extract_keywords(&chunk.content);
 
-        // Try Ollama embedding if available
-        let embedding = if self.ollama_available {
-            self.get_ollama_embedding(&chunk.content).await
+        // Try MLX embedding if available
+        let embedding = if self.mlx_available {
+            self.get_mlx_embedding(&chunk.content).await
                 .unwrap_or_else(|_| Vec::new())
         } else {
             Vec::new()
@@ -453,16 +453,15 @@ impl EmbeddingEngine {
         }
     }
 
-    // Get embedding from Ollama - async version kept for future use
+    // Get embedding from MLX via sam_api.py - async version kept for future use
     #[allow(dead_code)]
-    async fn get_ollama_embedding(&self, text: &str) -> Result<Vec<f32>, String> {
+    async fn get_mlx_embedding(&self, text: &str) -> Result<Vec<f32>, String> {
         let client = reqwest::Client::new();
         let payload = serde_json::json!({
-            "model": "all-minilm",
-            "prompt": text
+            "text": text
         });
 
-        let response = client.post("http://localhost:11434/api/embeddings")
+        let response = client.post("http://localhost:8765/api/embed")
             .json(&payload)
             .send()
             .await
@@ -622,29 +621,21 @@ impl EmbeddingEngine {
         self.save_index();
     }
 
-    /// Check if Ollama embedding model is available
-    pub async fn check_ollama(&mut self) -> bool {
+    /// Check if MLX embedding model is available via sam_api.py
+    pub async fn check_mlx(&mut self) -> bool {
         let client = reqwest::Client::new();
 
-        match client.get("http://localhost:11434/api/tags")
+        match client.get("http://localhost:8765/api/health")
             .send()
             .await
         {
             Ok(response) => {
-                if let Ok(json) = response.json::<serde_json::Value>().await {
-                    if let Some(models) = json["models"].as_array() {
-                        self.ollama_available = models.iter().any(|m| {
-                            m["name"].as_str()
-                                .map(|n| n.contains("minilm") || n.contains("embed"))
-                                .unwrap_or(false)
-                        });
-                    }
-                }
+                self.mlx_available = response.status().is_success();
             }
-            Err(_) => self.ollama_available = false,
+            Err(_) => self.mlx_available = false,
         }
 
-        self.ollama_available
+        self.mlx_available
     }
 }
 

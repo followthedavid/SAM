@@ -672,14 +672,14 @@ impl IntelligenceEngine {
 // =============================================================================
 
 pub struct TinyModelRouter {
-    ollama_url: String,
+    ai_url: String,
     model: String,
 }
 
 impl TinyModelRouter {
-    pub fn new(ollama_url: &str, model: &str) -> Self {
+    pub fn new(ai_url: &str, model: &str) -> Self {
         Self {
-            ollama_url: ollama_url.to_string(),
+            ai_url: ai_url.to_string(),
             model: model.to_string(),
         }
     }
@@ -699,7 +699,7 @@ Reply with ONLY the number:"#,
 
         let client = reqwest::Client::new();
         let response = client
-            .post(&format!("{}/api/generate", self.ollama_url))
+            .post(&format!("{}/api/query", self.ai_url))
             .json(&serde_json::json!({
                 "model": self.model,
                 "prompt": prompt,

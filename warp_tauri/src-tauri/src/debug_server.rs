@@ -5,13 +5,13 @@
 //!
 //! Endpoints:
 //!   GET  /debug/state   - App state (tabs, conversations, errors)
-//!   GET  /debug/ollama  - Ollama status (loaded models, queue)
+//!   GET  /debug/ai      - AI status (MLX via sam_api.py)
 //!   POST /debug/warm    - Force-warm models
 //!   GET  /debug/ping    - Health check
 //!
 //! Usage from terminal:
 //!   curl http://localhost:9998/debug/state
-//!   curl http://localhost:9998/debug/ollama
+//!   curl http://localhost:9998/debug/ai
 //!   curl -X POST http://localhost:9998/debug/warm
 
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -52,7 +52,7 @@ pub async fn start_debug_server(port: u16) -> Result<(), Box<dyn std::error::Err
     let addr = format!("127.0.0.1:{}", port);
     let listener = TcpListener::bind(&addr).await?;
     eprintln!("[DEBUG_SERVER] Listening on http://{}", addr);
-    eprintln!("[DEBUG_SERVER] Endpoints: /debug/state, /debug/ollama, /debug/warm, /debug/ping");
+    eprintln!("[DEBUG_SERVER] Endpoints: /debug/state, /debug/ai, /debug/warm, /debug/ping");
 
     loop {
         match listener.accept().await {
@@ -108,8 +108,8 @@ async fn handle_request(request: &str) -> String {
             });
             http_json(200, &json.to_string())
         }
-        ("GET", "/debug/ollama") => {
-            match get_ollama_status().await {
+        ("GET", "/debug/ai") => {
+            match get_ai_status().await {
                 Ok(json) => http_json(200, &json),
                 Err(e) => http_json(500, &format!(r#"{{"error":"{}"}}"#, e)),
             }
@@ -125,7 +125,7 @@ async fn handle_request(request: &str) -> String {
                 "endpoints": {
                     "GET /debug/ping": "Health check",
                     "GET /debug/state": "App state (tabs, errors, routing)",
-                    "GET /debug/ollama": "Ollama model status",
+                    "GET /debug/ai": "AI status (MLX via sam_api.py)",
                     "POST /debug/warm": "Force-warm all models",
                     "GET /debug/help": "This help message"
                 }
@@ -138,83 +138,67 @@ async fn handle_request(request: &str) -> String {
     }
 }
 
-async fn get_ollama_status() -> Result<String, String> {
+async fn get_ai_status() -> Result<String, String> {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
         .build()
         .map_err(|e| e.to_string())?;
 
-    // Get loaded models
-    let ps_response = client
-        .get("http://localhost:11434/api/ps")
+    // Check MLX sam_api.py health
+    match client.get("http://localhost:8765/api/health")
         .send()
         .await
-        .map_err(|e| e.to_string())?
-        .json::<serde_json::Value>()
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let models = ps_response.get("models").cloned().unwrap_or(serde_json::json!([]));
-    let loaded_count = models.as_array().map(|a| a.len()).unwrap_or(0);
-
-    // Get available models
-    let tags_response = client
-        .get("http://localhost:11434/api/tags")
-        .send()
-        .await
-        .map_err(|e| e.to_string())?
-        .json::<serde_json::Value>()
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let available = tags_response.get("models").cloned().unwrap_or(serde_json::json!([]));
-    let available_count = available.as_array().map(|a| a.len()).unwrap_or(0);
-
-    let result = serde_json::json!({
-        "status": "running",
-        "loaded_models": models,
-        "loaded_count": loaded_count,
-        "available_count": available_count,
-        "ollama_url": "http://localhost:11434"
-    });
-
-    Ok(result.to_string())
+    {
+        Ok(response) => {
+            let status_code = response.status();
+            let body: serde_json::Value = response.json().await.unwrap_or_default();
+            let result = serde_json::json!({
+                "status": if status_code.is_success() { "running" } else { "error" },
+                "backend": "MLX via sam_api.py",
+                "model": "qwen2.5-1.5b+sam-lora",
+                "url": "http://localhost:8765",
+                "health": body,
+                "ollama_decommissioned": "2026-01-18"
+            });
+            Ok(result.to_string())
+        }
+        Err(e) => {
+            let result = serde_json::json!({
+                "status": "offline",
+                "backend": "MLX via sam_api.py",
+                "error": format!("sam_api not reachable: {}", e),
+                "url": "http://localhost:8765",
+                "hint": "Start with: python3 sam_api.py server 8765"
+            });
+            Ok(result.to_string())
+        }
+    }
 }
 
 async fn warm_models() -> Result<String, String> {
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(180))
+        .timeout(std::time::Duration::from_secs(60))
         .build()
         .map_err(|e| e.to_string())?;
 
-    let models = vec!["sam-trained:latest", "qwen2.5-coder:1.5b"];
-    let mut results = Vec::new();
+    // Warm MLX model via sam_api.py
+    let res = client
+        .post("http://localhost:8765/api/query")
+        .json(&serde_json::json!({"query": "warmup"}))
+        .send()
+        .await;
 
-    for model in &models {
-        let res = client
-            .post("http://localhost:11434/api/generate")
-            .json(&serde_json::json!({
-                "model": model,
-                "prompt": ".",
-                "keep_alive": -1,
-                "stream": false,
-                "options": {"num_predict": 1}
-            }))
-            .send()
-            .await;
-
-        match res {
-            Ok(_) => results.push(format!("{}: ok", model)),
-            Err(e) => results.push(format!("{}: {}", model, e)),
-        }
-    }
+    let result = match res {
+        Ok(_) => "mlx:qwen2.5-1.5b+sam-lora: ok".to_string(),
+        Err(e) => format!("mlx:qwen2.5-1.5b+sam-lora: {}", e),
+    };
 
     // Update debug state
     update_debug_state(|state| {
         state.models_warmed = true;
     }).await;
 
-    Ok(results.join(", "))
+    Ok(result)
 }
 
 fn http_response(status: u16, body: &str) -> String {

@@ -15,7 +15,7 @@ pub mod router;
 pub mod agent_loop;
 pub mod context_manager;
 pub mod tool_cache;
-pub mod ollama_agent;
+
 pub mod self_correction;
 pub mod lean_agent;
 pub mod persistence;
@@ -86,7 +86,7 @@ pub use router::{ModelType, ModelRouter};
 pub use agent_loop::{AgentLoop, AgentState, LoopConfig};
 pub use context_manager::{ContextManager, ContextConfig};
 pub use tool_cache::{ToolCache, CacheConfig, CachedResult};
-pub use ollama_agent::{OllamaAgent, OllamaAgentConfig, AgentEvent, StreamingConfig};
+
 pub use self_correction::{SelfCorrectionEngine, SelfCorrectionConfig, ValidationResult as CorrectionResult};
 pub use lean_agent::{LeanState, TaskPhase, OutputParser, DefaultActions, build_atomic_prompt};
 pub use persistence::{PersistentTask, TaskStatus, FileBackup, ProtectedFiles, CharacterMemory, CharacterMessage, ActiveCharacterState};
