@@ -1,0 +1,36 @@
+# Environment files (contain credentials)
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments (symlinked to external drives)
+.venv
+venv
+env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Database files (stored on external drive)
+*.db
+*.sqlite3
+
+# Large data files
+*.jsonl
+*.parquet
+extracted_*.json

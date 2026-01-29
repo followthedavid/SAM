@@ -33,7 +33,7 @@ from smart_summarizer import (
     SmartSummarizer, FactType, ExtractedFact, ScoredSentence,
     summarize, extract_facts, summarize_conversation
 )
-from context_budget import (
+from memory.context_budget import (
     ContextBudget, QueryType, BudgetAllocation, ContextBuilder,
     ContextSection, SectionPriority, ContextImportanceScorer,
     ContextType, ScoredContent, get_importance_scorer

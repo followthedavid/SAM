@@ -1,6 +1,7 @@
-*.safetensors filter=lfs diff=lfs merge=lfs -text
-*.gguf filter=lfs diff=lfs merge=lfs -text
-*.bin filter=lfs diff=lfs merge=lfs -text
 warp_tauri/sam_brain/data/perpetual_codebase_python.jsonl filter=lfs diff=lfs merge=lfs -text
 warp_tauri/sam_brain/data/perpetual_merged.jsonl filter=lfs diff=lfs merge=lfs -text
 warp_tauri/sam_brain/data/train.jsonl filter=lfs diff=lfs merge=lfs -text
+warp_tauri/src-tauri/models/training_data/sam-finetuned/fused/model.safetensors filter=lfs diff=lfs merge=lfs -text
+*.safetensors filter=lfs diff=lfs merge=lfs -text
+*.gguf filter=lfs diff=lfs merge=lfs -text
+*.bin filter=lfs diff=lfs merge=lfs -text

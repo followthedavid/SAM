@@ -32,7 +32,7 @@ from unittest.mock import patch, MagicMock
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from fact_memory import (
+from memory.fact_memory import (
     FactMemory,
     UserFact,
     FactCategory,

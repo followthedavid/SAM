@@ -41,7 +41,7 @@ try:
     import sys
     import os
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from project_context import (
+    from memory.project_context import (
         get_project_context,
         Project,
         ProjectSession,
@@ -73,7 +73,7 @@ except ImportError:
 
 # Import fact memory for user context (Phase 1.3.6)
 try:
-    from fact_memory import get_fact_memory, FactMemory
+    from memory.fact_memory import get_fact_memory, FactMemory
     _fact_memory_available = True
 except ImportError:
     _fact_memory_available = False
@@ -479,7 +479,7 @@ Guidelines:
 
         try:
             # Use build_user_context for the formatted string
-            from fact_memory import build_user_context
+            from memory.fact_memory import build_user_context
             context = build_user_context(user_id, min_confidence=0.3)
             self._user_facts_loaded = bool(context)
             self._current_user_id = user_id
@@ -520,7 +520,7 @@ Guidelines:
 
         try:
             # Use the backward-compatible wrapper with proper token limit
-            from fact_memory import get_user_context
+            from memory.fact_memory import get_user_context
             return get_user_context(uid, max_tokens=token_limit)
         except Exception:
             return ""

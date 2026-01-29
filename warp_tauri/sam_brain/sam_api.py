@@ -57,6 +57,16 @@ sys.path.insert(0, str(SCRIPT_DIR))
 INVENTORY_FILE = SCRIPT_DIR / "exhaustive_analysis" / "master_inventory.json"
 STYLE_FILE = SCRIPT_DIR / "training_data" / "style_profile.json"
 
+# Approval Queue (Phase 4.1 - lazy loaded)
+try:
+    from serve.approval_queue import (
+        api_approval_queue, api_approval_approve, api_approval_reject,
+        api_approval_history, api_approval_get, api_approval_stats
+    )
+    APPROVAL_AVAILABLE = True
+except ImportError:
+    APPROVAL_AVAILABLE = False
+
 # SAM Intelligence singleton (lazy loaded)
 _sam_intelligence = None
 
@@ -71,7 +81,7 @@ def get_feedback_db():
     global _feedback_db
     if _feedback_db is None:
         try:
-            from feedback_system import FeedbackDB
+            from learn.feedback_system import FeedbackDB
             _feedback_db = FeedbackDB()
         except ImportError as e:
             print(f"Warning: Could not load FeedbackDB: {e}", file=sys.stderr)
@@ -86,7 +96,7 @@ def get_distillation_db():
     global _distillation_db
     if _distillation_db is None:
         try:
-            from knowledge_distillation import DistillationDB
+            from learn.knowledge_distillation import DistillationDB
             _distillation_db = DistillationDB()
         except ImportError as e:
             print(f"Warning: Could not load DistillationDB: {e}", file=sys.stderr)
@@ -178,7 +188,7 @@ def get_sam_intelligence():
     global _sam_intelligence
     if _sam_intelligence is None:
         try:
-            from sam_intelligence import SamIntelligence
+            from learn.sam_intelligence import SamIntelligence
             _sam_intelligence = SamIntelligence()
         except ImportError as e:
             print(f"Warning: Could not load SAM Intelligence: {e}", file=sys.stderr)
@@ -714,7 +724,7 @@ def api_query(query: str, speak: bool = False) -> dict:
         # Optionally speak the response
         if speak and output:
             try:
-                from voice_output import SAMVoice
+                from voice.voice_output import SAMVoice
                 voice = SAMVoice()
                 # Truncate long responses for speech
                 speech_text = output[:500] if len(output) > 500 else output
@@ -928,7 +938,7 @@ def api_starred() -> dict:
 def api_speak(text: str, voice: str = None) -> dict:
     """Speak text using TTS."""
     try:
-        from voice_output import SAMVoice
+        from voice.voice_output import SAMVoice
         sam_voice = SAMVoice()
 
         if voice:
@@ -952,7 +962,7 @@ def api_speak(text: str, voice: str = None) -> dict:
 def api_voices() -> dict:
     """List available voices."""
     try:
-        from voice_output import SAMVoice
+        from voice.voice_output import SAMVoice
         sam_voice = SAMVoice()
         voices = sam_voice.list_voices()
 
@@ -983,12 +993,12 @@ def get_training_stats() -> dict:
     """
     try:
         # Get deployment stats
-        from model_deployment import get_deployer
+        from learn.model_deployment import get_deployer
         deployer = get_deployer()
         deployment_stats = deployer.get_deployment_stats()
 
         # Get training pipeline stats
-        from training_pipeline import TrainingPipeline
+        from learn.training_pipeline import TrainingPipeline
         pipeline = TrainingPipeline()
         pipeline_stats = pipeline.stats()
 
@@ -1217,7 +1227,7 @@ def api_feedback(improvement_id: str, success: bool, impact: float = 0.5, lesson
 def api_scan() -> dict:
     """Trigger an improvement scan."""
     try:
-        from improvement_detector import ImprovementDetector
+        from learn.improvement_detector import ImprovementDetector
         detector = ImprovementDetector()
 
         # Quick scan (don't do full scan via API - too slow)
@@ -1281,7 +1291,7 @@ def api_orchestrate(message: str, auto_escalate: bool = True) -> dict:
 
         # Use escalation handler for intelligent routing
         try:
-            from escalation_handler import process_request, EscalationReason
+            from execution.escalation_handler import process_request, EscalationReason
             result = process_request(message, auto_escalate=auto_escalate)
 
             duration = (datetime.now() - start).total_seconds() * 1000
@@ -1462,7 +1472,7 @@ def api_context_stats() -> dict:
 
         # Also try to get context budget stats if available
         try:
-            from context_budget import ContextBudget
+            from memory.context_budget import ContextBudget
             budget = ContextBudget()
             allocation_stats = budget.get_allocation_stats()
             stats["budget_allocations"] = allocation_stats
@@ -1678,7 +1688,7 @@ def api_cognitive_feedback(
 
         # Record in intelligence core (Phase 1 - legacy)
         try:
-            from intelligence_core import get_intelligence_core
+            from learn.intelligence_core import get_intelligence_core
             core = get_intelligence_core()
 
             legacy_rating = "helpful" if rating == 1 else ("corrected" if correction else "not_helpful")
@@ -1695,7 +1705,7 @@ def api_cognitive_feedback(
 
         # Also record in escalation learner (legacy)
         try:
-            from escalation_learner import EscalationLearner
+            from execution.escalation_learner import EscalationLearner
             learner = EscalationLearner()
             learner.record_local_attempt(
                 query=response_id,
@@ -1861,7 +1871,7 @@ def api_feedback_dashboard() -> dict:
 def api_intelligence_stats() -> dict:
     """Get intelligence core statistics (distillation, feedback, memory)."""
     try:
-        from intelligence_core import get_intelligence_core
+        from learn.intelligence_core import get_intelligence_core
         core = get_intelligence_core()
         stats = core.get_stats()
 
@@ -1877,7 +1887,7 @@ def api_intelligence_stats() -> dict:
 def api_user_facts(user_id: str = "david") -> dict:
     """Get facts known about a user."""
     try:
-        from intelligence_core import get_intelligence_core
+        from learn.intelligence_core import get_intelligence_core
         core = get_intelligence_core()
         facts = core.get_user_facts(user_id)
         context = core.get_context_for_user(user_id)
@@ -1896,7 +1906,7 @@ def api_user_facts(user_id: str = "david") -> dict:
 def api_remember_fact(user_id: str, fact: str, category: str = "preference") -> dict:
     """Remember a fact about a user."""
     try:
-        from intelligence_core import get_intelligence_core, FactCategory
+        from learn.intelligence_core import get_intelligence_core, FactCategory
         core = get_intelligence_core()
 
         try:
@@ -1925,7 +1935,7 @@ def api_fact_context(user_id: str = "david") -> dict:
     so it knows facts about the user.
     """
     try:
-        from fact_memory import get_fact_memory, build_user_context
+        from memory.fact_memory import get_fact_memory, build_user_context
         fm = get_fact_memory()
 
         # Get the formatted context using build_user_context
@@ -1967,7 +1977,7 @@ def api_facts_list(user_id: str = "david", category: str = None, min_confidence:
         List of facts with metadata
     """
     try:
-        from fact_memory import get_fact_db
+        from memory.fact_memory import get_fact_db
 
         db = get_fact_db()
         facts = db.get_facts(
@@ -2019,7 +2029,7 @@ def api_facts_add(fact: str, category: str, user_id: str = "david", source: str 
         The created or reinforced fact
     """
     try:
-        from fact_memory import get_fact_db
+        from memory.fact_memory import get_fact_db
 
         db = get_fact_db()
         saved_fact = db.save_fact(
@@ -2055,7 +2065,7 @@ def api_facts_remove(fact_id: str) -> dict:
         Result of the removal operation
     """
     try:
-        from fact_memory import get_fact_db
+        from memory.fact_memory import get_fact_db
 
         db = get_fact_db()
 
@@ -2094,7 +2104,7 @@ def api_facts_search(query: str, user_id: str = "david", limit: int = 10) -> dic
         Matching facts
     """
     try:
-        from fact_memory import get_fact_db
+        from memory.fact_memory import get_fact_db
 
         db = get_fact_db()
         facts = db.search_facts(
@@ -2137,7 +2147,7 @@ def api_facts_get(fact_id: str) -> dict:
         Full fact details
     """
     try:
-        from fact_memory import get_fact_db
+        from memory.fact_memory import get_fact_db
 
         db = get_fact_db()
         fact = db.get_fact(fact_id)
@@ -2180,7 +2190,7 @@ def api_project_context(path: str = ".") -> dict:
     """Get project context for a path."""
     try:
         import os
-        from project_context import get_project_context
+        from memory.project_context import get_project_context
         ctx = get_project_context()
 
         project = ctx.detect_project(os.path.abspath(path))
@@ -2218,7 +2228,7 @@ def api_save_session(project_path: str, working_on: str = "", notes: str = "") -
     """Save session state for a project."""
     try:
         import os
-        from project_context import get_project_context
+        from memory.project_context import get_project_context
         ctx = get_project_context()
 
         project = ctx.detect_project(os.path.abspath(project_path))
@@ -2245,7 +2255,7 @@ def api_save_session(project_path: str, working_on: str = "", notes: str = "") -
 def api_recent_projects(limit: int = 5) -> dict:
     """Get recently accessed projects."""
     try:
-        from project_context import get_project_context
+        from memory.project_context import get_project_context
         ctx = get_project_context()
 
         projects = ctx.get_recent_projects(limit)
@@ -2283,7 +2293,7 @@ def api_project_current() -> dict:
         - timestamp: ISO timestamp
     """
     try:
-        from project_context import get_project_watcher, get_current_project, SSOT_PROJECTS
+        from memory.project_context import get_project_watcher, get_current_project, SSOT_PROJECTS
 
         # Try the watcher first (it tracks the most recent project switch)
         watcher = get_project_watcher(auto_start=False)
@@ -2361,7 +2371,7 @@ def api_project_todos(path: str = ".", limit: int = 10) -> dict:
     """Get TODOs for a project."""
     try:
         import os
-        from project_context import get_project_context
+        from memory.project_context import get_project_context
         ctx = get_project_context()
 
         project = ctx.detect_project(os.path.abspath(path))
@@ -2830,7 +2840,7 @@ def api_index_watch_stop() -> dict:
 def api_cognitive_escalate(query: str) -> dict:
     """Force escalation to Claude via browser bridge."""
     try:
-        from escalation_handler import escalate_to_claude
+        from execution.escalation_handler import escalate_to_claude
         response = escalate_to_claude(query)
         return {
             "success": True,
@@ -2907,7 +2917,7 @@ def api_think_stream(query: str, mode: str = "structured"):
     import json as json_module
 
     try:
-        from live_thinking import (
+        from serve.live_thinking import (
             stream_thinking, stream_structured_thinking, stream_coding_thinking,
             thinking_to_sse, ThinkingSession
         )
@@ -2935,7 +2945,7 @@ def api_think_stream(query: str, mode: str = "structured"):
 def api_think_colors() -> dict:
     """Get color scheme for frontend thought display."""
     try:
-        from live_thinking import get_thinking_colors
+        from serve.live_thinking import get_thinking_colors
         return {
             "success": True,
             "colors": get_thinking_colors(),
@@ -3328,7 +3338,7 @@ def api_vision_ocr(image_path: str = None, image_base64: str = None) -> dict:
 
         # Try Apple Vision first (fast, accurate, no GPU)
         try:
-            from apple_ocr import extract_text
+            from see.apple_ocr import extract_text
             result = extract_text(image_path)
 
             if result.get("success"):
@@ -3825,7 +3835,7 @@ def get_voice_pipeline():
     global _voice_pipeline
     if _voice_pipeline is None:
         try:
-            from voice_pipeline import SAMVoicePipeline, VoicePipelineConfig
+            from voice.voice_pipeline import SAMVoicePipeline, VoicePipelineConfig
             _voice_pipeline = SAMVoicePipeline()
         except Exception as e:
             print(f"Warning: Could not load voice pipeline: {e}", file=sys.stderr)
@@ -4380,7 +4390,11 @@ def run_server(port: int = 8765):
             elif path.startswith("/static/"):
                 try:
                     static_dir = Path(__file__).parent / "static"
-                    file_path = static_dir / path[8:]  # Remove /static/
+                    file_path = (static_dir / path[8:]).resolve()  # Remove /static/ and resolve
+                    # Prevent path traversal - ensure resolved path is within static_dir
+                    if not str(file_path).startswith(str(static_dir.resolve())):
+                        self.send_json({"error": "Access denied"}, 403)
+                        return
                     if file_path.exists() and file_path.is_file():
                         content_type = "text/html" if path.endswith(".html") else \
                                       "text/css" if path.endswith(".css") else \
@@ -4609,6 +4623,35 @@ def run_server(port: int = 8765):
                     self.send_json(api_distillation_review_details(example_id))
                 else:
                     self.send_json({"success": False, "error": "Missing example ID"}, 400)
+            # Approval Queue GET endpoints (Phase 4.1)
+            elif path == "/api/approval/queue":
+                if APPROVAL_AVAILABLE:
+                    project_id = params.get("project_id", [None])[0]
+                    self.send_json(api_approval_queue(project_id))
+                else:
+                    self.send_json({"success": False, "error": "Approval queue not available"}, 503)
+            elif path == "/api/approval/stats":
+                if APPROVAL_AVAILABLE:
+                    self.send_json(api_approval_stats())
+                else:
+                    self.send_json({"success": False, "error": "Approval queue not available"}, 503)
+            elif path == "/api/approval/history":
+                if APPROVAL_AVAILABLE:
+                    limit = int(params.get("limit", ["50"])[0])
+                    project_id = params.get("project_id", [None])[0]
+                    status = params.get("status", [None])[0]
+                    self.send_json(api_approval_history(limit, project_id, status))
+                else:
+                    self.send_json({"success": False, "error": "Approval queue not available"}, 503)
+            elif path.startswith("/api/approval/"):
+                if APPROVAL_AVAILABLE:
+                    item_id = path.split("/")[-1]
+                    if item_id and item_id != "approval":
+                        self.send_json(api_approval_get(item_id))
+                    else:
+                        self.send_json({"success": False, "error": "Missing item ID"}, 400)
+                else:
+                    self.send_json({"success": False, "error": "Approval queue not available"}, 503)
             else:
                 self.send_json({"success": False, "error": "Unknown endpoint"}, 404)
 
@@ -5076,6 +5119,35 @@ def run_server(port: int = 8765):
                         self.send_json({"success": False, "error": "Missing action or threshold"}, 400)
                 except json.JSONDecodeError:
                     self.send_json({"success": False, "error": "Invalid JSON"}, 400)
+            # Approval Queue POST endpoints (Phase 4.1)
+            elif self.path == "/api/approval/approve":
+                if APPROVAL_AVAILABLE:
+                    try:
+                        data = json.loads(body)
+                        item_id = data.get("item_id", "")
+                        approved_by = data.get("approved_by", "david")
+                        if item_id:
+                            self.send_json(api_approval_approve(item_id, approved_by))
+                        else:
+                            self.send_json({"success": False, "error": "Missing item_id"}, 400)
+                    except json.JSONDecodeError:
+                        self.send_json({"success": False, "error": "Invalid JSON"}, 400)
+                else:
+                    self.send_json({"success": False, "error": "Approval queue not available"}, 503)
+            elif self.path == "/api/approval/reject":
+                if APPROVAL_AVAILABLE:
+                    try:
+                        data = json.loads(body)
+                        item_id = data.get("item_id", "")
+                        reason = data.get("reason")
+                        if item_id:
+                            self.send_json(api_approval_reject(item_id, reason))
+                        else:
+                            self.send_json({"success": False, "error": "Missing item_id"}, 400)
+                    except json.JSONDecodeError:
+                        self.send_json({"success": False, "error": "Invalid JSON"}, 400)
+                else:
+                    self.send_json({"success": False, "error": "Approval queue not available"}, 503)
             else:
                 self.send_json({"success": False, "error": "Unknown endpoint"}, 404)
 

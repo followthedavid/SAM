@@ -2,29 +2,104 @@
 SAM Scraper System - Literotica Spider
 
 Scrapes gay male stories from Literotica for training data.
+
+ANTI-BOT MEASURES (updated 2026-01-28):
+- User-Agent rotation with realistic browser signatures
+- Random delays between requests (2-5 seconds)
+- Referer header spoofing
+- AutoThrottle enabled with adaptive delays
+- Exponential backoff on 403/429 responses
+- Cookie persistence for session handling
 """
 
 import re
+import random
+import time
 from typing import Dict, Any, Iterator
 
 from scrapy.http import Request, Response
+from scrapy.downloadermiddlewares.retry import get_retry_request
 
 from ..storage.database import ScrapedItem
 from .base_spider import BaseSpider
 
 
+# Realistic User-Agents for rotation
+USER_AGENTS = [
+    # Chrome on Mac
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    # Safari on Mac
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+    # Firefox on Mac
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0",
+    # Chrome on Windows
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    # Edge on Windows
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+]
+
+
 class LiteroticaSpider(BaseSpider):
-    """Spider for Literotica gay male stories."""
+    """Spider for Literotica gay male stories.
+
+    Includes enhanced anti-bot detection countermeasures:
+    - Rotating User-Agents
+    - Random request delays (2-5s)
+    - Referer header spoofing
+    - AutoThrottle with adaptive delays
+    - Exponential backoff on rate limiting
+    """
 
     name = "literotica_spider"
     source = "literotica"
     allowed_domains = ["literotica.com", "www.literotica.com"]
 
-    rate_limit = 2.0
+    rate_limit = 3.0  # Increased base delay
+
+    # Track retry attempts for exponential backoff
+    _retry_counts: Dict[str, int] = {}
+    _last_request_time: float = 0
+
     custom_settings = {
         **BaseSpider.custom_settings,
-        "DOWNLOAD_DELAY": 2.0,
+        # Base delay with randomization
+        "DOWNLOAD_DELAY": 3.0,
+        "RANDOMIZE_DOWNLOAD_DELAY": True,  # Adds 0.5x to 1.5x randomization
         "CONCURRENT_REQUESTS": 1,
+        "CONCURRENT_REQUESTS_PER_DOMAIN": 1,
+        # AutoThrottle for adaptive delays
+        "AUTOTHROTTLE_ENABLED": True,
+        "AUTOTHROTTLE_START_DELAY": 3.0,
+        "AUTOTHROTTLE_MAX_DELAY": 30.0,
+        "AUTOTHROTTLE_TARGET_CONCURRENCY": 1.0,
+        "AUTOTHROTTLE_DEBUG": False,
+        # Retry configuration
+        "RETRY_ENABLED": True,
+        "RETRY_TIMES": 5,
+        "RETRY_HTTP_CODES": [403, 429, 500, 502, 503, 504, 408, 522, 524],
+        # Cookie handling
+        "COOKIES_ENABLED": True,
+        "COOKIES_DEBUG": False,
+        # Default headers
+        "DEFAULT_REQUEST_HEADERS": {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            # Note: Don't request 'br' (Brotli) unless brotli library is installed
+            "Accept-Encoding": "gzip, deflate",
+            "DNT": "1",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "same-origin",
+            "Sec-Fetch-User": "?1",
+            "Cache-Control": "max-age=0",
+        },
     }
 
     # Gay male category
@@ -35,6 +110,87 @@ class LiteroticaSpider(BaseSpider):
         super().__init__(*args, **kwargs)
         self.max_pages = max_pages
         self.min_words = min_words
+        self._retry_counts = {}
+        self._last_request_time = 0
+
+    def _get_random_user_agent(self) -> str:
+        """Get a random realistic User-Agent."""
+        return random.choice(USER_AGENTS)
+
+    def _get_random_delay(self) -> float:
+        """Get a random delay between 2-5 seconds."""
+        return random.uniform(2.0, 5.0)
+
+    def _add_jitter_delay(self):
+        """Add random jitter delay between requests."""
+        elapsed = time.time() - self._last_request_time
+        min_delay = self._get_random_delay()
+        if elapsed < min_delay:
+            time.sleep(min_delay - elapsed + random.uniform(0.5, 1.5))
+        self._last_request_time = time.time()
+
+    def make_request(
+        self,
+        url: str,
+        callback=None,
+        meta: Dict[str, Any] = None,
+        **kwargs
+    ) -> Request:
+        """Create a request with anti-bot headers and random User-Agent."""
+        if callback is None:
+            callback = self.parse
+
+        if meta is None:
+            meta = {}
+
+        # Add retry tracking to meta
+        meta.setdefault("retry_count", 0)
+
+        # Build headers with random User-Agent and Referer
+        headers = kwargs.get("headers", {})
+        headers["User-Agent"] = self._get_random_user_agent()
+        headers["Referer"] = f"{self.BASE_URL}/"
+
+        # Add some browser-like headers
+        headers.setdefault("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+        headers.setdefault("Accept-Language", "en-US,en;q=0.9")
+        headers.setdefault("Accept-Encoding", "gzip, deflate, br")
+
+        kwargs["headers"] = headers
+
+        # Use dont_filter=False to allow Scrapy's deduplication
+        kwargs.setdefault("dont_filter", False)
+
+        return Request(url, callback=callback, meta=meta, errback=self.handle_error, **kwargs)
+
+    def handle_error(self, failure):
+        """Handle request errors with exponential backoff."""
+        request = failure.request
+        url = request.url
+
+        # Get current retry count
+        retry_count = request.meta.get("retry_count", 0)
+
+        # Check if it's a rate limit or forbidden error
+        if hasattr(failure.value, "response"):
+            response = failure.value.response
+            if response and response.status in [403, 429]:
+                # Exponential backoff: 5s, 10s, 20s, 40s, 80s
+                backoff_delay = min(5 * (2 ** retry_count), 120)
+                self.logger.warning(
+                    f"Got {response.status} for {url}. "
+                    f"Backing off for {backoff_delay}s (retry {retry_count + 1})"
+                )
+                time.sleep(backoff_delay)
+
+                # Retry with incremented count
+                if retry_count < 5:
+                    new_request = request.copy()
+                    new_request.meta["retry_count"] = retry_count + 1
+                    new_request.headers["User-Agent"] = self._get_random_user_agent()
+                    return new_request
+
+        self.logger.error(f"Failed to fetch {url}: {failure.value}")
 
     def start_requests(self) -> Iterator[Request]:
         """Start crawling the gay male category."""

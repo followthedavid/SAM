@@ -45,7 +45,7 @@ class TestVoiceSettings(unittest.TestCase):
         self.settings_file = Path(self.temp_dir) / "voice_settings.json"
 
         # Patch the settings file location
-        import voice_settings
+        import voice.voice_settings as voice_settings
         self._original_file = voice_settings.VOICE_SETTINGS_FILE
         voice_settings.VOICE_SETTINGS_FILE = self.settings_file
 
@@ -54,7 +54,7 @@ class TestVoiceSettings(unittest.TestCase):
 
     def tearDown(self):
         """Clean up test fixtures."""
-        import voice_settings
+        import voice.voice_settings as voice_settings
         voice_settings.VOICE_SETTINGS_FILE = self._original_file
         voice_settings.VoiceSettingsManager._instance = None
 
@@ -65,7 +65,7 @@ class TestVoiceSettings(unittest.TestCase):
 
     def test_default_settings(self):
         """Test default settings are correct."""
-        from voice_settings import VoiceSettings
+        from voice.voice_settings import VoiceSettings
 
         settings = VoiceSettings()
 
@@ -79,7 +79,7 @@ class TestVoiceSettings(unittest.TestCase):
 
     def test_settings_to_dict(self):
         """Test conversion to dictionary."""
-        from voice_settings import VoiceSettings
+        from voice.voice_settings import VoiceSettings
 
         settings = VoiceSettings(
             voice="dustin",
@@ -97,7 +97,7 @@ class TestVoiceSettings(unittest.TestCase):
 
     def test_settings_from_dict(self):
         """Test creation from dictionary."""
-        from voice_settings import VoiceSettings
+        from voice.voice_settings import VoiceSettings
 
         data = {
             "voice": "daniel",
@@ -116,7 +116,7 @@ class TestVoiceSettings(unittest.TestCase):
 
     def test_settings_validation_valid(self):
         """Test validation with valid settings."""
-        from voice_settings import VoiceSettings
+        from voice.voice_settings import VoiceSettings
 
         settings = VoiceSettings(
             speed=1.0,
@@ -130,7 +130,7 @@ class TestVoiceSettings(unittest.TestCase):
 
     def test_settings_validation_invalid_speed(self):
         """Test validation catches invalid speed."""
-        from voice_settings import VoiceSettings
+        from voice.voice_settings import VoiceSettings
 
         settings = VoiceSettings(speed=3.0)
         errors = settings.validate()
@@ -140,7 +140,7 @@ class TestVoiceSettings(unittest.TestCase):
 
     def test_settings_validation_invalid_pitch(self):
         """Test validation catches invalid pitch."""
-        from voice_settings import VoiceSettings
+        from voice.voice_settings import VoiceSettings
 
         settings = VoiceSettings(pitch=15)
         errors = settings.validate()
@@ -150,7 +150,7 @@ class TestVoiceSettings(unittest.TestCase):
 
     def test_settings_validation_invalid_volume(self):
         """Test validation catches invalid volume."""
-        from voice_settings import VoiceSettings
+        from voice.voice_settings import VoiceSettings
 
         settings = VoiceSettings(volume=1.5)
         errors = settings.validate()
@@ -160,7 +160,7 @@ class TestVoiceSettings(unittest.TestCase):
 
     def test_settings_validation_invalid_engine(self):
         """Test validation catches invalid engine."""
-        from voice_settings import VoiceSettings
+        from voice.voice_settings import VoiceSettings
 
         settings = VoiceSettings(engine="unknown")
         errors = settings.validate()
@@ -170,7 +170,7 @@ class TestVoiceSettings(unittest.TestCase):
 
     def test_manager_singleton(self):
         """Test manager is a singleton."""
-        from voice_settings import VoiceSettingsManager
+        from voice.voice_settings import VoiceSettingsManager
 
         manager1 = VoiceSettingsManager.get_instance()
         manager2 = VoiceSettingsManager.get_instance()
@@ -179,7 +179,7 @@ class TestVoiceSettings(unittest.TestCase):
 
     def test_manager_load_default(self):
         """Test loading defaults when no file exists."""
-        from voice_settings import VoiceSettingsManager
+        from voice.voice_settings import VoiceSettingsManager
 
         manager = VoiceSettingsManager.get_instance()
         settings = manager.settings
@@ -189,14 +189,14 @@ class TestVoiceSettings(unittest.TestCase):
 
     def test_manager_save_and_load(self):
         """Test saving and loading settings."""
-        from voice_settings import VoiceSettingsManager
+        from voice.voice_settings import VoiceSettingsManager
 
         # Get manager and update settings
         manager = VoiceSettingsManager.get_instance()
         manager.update(voice="daniel", speed=1.5)
 
         # Clear instance and reload
-        from voice_settings import VoiceSettingsManager as VSM
+        from voice.voice_settings import VoiceSettingsManager as VSM
         VSM._instance = None
 
         # Load fresh
@@ -207,7 +207,7 @@ class TestVoiceSettings(unittest.TestCase):
 
     def test_manager_update_with_validation(self):
         """Test update validates settings."""
-        from voice_settings import VoiceSettingsManager
+        from voice.voice_settings import VoiceSettingsManager
 
         manager = VoiceSettingsManager.get_instance()
 
@@ -225,7 +225,7 @@ class TestVoiceSettings(unittest.TestCase):
 
     def test_manager_reset_to_default(self):
         """Test resetting to defaults."""
-        from voice_settings import VoiceSettingsManager
+        from voice.voice_settings import VoiceSettingsManager
 
         manager = VoiceSettingsManager.get_instance()
         manager.update(voice="custom", speed=0.7)
@@ -241,7 +241,7 @@ class TestQualityPresets(unittest.TestCase):
 
     def test_quality_level_enum(self):
         """Test QualityLevel enum values."""
-        from voice_settings import QualityLevel
+        from voice.voice_settings import QualityLevel
 
         self.assertEqual(QualityLevel.FAST.value, "fast")
         self.assertEqual(QualityLevel.BALANCED.value, "balanced")
@@ -249,14 +249,14 @@ class TestQualityPresets(unittest.TestCase):
 
     def test_quality_presets_exist(self):
         """Test all quality levels have presets."""
-        from voice_settings import QualityLevel, QUALITY_PRESETS
+        from voice.voice_settings import QualityLevel, QUALITY_PRESETS
 
         for level in QualityLevel:
             self.assertIn(level, QUALITY_PRESETS)
 
     def test_fast_preset_uses_macos(self):
         """Test FAST preset uses macOS engine."""
-        from voice_settings import QualityLevel, QUALITY_PRESETS
+        from voice.voice_settings import QualityLevel, QUALITY_PRESETS
 
         preset = QUALITY_PRESETS[QualityLevel.FAST]
         self.assertEqual(preset["engine"], "macos")
@@ -264,7 +264,7 @@ class TestQualityPresets(unittest.TestCase):
 
     def test_quality_preset_uses_rvc(self):
         """Test QUALITY preset uses RVC."""
-        from voice_settings import QualityLevel, QUALITY_PRESETS
+        from voice.voice_settings import QualityLevel, QUALITY_PRESETS
 
         preset = QUALITY_PRESETS[QualityLevel.QUALITY]
         self.assertTrue(preset["rvc_enabled"])
@@ -272,7 +272,7 @@ class TestQualityPresets(unittest.TestCase):
 
     def test_balanced_preset_no_rvc(self):
         """Test BALANCED preset uses F5 without RVC."""
-        from voice_settings import QualityLevel, QUALITY_PRESETS
+        from voice.voice_settings import QualityLevel, QUALITY_PRESETS
 
         preset = QUALITY_PRESETS[QualityLevel.BALANCED]
         self.assertEqual(preset["engine"], "f5")
@@ -280,7 +280,7 @@ class TestQualityPresets(unittest.TestCase):
 
     def test_presets_have_descriptions(self):
         """Test all presets have descriptions."""
-        from voice_settings import QualityLevel, QUALITY_PRESETS
+        from voice.voice_settings import QualityLevel, QUALITY_PRESETS
 
         for level, preset in QUALITY_PRESETS.items():
             self.assertIn("description", preset)
@@ -296,14 +296,14 @@ class TestVoiceSettingsAPI(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         self.settings_file = Path(self.temp_dir) / "voice_settings.json"
 
-        import voice_settings
+        import voice.voice_settings as voice_settings
         self._original_file = voice_settings.VOICE_SETTINGS_FILE
         voice_settings.VOICE_SETTINGS_FILE = self.settings_file
         voice_settings.VoiceSettingsManager._instance = None
 
     def tearDown(self):
         """Clean up test fixtures."""
-        import voice_settings
+        import voice.voice_settings as voice_settings
         voice_settings.VOICE_SETTINGS_FILE = self._original_file
         voice_settings.VoiceSettingsManager._instance = None
 
@@ -313,7 +313,7 @@ class TestVoiceSettingsAPI(unittest.TestCase):
 
     def test_api_get_settings(self):
         """Test GET /api/voice/settings handler."""
-        from voice_settings import api_get_voice_settings
+        from voice.voice_settings import api_get_voice_settings
 
         result = api_get_voice_settings()
 
@@ -326,7 +326,7 @@ class TestVoiceSettingsAPI(unittest.TestCase):
 
     def test_api_update_settings_valid(self):
         """Test PUT /api/voice/settings with valid data."""
-        from voice_settings import api_update_voice_settings
+        from voice.voice_settings import api_update_voice_settings
 
         result = api_update_voice_settings({
             "voice": "daniel",
@@ -339,7 +339,7 @@ class TestVoiceSettingsAPI(unittest.TestCase):
 
     def test_api_update_settings_invalid(self):
         """Test PUT /api/voice/settings with invalid data."""
-        from voice_settings import api_update_voice_settings
+        from voice.voice_settings import api_update_voice_settings
 
         result = api_update_voice_settings({
             "speed": 10.0  # Invalid
@@ -354,7 +354,7 @@ class TestVoiceOutput(unittest.TestCase):
 
     def test_voice_config_load_default(self):
         """Test VoiceConfig loads defaults when no config exists."""
-        from voice_output import VoiceConfig
+        from voice.voice_output import VoiceConfig
 
         # Use a non-existent config file
         with patch('voice_output.CONFIG_FILE', Path("/nonexistent/config.json")):
@@ -365,7 +365,7 @@ class TestVoiceOutput(unittest.TestCase):
 
     def test_macos_voice_list_voices(self):
         """Test listing macOS voices."""
-        from voice_output import MacOSVoice
+        from voice.voice_output import MacOSVoice
 
         voice = MacOSVoice()
         voices = voice.list_voices()
@@ -376,7 +376,7 @@ class TestVoiceOutput(unittest.TestCase):
     @patch('subprocess.run')
     def test_macos_voice_speak(self, mock_run):
         """Test macOS TTS generation."""
-        from voice_output import MacOSVoice
+        from voice.voice_output import MacOSVoice
 
         # Mock successful say command
         mock_run.return_value = Mock(returncode=0)
@@ -401,7 +401,7 @@ class TestVoiceOutput(unittest.TestCase):
 
     def test_sam_voice_create_engine(self):
         """Test SAMVoice creates correct engine."""
-        from voice_output import SAMVoice, VoiceConfig, MacOSVoice
+        from voice.voice_output import SAMVoice, VoiceConfig, MacOSVoice
 
         config = VoiceConfig(engine="macos", voice="Alex")
         voice = SAMVoice(config)
@@ -410,7 +410,7 @@ class TestVoiceOutput(unittest.TestCase):
 
     def test_sam_voice_set_voice(self):
         """Test changing voice."""
-        from voice_output import SAMVoice, VoiceConfig
+        from voice.voice_output import SAMVoice, VoiceConfig
 
         with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
             config_path = Path(f.name)
@@ -774,7 +774,7 @@ class TestConcurrency(unittest.TestCase):
 
         def update_settings(value):
             try:
-                from voice_settings import VoiceSettingsManager
+                from voice.voice_settings import VoiceSettingsManager
                 manager = VoiceSettingsManager.get_instance()
                 manager.update(speed=value)
                 results.append(value)

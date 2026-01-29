@@ -35,7 +35,7 @@ import pytest
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from project_context import (
+from memory.project_context import (
     # Phase 2.1.1: Lightweight detection
     ProjectDetector,
     ProjectInfo,

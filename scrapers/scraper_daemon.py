@@ -34,7 +34,7 @@ from dataclasses import dataclass, asdict
 
 # Paths
 SCRAPER_DIR = Path(__file__).parent
-DAEMON_DIR = Path("/Volumes/David External/scraper_daemon")
+DAEMON_DIR = Path("/Volumes/#1/SAM/scraper_daemon")
 DB_PATH = DAEMON_DIR / "daemon_state.db"
 LOG_PATH = DAEMON_DIR / "daemon.log"
 PID_PATH = DAEMON_DIR / "daemon.pid"
@@ -50,7 +50,7 @@ SCRAPERS = {
         "script": "nifty_ripper.py",
         "init_command": None,  # Already indexed: 64,557 stories
         "command": ["download", "--limit", "50"],
-        "storage": "/Volumes/David External/nifty_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/nifty_archive",
         "rate_limit": 3.0,
         "priority": 1,
         "enabled": True,
@@ -60,7 +60,7 @@ SCRAPERS = {
         "script": "ao3_ripper.py",
         "init_command": None,  # Already indexed
         "command": ["download", "--limit", "20"],
-        "storage": "/Volumes/David External/ao3_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/ao3_archive",
         "rate_limit": 5.0,  # AO3 is strict
         "priority": 2,
         "enabled": True,
@@ -70,7 +70,7 @@ SCRAPERS = {
         "script": "ao3_roleplay_ripper.py",
         "init_command": ["index", "--limit", "100"],  # Small init, AO3 is slow
         "command": ["download", "--limit", "10"],
-        "storage": "/Volumes/David External/ao3_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/ao3_archive",
         "rate_limit": 5.0,
         "priority": 8,  # Lower priority - slow site
         "enabled": True,
@@ -80,7 +80,7 @@ SCRAPERS = {
         "script": "literotica_ripper.py",
         "init_command": ["index", "--limit", "500"],  # Smaller init
         "command": ["download", "--limit", "30"],
-        "storage": "/Volumes/David External/literotica_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/literotica_archive",
         "rate_limit": 3.0,
         "priority": 9,
         "enabled": True,
@@ -90,7 +90,7 @@ SCRAPERS = {
         "script": "dark_psych_ripper.py",
         "init_command": ["index", "--limit", "300"],  # Smaller init
         "command": ["download", "--limit", "30"],
-        "storage": "/Volumes/David External/dark_psych_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/dark_psych_archive",
         "rate_limit": 3.0,
         "priority": 10,
         "enabled": True,
@@ -102,7 +102,7 @@ SCRAPERS = {
         "script": "code_collector.py",
         "init_command": None,
         "command": ["github", "--limit", "100"],
-        "storage": "/Volumes/David External/code_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/code_archive",
         "rate_limit": 1.0,  # GitHub API has rate limits
         "priority": 11,
         "enabled": True,
@@ -112,7 +112,7 @@ SCRAPERS = {
         "script": "code_collector.py",
         "init_command": None,
         "command": ["stackoverflow", "--limit", "100"],
-        "storage": "/Volumes/David External/code_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/code_archive",
         "rate_limit": 1.0,
         "priority": 12,
         "enabled": True,
@@ -122,7 +122,7 @@ SCRAPERS = {
         "script": "code_collector.py",
         "init_command": None,
         "command": ["prs", "--limit", "50"],
-        "storage": "/Volumes/David External/code_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/code_archive",
         "rate_limit": 1.0,
         "priority": 13,
         "enabled": True,
@@ -134,7 +134,7 @@ SCRAPERS = {
         "script": "wmag_ripper.py",
         "init_command": ["index", "--limit", "500"],
         "command": ["download", "--limit", "30"],
-        "storage": "/Volumes/David External/wmag_archive",
+        "storage": "/Volumes/#1/SAM/fashion_archives/wmag_archive",
         "rate_limit": 2.0,
         "priority": 21,
         "enabled": True,
@@ -144,7 +144,7 @@ SCRAPERS = {
         "script": "vmag_ripper.py",
         "init_command": ["index", "--limit", "500"],
         "command": ["download", "--limit", "30"],
-        "storage": "/Volumes/David External/vmag_archive",
+        "storage": "/Volumes/#1/SAM/fashion_archives/vmag_archive",
         "rate_limit": 2.0,
         "priority": 22,
         "enabled": True,
@@ -154,7 +154,7 @@ SCRAPERS = {
         "script": "gq_esquire_ripper.py",
         "init_command": ["index", "--limit", "500"],
         "command": ["download", "--limit", "30"],
-        "storage": "/Volumes/David External/gq_esquire_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/gq_esquire_archive",
         "rate_limit": 2.0,
         "priority": 23,
         "enabled": True,
@@ -164,7 +164,7 @@ SCRAPERS = {
         "script": "thecut_ripper.py",
         "init_command": ["index", "--limit", "500"],
         "command": ["download", "--limit", "30"],
-        "storage": "/Volumes/David External/thecut_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/thecut_archive",
         "rate_limit": 2.0,
         "priority": 24,
         "enabled": True,
@@ -174,7 +174,7 @@ SCRAPERS = {
         "script": "interview_ripper.py",
         "init_command": ["index", "--limit", "500"],
         "command": ["download", "--limit", "30"],
-        "storage": "/Volumes/David External/interview_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/interview_archive",
         "rate_limit": 2.0,
         "priority": 25,
         "enabled": True,
@@ -182,9 +182,9 @@ SCRAPERS = {
     },
     "firstview": {
         "script": "firstview_ripper.py",
-        "init_command": None,  # Already indexed 337K photos
+        "init_command": ["index"],  # Rewritten v2.0: full 8M catalog with checkpoint/resume
         "command": ["download", "--limit", "500"],
-        "storage": "/Volumes/David External/firstview_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/firstview_archive",
         "rate_limit": 0.3,
         "priority": 3,  # HIGH PRIORITY - already indexed
         "enabled": True,
@@ -194,7 +194,7 @@ SCRAPERS = {
         "script": "wwd_ripper.py",
         "init_command": None,  # Already indexed 247K articles
         "command": ["download", "--limit", "50"],
-        "storage": "/Volumes/#1/wwd_archive",
+        "storage": "/Volumes/#1/SAM/fashion_archives/wwd_archive",
         "rate_limit": 2.0,
         "priority": 4,  # HIGH PRIORITY - already indexed
         "enabled": True,
@@ -207,7 +207,7 @@ SCRAPERS = {
         "script": "apple_dev_collector.py",
         "init_command": None,
         "command": ["github", "--limit", "200"],
-        "storage": "/Volumes/David External/apple_dev_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/apple_dev_archive",
         "rate_limit": 1.0,  # GitHub API rate limits
         "priority": 5,
         "enabled": True,
@@ -218,7 +218,7 @@ SCRAPERS = {
         "script": "apple_dev_collector.py",
         "init_command": None,
         "command": ["stackoverflow", "--limit", "200"],
-        "storage": "/Volumes/David External/apple_dev_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/apple_dev_archive",
         "rate_limit": 1.0,
         "priority": 6,
         "enabled": True,
@@ -229,7 +229,7 @@ SCRAPERS = {
         "script": "apple_dev_collector.py",
         "init_command": None,
         "command": ["cutting-edge", "--limit", "100"],
-        "storage": "/Volumes/David External/apple_dev_archive",
+        "storage": "/Volumes/#1/SAM/scraper_archives/apple_dev_archive",
         "rate_limit": 2.0,
         "priority": 7,
         "enabled": True,

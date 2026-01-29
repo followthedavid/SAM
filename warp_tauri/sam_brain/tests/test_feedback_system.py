@@ -29,7 +29,7 @@ import pytest
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from feedback_system import (
+from learn.feedback_system import (
     # Core classes
     FeedbackDB,
     FeedbackEntry,

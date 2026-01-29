@@ -89,12 +89,502 @@
       "error": null,
       "duration_ms": 0,
       "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260125_094100_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:15:48.801052",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-0/test_fix_all_in_file0/multi_issues.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/multi_issues_20260127_101548_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:15:48.801525",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-0/test_fix_all_in_file0/multi_issues.py",
+      "issue_type": "MISSING_NEWLINE",
+      "success": true,
+      "changes": "Added final newline",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/multi_issues_20260127_101548_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:15:48.802232",
+      "file": "/path/to/file.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Removed whitespace",
+      "error": null,
+      "duration_ms": 50,
+      "backup": null
+    },
+    {
+      "timestamp": "2026-01-27T10:15:48.887965",
+      "file": "/root/protected.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": false,
+      "changes": "",
+      "error": "File not found",
+      "duration_ms": 0,
+      "backup": null
+    },
+    {
+      "timestamp": "2026-01-27T10:15:48.889747",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-0/test_concurrent_access_safety0/concurrent.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/concurrent_20260127_101548_e1d3ab09.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:15:48.895970",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-0/test_full_scan_detect_fix_veri0/integration.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260127_101548_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:15:48.896130",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-0/test_full_scan_detect_fix_veri0/integration.py",
+      "issue_type": "MISSING_NEWLINE",
+      "success": true,
+      "changes": "Added final newline",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260127_101548_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:11.586633",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-1/test_fix_all_in_file0/multi_issues.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/multi_issues_20260127_101611_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:11.586828",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-1/test_fix_all_in_file0/multi_issues.py",
+      "issue_type": "MISSING_NEWLINE",
+      "success": true,
+      "changes": "Added final newline",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/multi_issues_20260127_101611_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:11.587619",
+      "file": "/path/to/file.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Removed whitespace",
+      "error": null,
+      "duration_ms": 50,
+      "backup": null
+    },
+    {
+      "timestamp": "2026-01-27T10:16:11.674199",
+      "file": "/root/protected.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": false,
+      "changes": "",
+      "error": "File not found",
+      "duration_ms": 0,
+      "backup": null
+    },
+    {
+      "timestamp": "2026-01-27T10:16:11.676100",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-1/test_concurrent_access_safety0/concurrent.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/concurrent_20260127_101611_e1d3ab09.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:11.682349",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-1/test_full_scan_detect_fix_veri0/integration.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260127_101611_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:11.682518",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-1/test_full_scan_detect_fix_veri0/integration.py",
+      "issue_type": "MISSING_NEWLINE",
+      "success": true,
+      "changes": "Added final newline",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260127_101611_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:27.147194",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-2/test_fix_all_in_file0/multi_issues.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/multi_issues_20260127_101627_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:27.147426",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-2/test_fix_all_in_file0/multi_issues.py",
+      "issue_type": "MISSING_NEWLINE",
+      "success": true,
+      "changes": "Added final newline",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/multi_issues_20260127_101627_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:27.148183",
+      "file": "/path/to/file.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Removed whitespace",
+      "error": null,
+      "duration_ms": 50,
+      "backup": null
+    },
+    {
+      "timestamp": "2026-01-27T10:16:27.237801",
+      "file": "/root/protected.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": false,
+      "changes": "",
+      "error": "File not found",
+      "duration_ms": 0,
+      "backup": null
+    },
+    {
+      "timestamp": "2026-01-27T10:16:27.239593",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-2/test_concurrent_access_safety0/concurrent.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/concurrent_20260127_101627_e1d3ab09.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:27.245897",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-2/test_full_scan_detect_fix_veri0/integration.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260127_101627_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:27.246140",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-2/test_full_scan_detect_fix_veri0/integration.py",
+      "issue_type": "MISSING_NEWLINE",
+      "success": true,
+      "changes": "Added final newline",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260127_101627_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:42.252652",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-3/test_fix_all_in_file0/multi_issues.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/multi_issues_20260127_101642_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:42.252928",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-3/test_fix_all_in_file0/multi_issues.py",
+      "issue_type": "MISSING_NEWLINE",
+      "success": true,
+      "changes": "Added final newline",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/multi_issues_20260127_101642_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:42.253748",
+      "file": "/path/to/file.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Removed whitespace",
+      "error": null,
+      "duration_ms": 50,
+      "backup": null
+    },
+    {
+      "timestamp": "2026-01-27T10:16:42.337458",
+      "file": "/root/protected.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": false,
+      "changes": "",
+      "error": "File not found",
+      "duration_ms": 0,
+      "backup": null
+    },
+    {
+      "timestamp": "2026-01-27T10:16:42.339330",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-3/test_concurrent_access_safety0/concurrent.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/concurrent_20260127_101642_e1d3ab09.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:42.345329",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-3/test_full_scan_detect_fix_veri0/integration.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260127_101642_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:16:42.345593",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-3/test_full_scan_detect_fix_veri0/integration.py",
+      "issue_type": "MISSING_NEWLINE",
+      "success": true,
+      "changes": "Added final newline",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260127_101642_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:19:57.402017",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-9/test_fix_all_in_file0/multi_issues.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/multi_issues_20260127_101957_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:19:57.402253",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-9/test_fix_all_in_file0/multi_issues.py",
+      "issue_type": "MISSING_NEWLINE",
+      "success": true,
+      "changes": "Added final newline",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/multi_issues_20260127_101957_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:19:57.403037",
+      "file": "/path/to/file.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Removed whitespace",
+      "error": null,
+      "duration_ms": 50,
+      "backup": null
+    },
+    {
+      "timestamp": "2026-01-27T10:19:57.487804",
+      "file": "/root/protected.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": false,
+      "changes": "",
+      "error": "File not found",
+      "duration_ms": 0,
+      "backup": null
+    },
+    {
+      "timestamp": "2026-01-27T10:19:57.489796",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-9/test_concurrent_access_safety0/concurrent.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/concurrent_20260127_101957_e1d3ab09.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:19:57.496190",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-9/test_full_scan_detect_fix_veri0/integration.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260127_101957_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:19:57.496432",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-9/test_full_scan_detect_fix_veri0/integration.py",
+      "issue_type": "MISSING_NEWLINE",
+      "success": true,
+      "changes": "Added final newline",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260127_101957_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:27:57.075929",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-15/test_fix_all_in_file0/multi_issues.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/multi_issues_20260127_102757_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:27:57.076290",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-15/test_fix_all_in_file0/multi_issues.py",
+      "issue_type": "MISSING_NEWLINE",
+      "success": true,
+      "changes": "Added final newline",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/multi_issues_20260127_102757_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:27:57.077064",
+      "file": "/path/to/file.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Removed whitespace",
+      "error": null,
+      "duration_ms": 50,
+      "backup": null
+    },
+    {
+      "timestamp": "2026-01-27T10:27:57.172691",
+      "file": "/root/protected.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": false,
+      "changes": "",
+      "error": "File not found",
+      "duration_ms": 0,
+      "backup": null
+    },
+    {
+      "timestamp": "2026-01-27T10:27:57.174784",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-15/test_concurrent_access_safety0/concurrent.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/concurrent_20260127_102757_e1d3ab09.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:27:57.183578",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-15/test_full_scan_detect_fix_veri0/integration.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260127_102757_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:27:57.183815",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-15/test_full_scan_detect_fix_veri0/integration.py",
+      "issue_type": "MISSING_NEWLINE",
+      "success": true,
+      "changes": "Added final newline",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260127_102757_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:29:15.279737",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-16/test_fix_all_in_file0/multi_issues.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/multi_issues_20260127_102915_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:29:15.280446",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-16/test_fix_all_in_file0/multi_issues.py",
+      "issue_type": "MISSING_NEWLINE",
+      "success": true,
+      "changes": "Added final newline",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/multi_issues_20260127_102915_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:29:15.281346",
+      "file": "/path/to/file.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Removed whitespace",
+      "error": null,
+      "duration_ms": 50,
+      "backup": null
+    },
+    {
+      "timestamp": "2026-01-27T10:29:15.378512",
+      "file": "/root/protected.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": false,
+      "changes": "",
+      "error": "File not found",
+      "duration_ms": 0,
+      "backup": null
+    },
+    {
+      "timestamp": "2026-01-27T10:29:15.380502",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-16/test_concurrent_access_safety0/concurrent.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/concurrent_20260127_102915_e1d3ab09.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:29:15.386650",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-16/test_full_scan_detect_fix_veri0/integration.py",
+      "issue_type": "TRAILING_WHITESPACE",
+      "success": true,
+      "changes": "Line 1: removed trailing whitespace",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260127_102915_9ca53015.py"
+    },
+    {
+      "timestamp": "2026-01-27T10:29:15.386886",
+      "file": "/private/var/folders/tz/p77g745d1jx0h7b7lcp1jzbc0000gn/T/pytest-of-davidquinton/pytest-16/test_full_scan_detect_fix_veri0/integration.py",
+      "issue_type": "MISSING_NEWLINE",
+      "success": true,
+      "changes": "Added final newline",
+      "error": null,
+      "duration_ms": 0,
+      "backup": "/Users/davidquinton/ReverseLab/SAM/warp_tauri/sam_brain/.auto_fix_backups/integration_20260127_102915_9ca53015.py"
     }
   ],
   "stats": {
-    "total_fixes": 9,
-    "successful_fixes": 6,
-    "failed_fixes": 3,
-    "total_time_ms": 53
+    "total_fixes": 58,
+    "successful_fixes": 48,
+    "failed_fixes": 10,
+    "total_time_ms": 403
   }
 }

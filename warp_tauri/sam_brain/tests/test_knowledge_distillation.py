@@ -26,7 +26,7 @@ import pytest
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from knowledge_distillation import (
+from learn.knowledge_distillation import (
     ReasoningPatternExtractor,
     ReasoningPattern,
     ReasoningType,

@@ -427,7 +427,8 @@ class TestSchedulerJobExecution:
     def test_run_quality_check_job(self, temp_scheduler_instance, populated_training_dir):
         """Test running a quality check job."""
         # Point scheduler to our test data
-        with patch.object(temp_scheduler_instance, '_run_quality_check_job') as mock_run:
+        with patch.object(temp_scheduler_instance, '_run_quality_check_job') as mock_run, \
+             patch.object(temp_scheduler_instance, '_check_resources', return_value=True):
             mock_run.return_value = {"checked": 3, "passed": 2, "failed": 1}
 
             run = temp_scheduler_instance.run_job("quality_check", force=True)
@@ -453,7 +454,8 @@ class TestSchedulerJobExecution:
         job = temp_scheduler_instance.jobs["mining_code"]
         job.enabled = False
 
-        with patch.object(temp_scheduler_instance, '_run_mining_job') as mock_run:
+        with patch.object(temp_scheduler_instance, '_run_mining_job') as mock_run, \
+             patch.object(temp_scheduler_instance, '_check_resources', return_value=True):
             mock_run.return_value = {"extracted": 0}
             run = temp_scheduler_instance.run_job("mining_code", force=True)
 
@@ -463,7 +465,8 @@ class TestSchedulerJobExecution:
         """Test that job runs are tracked in history."""
         initial_history_len = len(temp_scheduler_instance.history)
 
-        with patch.object(temp_scheduler_instance, '_run_quality_check_job') as mock_run:
+        with patch.object(temp_scheduler_instance, '_run_quality_check_job') as mock_run, \
+             patch.object(temp_scheduler_instance, '_check_resources', return_value=True):
             mock_run.return_value = {"checked": 0}
             temp_scheduler_instance.run_job("quality_check", force=True)
 
@@ -474,7 +477,8 @@ class TestSchedulerJobExecution:
         job = temp_scheduler_instance.jobs["quality_check"]
         initial_count = job.run_count
 
-        with patch.object(temp_scheduler_instance, '_run_quality_check_job') as mock_run:
+        with patch.object(temp_scheduler_instance, '_run_quality_check_job') as mock_run, \
+             patch.object(temp_scheduler_instance, '_check_resources', return_value=True):
             mock_run.return_value = {"checked": 0}
             temp_scheduler_instance.run_job("quality_check", force=True)
 
@@ -601,7 +605,7 @@ class TestTrainingPipeline:
 
     def test_pipeline_config(self):
         """Test that pipeline config is properly set."""
-        from training_pipeline import (
+        from learn.training_pipeline import (
             MIN_SAMPLES_FOR_TRAINING,
             BASE_MODEL,
             LORA_RANK,
@@ -615,7 +619,7 @@ class TestTrainingPipeline:
 
     def test_training_run_dataclass(self):
         """Test TrainingRun dataclass."""
-        from training_pipeline import TrainingRun
+        from learn.training_pipeline import TrainingRun
 
         run = TrainingRun(
             run_id="test_001",
@@ -632,7 +636,7 @@ class TestTrainingPipeline:
 
     def test_pipeline_stats(self):
         """Test pipeline stats method."""
-        from training_pipeline import TrainingPipeline
+        from learn.training_pipeline import TrainingPipeline
 
         pipeline = TrainingPipeline()
         stats = pipeline.stats()

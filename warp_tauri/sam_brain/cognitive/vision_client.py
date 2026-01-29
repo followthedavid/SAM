@@ -43,13 +43,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any, Union, List
 from enum import Enum
 
-
-class VisionTier(Enum):
-    """Processing tiers for smart routing."""
-    ZERO_COST = "ZERO_COST"       # Apple Vision, PIL (instant, 0 RAM)
-    LIGHTWEIGHT = "LIGHTWEIGHT"   # CoreML, small classifiers (~200MB)
-    LOCAL_VLM = "LOCAL_VLM"       # nanoLLaVA (4GB RAM, 60s)
-    CLAUDE = "CLAUDE"             # Claude escalation (complex tasks)
+from .vision_types import VisionTier
 
 
 @dataclass
@@ -601,11 +595,9 @@ class DirectVisionClient:
             image_path = str(image)
 
         try:
-            from .smart_vision import VisionTier as SmartVisionTier
-
             tier = None
             if force_tier:
-                tier = SmartVisionTier[force_tier.value]
+                tier = force_tier
 
             result = router.process(image_path, prompt, force_tier=tier, skip_cache=skip_cache)
 

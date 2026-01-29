@@ -34,7 +34,7 @@ import pytest
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from auto_fix import (
+from execution.auto_fix import (
     # Core classes
     IssueDetector,
     AutoFixer,
@@ -54,7 +54,7 @@ from auto_fix import (
     BACKUP_DIR,
 )
 
-from auto_fix_control import (
+from execution.auto_fix_control import (
     # Core classes
     AutoFixController,
     AutoFixTracker,
@@ -1268,14 +1268,14 @@ class TestIntegration:
         """Test API functions work correctly."""
         # Override controller with temp db
         global _controller
-        from auto_fix_control import _controller
+        from execution.auto_fix_control import _controller
 
         # Save original
         original = _controller
 
         try:
             # Create test controller
-            import auto_fix_control
+            import execution.auto_fix_control as auto_fix_control
             auto_fix_control._controller = AutoFixController(db_path=temp_db_path)
 
             # Test get permissions

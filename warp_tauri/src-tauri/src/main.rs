@@ -131,7 +131,7 @@ use commands::{
     cmd_remember_character_fact, cmd_clear_character_history, cmd_delete_character_memory,
     cmd_list_characters_with_memory, cmd_get_active_character, cmd_set_active_character,
     cmd_clear_active_character,
-    // Ollama management
+    // Ollama management (LEGACY - Ollama decommissioned 2026-01-18, kept for API compat)
     cmd_ollama_status, cmd_restart_ollama, cmd_warm_model, cmd_unload_model,
 };
 use session::{save_session, load_session};
@@ -376,35 +376,43 @@ fn main() {
                 }
             });
 
-            // Pre-warm Ollama models to avoid 70+ second delay on first request
-            // Model loading from disk takes ~70s, so we use 180s timeout and 30m keep_alive
+            // Pre-warm MLX inference via sam_api.py (port 8765)
+            // Ollama was decommissioned 2026-01-18, all inference is now native MLX
+            // sam_api.py runs Qwen2.5-1.5B + SAM LoRA on Apple Silicon
             std::thread::spawn(|| {
-                eprintln!("[STARTUP] Pre-warming Ollama models (this may take up to 2 minutes on first load)...");
+                eprintln!("[STARTUP] Checking MLX inference (sam_api on port 8765)...");
                 let client = reqwest::blocking::Client::builder()
-                    .timeout(std::time::Duration::from_secs(180))
+                    .timeout(std::time::Duration::from_secs(30))
                     .build();
 
                 if let Ok(client) = client {
-                    // Warm sam-trained for chat/roleplay (fine-tuned with thousands of examples)
-                    // On 8GB RAM, only one model fits - sam-trained is primary
-                    // qwen2.5-coder will be loaded on-demand for coding tasks
+                    // Health check the MLX-powered sam_api
                     let res = client
-                        .post("http://localhost:11434/api/generate")
-                        .json(&serde_json::json!({
-                            "model": "sam-trained:latest",
-                            "prompt": "I am SAM, ready to assist.",
-                            "stream": false,
-                            "keep_alive": "30m",
-                            "options": {"num_predict": 1}
-                        }))
+                        .get("http://localhost:8765/api/health")
                         .send();
 
                     match res {
-                        Ok(_) => eprintln!("[STARTUP] sam-trained:latest pre-warmed (30m keep_alive)"),
-                        Err(e) => eprintln!("[STARTUP] sam-trained pre-warm failed: {}", e),
+                        Ok(resp) if resp.status().is_success() => {
+                            eprintln!("[STARTUP] MLX sam_api is running (native Apple Silicon)");
+
+                            // Warm the model with a short generation to load weights into memory
+                            let warm_res = client
+                                .post("http://localhost:8765/api/query")
+                                .json(&serde_json::json!({
+                                    "query": "warmup"
+                                }))
+                                .send();
+
+                            match warm_res {
+                                Ok(_) => eprintln!("[STARTUP] MLX model pre-warmed successfully"),
+                                Err(e) => eprintln!("[STARTUP] MLX warm-up request failed (non-fatal): {}", e),
+                            }
+                        }
+                        Ok(resp) => eprintln!("[STARTUP] sam_api responded with status {} (may still be starting)", resp.status()),
+                        Err(_) => eprintln!("[STARTUP] sam_api not running on port 8765 - start with: python3 sam_api.py server 8765"),
                     }
 
-                    eprintln!("[STARTUP] Ollama models ready");
+                    eprintln!("[STARTUP] MLX inference check complete");
                 }
             });
 

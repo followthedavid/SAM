@@ -30,6 +30,7 @@ from typing import Optional, Dict, List, Tuple, Any
 from enum import Enum
 
 from .resource_manager import ResourceManager, ResourceLevel, ResourceConfig
+from .vision_types import VisionTier
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("vision_selector")
@@ -96,14 +97,6 @@ TASK_MINIMUM_TIERS = {
     "ui": "CLAUDE",               # UI analysis -> Claude
     "compare": "CLAUDE",          # Comparison tasks -> Claude
 }
-
-
-class VisionTier(Enum):
-    """Vision processing tiers ordered by resource cost."""
-    ZERO_COST = 0      # Apple Vision, PIL (instant, 0 extra RAM)
-    LIGHTWEIGHT = 1    # CoreML, small classifiers (~200MB)
-    LOCAL_VLM = 2      # nanoLLaVA (~4GB RAM)
-    CLAUDE = 3         # Claude via terminal bridge (network, 0 local RAM)
 
 
 @dataclass

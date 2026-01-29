@@ -6,6 +6,9 @@ Runs indefinitely, continuously learning from all available sources.
 Maximizes parallel streams of progress.
 
 Launch and forget - SAM gets smarter over time.
+
+Includes CurriculumManager for prioritized learning with confidence scoring
+(merged from teacher_student.py).
 """
 
 import os
@@ -14,24 +17,36 @@ import json
 import time
 import signal
 import hashlib
+import sqlite3
 import subprocess
 import threading
 import concurrent.futures
 from pathlib import Path
 from datetime import datetime, timedelta
-from typing import Dict, List, Set, Any
+from typing import Dict, List, Set, Any, Optional, Tuple
 from collections import defaultdict
+from dataclasses import dataclass, asdict, field
+from enum import Enum
 import queue
+
+# Resource checking - single source of truth
+from cognitive.resource_manager import can_train as system_can_train
 
 # Paths
 BRAIN_PATH = Path(__file__).parent
 DATA_PATH = BRAIN_PATH / "data"
 MODELS_PATH = BRAIN_PATH / "models"
 EXTERNAL = Path("/Volumes/David External")
+LEARNING_DIR = EXTERNAL / "sam_learning"
+LEARNING_DIR.mkdir(parents=True, exist_ok=True)
+CURRICULUM_DB_PATH = LEARNING_DIR / "curriculum.db"
 STATE_FILE = BRAIN_PATH / ".perpetual_state.json"
 LOG_FILE = BRAIN_PATH / "perpetual_learner.log"
 
 DATA_PATH.mkdir(parents=True, exist_ok=True)
+
+# Dedup hash cap - LRU-style pruning to prevent unbounded growth
+MAX_DEDUP_HASHES = 10000
 
 # Global state
 running = True
@@ -46,6 +61,384 @@ def log(msg: str):
         f.write(line + '\n')
 
 
+# =============================================================================
+# Curriculum Learning System (merged from teacher_student.py)
+# =============================================================================
+
+class TaskType(Enum):
+    """Types of learning tasks for curriculum prioritization."""
+    CODING = "coding"
+    REASONING = "reasoning"
+    ROLEPLAY = "roleplay"
+    KNOWLEDGE = "knowledge"
+    DEBUGGING = "debugging"
+    ARCHITECTURE = "architecture"
+
+
+class TaskPriority(Enum):
+    """Priority levels for curriculum tasks."""
+    CRITICAL = 1    # Learn immediately
+    HIGH = 2        # Learn today
+    MEDIUM = 3      # Learn this week
+    LOW = 4         # Learn eventually
+
+
+@dataclass
+class CurriculumTask:
+    """
+    A prioritized learning task with confidence scoring.
+
+    Tasks are processed based on priority, with lower numbers processed first.
+    Confidence scoring enables correction example generation for low-confidence
+    attempts (< 0.7).
+    """
+    id: str
+    task_type: str
+    instruction: str           # What to learn
+    context: Optional[str]     # Additional context
+    expected_skills: List[str] # What SAM should learn from this
+    priority: int
+    created_at: str
+    created_by: str            # "claude_code", "perpetual_learner", "user", "self"
+
+    # Learning progress
+    attempted: bool = False
+    sam_attempt: Optional[str] = None
+    sam_confidence: float = 0.0
+    verified_response: Optional[str] = None
+    learning_captured: bool = False
+    completed_at: Optional[str] = None
+
+
+class CurriculumManager:
+    """
+    Manages prioritized curriculum learning with confidence-based correction.
+
+    Features:
+    - Priority-ordered task queue (CRITICAL > HIGH > MEDIUM > LOW)
+    - Confidence scoring for SAM's attempts
+    - Correction example generation when confidence < 0.7
+    - Teacher-student verification loop integration
+
+    Usage:
+        manager = CurriculumManager()
+
+        # Add learning tasks
+        task_id = manager.add_task(
+            instruction="Explain SwiftUI @State vs @Binding",
+            task_type="coding",
+            priority=TaskPriority.HIGH.value,
+            expected_skills=["swift", "swiftui"]
+        )
+
+        # Process next task
+        task = manager.get_next_task()
+        if task:
+            # Attempt with local model
+            attempt, confidence = manager.attempt_task(task)
+
+            # Mark as attempted
+            manager.mark_attempted(task['id'], attempt, confidence)
+
+            # If needed, verify and capture learning
+            if confidence < 0.7:
+                verified = get_better_answer(task['instruction'])
+                manager.capture_learning(task, attempt, verified)
+    """
+
+    def __init__(self, db_path: Path = CURRICULUM_DB_PATH):
+        self.db_path = db_path
+        self.training_output = DATA_PATH / "curriculum_learned.jsonl"
+        self._init_db()
+
+    def _init_db(self):
+        """Initialize curriculum database."""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS curriculum (
+                id TEXT PRIMARY KEY,
+                task_type TEXT,
+                instruction TEXT NOT NULL,
+                context TEXT,
+                expected_skills TEXT,
+                priority INTEGER DEFAULT 3,
+                created_at TEXT,
+                created_by TEXT,
+                attempted INTEGER DEFAULT 0,
+                sam_attempt TEXT,
+                sam_confidence REAL DEFAULT 0,
+                verified_response TEXT,
+                learning_captured INTEGER DEFAULT 0,
+                completed_at TEXT
+            )
+        """)
+
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS learning_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                started_at TEXT,
+                ended_at TEXT,
+                tasks_attempted INTEGER DEFAULT 0,
+                tasks_learned INTEGER DEFAULT 0,
+                training_examples_created INTEGER DEFAULT 0
+            )
+        """)
+
+        c.execute("""
+            CREATE INDEX IF NOT EXISTS idx_curriculum_pending
+            ON curriculum(attempted, priority)
+        """)
+
+        conn.commit()
+        conn.close()
+
+    def add_task(self, instruction: str, task_type: str = "coding",
+                 context: str = None, expected_skills: List[str] = None,
+                 priority: int = TaskPriority.MEDIUM.value,
+                 created_by: str = "perpetual_learner") -> Optional[str]:
+        """
+        Add a learning task to the curriculum.
+
+        Returns task_id if added, None if task already exists.
+        """
+        task = CurriculumTask(
+            id=hashlib.md5(instruction.encode()).hexdigest()[:16],
+            task_type=task_type,
+            instruction=instruction,
+            context=context,
+            expected_skills=expected_skills or [],
+            priority=priority,
+            created_at=datetime.now().isoformat(),
+            created_by=created_by,
+        )
+
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        try:
+            c.execute("""
+                INSERT OR IGNORE INTO curriculum
+                (id, task_type, instruction, context, expected_skills, priority,
+                 created_at, created_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                task.id, task.task_type, task.instruction, task.context,
+                json.dumps(task.expected_skills), task.priority,
+                task.created_at, task.created_by
+            ))
+            conn.commit()
+            if c.rowcount > 0:
+                log(f"[Curriculum] Added task: {instruction[:60]}...")
+                return task.id
+            return None
+        finally:
+            conn.close()
+
+    def add_batch(self, tasks: List[Dict]) -> int:
+        """Add multiple learning tasks. Returns count added."""
+        added = 0
+        for t in tasks:
+            if self.add_task(
+                instruction=t["instruction"],
+                task_type=t.get("type", "coding"),
+                context=t.get("context"),
+                expected_skills=t.get("skills", []),
+                priority=t.get("priority", TaskPriority.MEDIUM.value),
+                created_by=t.get("created_by", "perpetual_learner")
+            ):
+                added += 1
+        return added
+
+    def get_next_task(self) -> Optional[Dict]:
+        """Get the next pending task, ordered by priority."""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        c.execute("""
+            SELECT * FROM curriculum
+            WHERE attempted = 0
+            ORDER BY priority ASC, created_at ASC
+            LIMIT 1
+        """)
+        row = c.fetchone()
+        conn.close()
+        if row:
+            result = dict(row)
+            result['expected_skills'] = json.loads(result.get('expected_skills', '[]'))
+            return result
+        return None
+
+    def get_pending_count(self) -> int:
+        """Get count of pending tasks."""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("SELECT COUNT(*) FROM curriculum WHERE attempted = 0")
+        count = c.fetchone()[0]
+        conn.close()
+        return count
+
+    def get_low_confidence_tasks(self, threshold: float = 0.7, limit: int = 10) -> List[Dict]:
+        """Get attempted tasks with confidence below threshold (need correction)."""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        c.execute("""
+            SELECT * FROM curriculum
+            WHERE attempted = 1 AND learning_captured = 0 AND sam_confidence < ?
+            ORDER BY sam_confidence ASC
+            LIMIT ?
+        """, (threshold, limit))
+        rows = c.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+
+    def mark_attempted(self, task_id: str, sam_attempt: str, confidence: float):
+        """Mark a task as attempted with SAM's response and confidence."""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("""
+            UPDATE curriculum
+            SET attempted = 1, sam_attempt = ?, sam_confidence = ?
+            WHERE id = ?
+        """, (sam_attempt, confidence, task_id))
+        conn.commit()
+        conn.close()
+
+    def mark_learned(self, task_id: str, verified_response: str):
+        """Mark a task as learned with the verified response."""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("""
+            UPDATE curriculum
+            SET verified_response = ?, learning_captured = 1, completed_at = ?
+            WHERE id = ?
+        """, (verified_response, datetime.now().isoformat(), task_id))
+        conn.commit()
+        conn.close()
+
+    def estimate_confidence(self, response: str) -> float:
+        """
+        Estimate confidence in a response based on heuristics.
+
+        Returns value between 0.1 and 0.95.
+        """
+        confidence = 0.5  # Base
+
+        # Longer responses often better
+        if len(response) > 500:
+            confidence += 0.1
+        if len(response) > 1000:
+            confidence += 0.1
+
+        # Code blocks indicate practical answer
+        if "```" in response:
+            confidence += 0.15
+
+        # Hedging language reduces confidence
+        hedges = ["i think", "maybe", "possibly", "not sure", "i don't know"]
+        for hedge in hedges:
+            if hedge in response.lower():
+                confidence -= 0.1
+
+        return max(0.1, min(0.95, confidence))
+
+    def capture_learning(self, task: Dict, sam_attempt: str, verified_response: str):
+        """
+        Convert learning into training data.
+
+        Creates:
+        1. Standard instruction-following example (always)
+        2. Correction example if confidence < 0.7 (teaches SAM to improve)
+        """
+        # Create instruction-following training example
+        example = {
+            "messages": [
+                {"role": "user", "content": task["instruction"]},
+                {"role": "assistant", "content": verified_response}
+            ],
+            "metadata": {
+                "source": "curriculum_learning",
+                "task_type": task.get("task_type", "unknown"),
+                "task_id": task.get("id", ""),
+                "sam_attempt_confidence": task.get("sam_confidence", 0),
+                "learned_at": datetime.now().isoformat(),
+            }
+        }
+
+        # Also create a correction example if SAM was low confidence
+        if task.get("sam_confidence", 0) < 0.7:
+            correction_example = {
+                "messages": [
+                    {"role": "user", "content": task["instruction"]},
+                    {"role": "assistant", "content": sam_attempt},
+                    {"role": "user", "content": "That's not quite right. Can you do better?"},
+                    {"role": "assistant", "content": verified_response}
+                ],
+                "metadata": {
+                    "source": "curriculum_correction",
+                    "task_type": task.get("task_type", "unknown"),
+                    "original_confidence": task.get("sam_confidence", 0),
+                }
+            }
+
+            with open(self.training_output, "a") as f:
+                f.write(json.dumps(correction_example) + "\n")
+            log(f"[Curriculum] Created correction example (confidence: {task.get('sam_confidence', 0):.2f})")
+
+        # Write main example
+        with open(self.training_output, "a") as f:
+            f.write(json.dumps(example) + "\n")
+
+        # Mark as learned in DB
+        self.mark_learned(task.get("id", ""), verified_response)
+        log(f"[Curriculum] Captured learning for: {task['instruction'][:40]}...")
+
+    def get_stats(self) -> Dict:
+        """Get curriculum statistics."""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+
+        c.execute("SELECT COUNT(*) FROM curriculum")
+        total = c.fetchone()[0]
+
+        c.execute("SELECT COUNT(*) FROM curriculum WHERE attempted = 0")
+        pending = c.fetchone()[0]
+
+        c.execute("SELECT COUNT(*) FROM curriculum WHERE learning_captured = 1")
+        learned = c.fetchone()[0]
+
+        c.execute("SELECT AVG(sam_confidence) FROM curriculum WHERE attempted = 1")
+        avg_confidence = c.fetchone()[0] or 0
+
+        c.execute("SELECT COUNT(*) FROM curriculum WHERE attempted = 1 AND sam_confidence < 0.7")
+        needs_correction = c.fetchone()[0]
+
+        c.execute("SELECT task_type, COUNT(*) FROM curriculum GROUP BY task_type")
+        by_type = dict(c.fetchall())
+
+        c.execute("SELECT priority, COUNT(*) FROM curriculum WHERE attempted = 0 GROUP BY priority")
+        pending_by_priority = dict(c.fetchall())
+
+        conn.close()
+
+        return {
+            "total_tasks": total,
+            "pending": pending,
+            "learned": learned,
+            "in_progress": total - pending - learned,
+            "avg_confidence": round(avg_confidence, 2),
+            "needs_correction": needs_correction,
+            "by_type": by_type,
+            "pending_by_priority": pending_by_priority,
+        }
+
+
+# =============================================================================
+# End Curriculum Learning System
+# =============================================================================
+
+
 class PerpetualLearner:
     """
     Continuous learning engine that never stops.
@@ -56,20 +449,27 @@ class PerpetualLearner:
     3. Codebase scanning (learns your patterns)
     4. Synthetic generation (fills knowledge gaps)
     5. Training cycles (periodic model updates)
+    6. Curriculum learning (prioritized tasks with confidence scoring)
     """
 
     def __init__(self):
         self.state = self._load_state()
-        self.seen_hashes: Set[str] = set(self.state.get("seen_hashes", []))
+        # Ordered list for LRU pruning, set for O(1) lookup
+        saved_hashes = self.state.get("seen_hashes", [])
+        self.seen_hashes_list: List[str] = saved_hashes[-MAX_DEDUP_HASHES:]
+        self.seen_hashes: Set[str] = set(self.seen_hashes_list)
         self.training_queue = queue.Queue()
         self.stats = defaultdict(int)
         self.last_train = datetime.fromisoformat(self.state.get("last_train", "2000-01-01T00:00:00"))
         self.examples_since_train = self.state.get("examples_since_train", 0)
 
-        # Training thresholds
-        self.TRAIN_EVERY_N_EXAMPLES = 200
-        self.TRAIN_EVERY_N_HOURS = 2
-        self.MIN_EXAMPLES_TO_TRAIN = 50
+        # Training thresholds (conservative for 8GB system)
+        self.TRAIN_EVERY_N_EXAMPLES = 500
+        self.TRAIN_EVERY_N_HOURS = 6
+        self.MIN_EXAMPLES_TO_TRAIN = 100
+
+        # Curriculum manager for prioritized learning
+        self.curriculum = CurriculumManager()
 
     def _load_state(self) -> dict:
         if STATE_FILE.exists():
@@ -80,8 +480,12 @@ class PerpetualLearner:
         return {}
 
     def _save_state(self):
+        # LRU pruning: keep only the most recent MAX_DEDUP_HASHES
+        if len(self.seen_hashes_list) > MAX_DEDUP_HASHES:
+            self.seen_hashes_list = self.seen_hashes_list[-MAX_DEDUP_HASHES:]
+            self.seen_hashes = set(self.seen_hashes_list)
         self.state.update({
-            "seen_hashes": list(self.seen_hashes)[-50000:] if len(self.seen_hashes) > 50000 else list(self.seen_hashes),
+            "seen_hashes": self.seen_hashes_list,
             "last_train": self.last_train.isoformat(),
             "examples_since_train": self.examples_since_train,
             "stats": dict(self.stats),
@@ -100,6 +504,7 @@ class PerpetualLearner:
             return False
 
         self.seen_hashes.add(h)
+        self.seen_hashes_list.append(h)
 
         example = {
             "instruction": instruction[:2000],
@@ -145,6 +550,8 @@ class PerpetualLearner:
             threading.Thread(target=self._stream_apple_docs, daemon=True),
             threading.Thread(target=self._stream_frida_docs, daemon=True),
             threading.Thread(target=self._stream_literotica, daemon=True),
+            # Curriculum learning (prioritized tasks with confidence scoring)
+            threading.Thread(target=self._stream_curriculum_learner, daemon=True),
             # Core
             threading.Thread(target=self._training_scheduler, daemon=True),
             threading.Thread(target=self._stats_reporter, daemon=True),
@@ -914,10 +1321,13 @@ class PerpetualLearner:
                 time.sleep(1)
 
     def _training_scheduler(self):
-        """Schedule training when thresholds are met."""
+        """Schedule training when thresholds are met AND system has resources."""
         global running
 
-        log("[Training] Scheduler started")
+        log("[Training] Resource-aware scheduler started")
+        log(f"[Training] Thresholds: {self.TRAIN_EVERY_N_EXAMPLES} examples or {self.TRAIN_EVERY_N_HOURS}h, min {self.MIN_EXAMPLES_TO_TRAIN}")
+        from cognitive.resource_manager import TRAINING_MIN_FREE_RAM_GB, TRAINING_MAX_SWAP_USED_GB, TRAINING_MIN_DISK_FREE_GB
+        log(f"[Training] Resource gates: RAM>{TRAINING_MIN_FREE_RAM_GB}GB, swap<{TRAINING_MAX_SWAP_USED_GB}GB, disk>{TRAINING_MIN_DISK_FREE_GB}GB")
 
         while running:
             should_train = False
@@ -935,13 +1345,25 @@ class PerpetualLearner:
                 reason = f"{hours_since:.1f} hours since last train"
 
             if should_train:
-                log(f"[Training] Triggering training: {reason}")
-                self._run_training()
+                # RESOURCE CHECK: Don't train if system is stressed
+                can_train, resource_msg = system_can_train()
+                if can_train:
+                    log(f"[Training] Triggering training: {reason} | Resources: {resource_msg}")
+                    self._run_training()
+                else:
+                    log(f"[Training] DEFERRED: {reason} | {resource_msg}")
+                    # Will retry next cycle
 
-            time.sleep(300)  # Check every 5 minutes
+            time.sleep(600)  # Check every 10 minutes (was 5)
 
     def _run_training(self):
-        """Execute training with accumulated data."""
+        """Execute training with accumulated data. Checks resources before and during."""
+        # Final resource check right before training
+        can_train, msg = system_can_train()
+        if not can_train:
+            log(f"[Training] Aborted at launch: {msg}")
+            return
+
         try:
             # Merge all perpetual data
             merged_path = DATA_PATH / "perpetual_merged.jsonl"
@@ -1012,11 +1434,11 @@ class PerpetualLearner:
                 "--train",
                 "--data", str(DATA_PATH),
                 "--adapter-path", str(adapter_path),
-                "--iters", str(min(300, count // 10)),
+                "--iters", str(min(150, count // 10)),
                 "--batch-size", "1",
                 "--num-layers", "4",
                 "--save-every", "50"
-            ], capture_output=True, text=True, timeout=7200)
+            ], capture_output=True, text=True, timeout=3600)
 
             if result.returncode == 0:
                 log("[Training] Complete!")
@@ -1058,7 +1480,190 @@ class PerpetualLearner:
             log(f"By category:")
             for cat, count in sorted(self.stats.items(), key=lambda x: -x[1])[:10]:
                 log(f"  {cat}: {count}")
+
+            # Curriculum stats
+            try:
+                curriculum_stats = self.curriculum.get_stats()
+                log(f"Curriculum: {curriculum_stats['pending']} pending, {curriculum_stats['learned']} learned")
+                if curriculum_stats['needs_correction'] > 0:
+                    log(f"  Needs correction: {curriculum_stats['needs_correction']}")
+                if curriculum_stats['avg_confidence'] > 0:
+                    log(f"  Avg confidence: {curriculum_stats['avg_confidence']:.2f}")
+            except Exception as e:
+                pass
+
             log(f"-------------\n")
+
+    def _stream_curriculum_learner(self):
+        """
+        Process curriculum tasks with prioritization and confidence-based correction.
+
+        This stream:
+        1. Gets the next highest-priority pending task
+        2. Attempts it with the local MLX model
+        3. Scores confidence based on response quality
+        4. If confidence < 0.7, generates correction examples
+        5. Captures learning as training data
+        """
+        global running
+
+        log("[Curriculum] Starting prioritized learning stream...")
+        log(f"[Curriculum] Database: {CURRICULUM_DB_PATH}")
+
+        # Wait for other streams to initialize
+        time.sleep(10)
+
+        while running:
+            try:
+                # Check for pending tasks
+                task = self.curriculum.get_next_task()
+
+                if not task:
+                    # No pending tasks - sleep longer
+                    for _ in range(1800):  # 30 min
+                        if not running:
+                            break
+                        time.sleep(1)
+                    continue
+
+                log(f"[Curriculum] Processing: {task['instruction'][:60]}...")
+
+                # Attempt with local MLX model via SAM API
+                sam_attempt, confidence = self._curriculum_attempt(task['instruction'])
+
+                # Mark as attempted
+                self.curriculum.mark_attempted(task['id'], sam_attempt, confidence)
+                log(f"[Curriculum] Attempt confidence: {confidence:.2f}")
+
+                # If low confidence, this is a learning opportunity
+                if confidence < 0.7:
+                    # Try to get a better answer (could use Claude API or other sources)
+                    verified = self._curriculum_get_verified_answer(task, sam_attempt)
+
+                    if verified:
+                        # Capture the learning with correction example
+                        task['sam_confidence'] = confidence
+                        self.curriculum.capture_learning(task, sam_attempt, verified)
+                        self.stats['curriculum_learned'] += 1
+                        self.examples_since_train += 1
+                else:
+                    # High confidence - still capture but no correction needed
+                    task['sam_confidence'] = confidence
+                    self.curriculum.capture_learning(task, sam_attempt, sam_attempt)
+                    self.stats['curriculum_confident'] += 1
+                    self.examples_since_train += 1
+
+                # Pause between tasks to avoid overwhelming the system
+                for _ in range(60):  # 1 minute between tasks
+                    if not running:
+                        break
+                    time.sleep(1)
+
+            except Exception as e:
+                log(f"[Curriculum] Error: {e}")
+                time.sleep(60)
+
+    def _curriculum_attempt(self, instruction: str) -> Tuple[str, float]:
+        """Attempt a curriculum task with local MLX model."""
+        try:
+            import requests
+
+            # Use SAM API if running
+            response = requests.post(
+                "http://localhost:8765/api/chat",
+                json={"message": instruction, "mode": "default"},
+                timeout=120
+            )
+            if response.status_code == 200:
+                data = response.json()
+                answer = data.get("response", "")
+                confidence = self.curriculum.estimate_confidence(answer)
+                return answer, confidence
+
+        except Exception as e:
+            log(f"[Curriculum] SAM API unavailable: {e}")
+
+        # Fallback: mark as very low confidence
+        return f"[SAM attempt pending - API not available]", 0.1
+
+    def _curriculum_get_verified_answer(self, task: Dict, sam_attempt: str) -> Optional[str]:
+        """
+        Get a verified/improved answer for a low-confidence attempt.
+
+        This could be expanded to use:
+        - Claude API (when available)
+        - Documentation lookup
+        - Code search
+        - etc.
+
+        For now, returns None to indicate manual verification needed.
+        """
+        # Check if we have anthropic package and API key
+        try:
+            import anthropic
+            import os
+
+            api_key = os.environ.get("ANTHROPIC_API_KEY")
+            if not api_key:
+                # Try common key file locations
+                for keyfile in [Path.home() / ".anthropic_key", Path.home() / ".config/anthropic/key"]:
+                    if keyfile.exists():
+                        api_key = keyfile.read_text().strip()
+                        break
+
+            if not api_key:
+                return None
+
+            client = anthropic.Anthropic(api_key=api_key)
+
+            prompt = f"""I'm training a local AI assistant called SAM. SAM attempted to answer this task:
+
+TASK: {task['instruction']}
+
+SAM'S ATTEMPT:
+{sam_attempt}
+
+Please provide:
+1. A thorough, correct answer to the task
+2. Key patterns or principles to remember
+
+Be detailed and educational - SAM will learn from your response."""
+
+            message = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=2000,
+                messages=[{"role": "user", "content": prompt}]
+            )
+
+            return message.content[0].text
+
+        except ImportError:
+            return None
+        except Exception as e:
+            log(f"[Curriculum] Verification error: {e}")
+            return None
+
+    def add_curriculum_task(self, instruction: str, task_type: str = "coding",
+                           priority: int = TaskPriority.MEDIUM.value,
+                           expected_skills: List[str] = None) -> Optional[str]:
+        """
+        Convenience method to add a curriculum task from external callers.
+
+        Example:
+            learner = PerpetualLearner()
+            learner.add_curriculum_task(
+                "Explain SwiftUI @State vs @Binding",
+                task_type="coding",
+                priority=TaskPriority.HIGH.value,
+                expected_skills=["swift", "swiftui"]
+            )
+        """
+        return self.curriculum.add_task(
+            instruction=instruction,
+            task_type=task_type,
+            priority=priority,
+            expected_skills=expected_skills or []
+        )
 
 
 def main():

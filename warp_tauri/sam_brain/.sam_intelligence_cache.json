@@ -1,4 +1,189 @@
 {
+  "top_suggestions": {
+    "data": [
+      {
+        "id": "imp_20260112175719_720e71eb",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] discovered in Python,",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_e24435d7",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] #10946: bdist --skip-build should trickle down to subcommands",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_5c052986",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] #2945: upload ignores bdist_rpm files",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_c6eba8d0",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] URLs require a scheme string ('http://') to be used.",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_d3c26989",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] assert_array_equal does not check metadata",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_915fe6b2",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] with signed vs unsigned char errored on power9 and s390x Linux",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_1da78531",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] #1436; the following should succeed",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_a908dc78",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] 776311 and friends.",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_d533d3da",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] described in patches 527371/672491.",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_27c427c2",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] 545855 -- This pattern failed to cause a compile error as it",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_38deb4bb",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] 448951 (similar to 429357, but with single char match).",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_7d02d766",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] 764548, regex.compile() barfs on str/unicode subclasses.",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_9d033785",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] #1700.",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_7ca48a5d",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] 110866: reference to undefined group.",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_8aba91fe",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] 111869: search (PRE/PCRE fails on this one, SRE doesn't).",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_f1774a8b",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] 112468: various expected syntax errors.",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_8ac96b9a",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] 114033: nothing to repeat.",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_6bf466e4",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] 115040: rescan if flags are modified inside pattern.",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_2b829b74",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] 115618: negative lookahead.",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      },
+      {
+        "id": "imp_20260112175719_70135f61",
+        "project": "SAM",
+        "type": "reliability",
+        "description": "[BUG] 116251: character class bug.",
+        "priority": 1,
+        "score": 33.0,
+        "auto_approve": true
+      }
+    ],
+    "expires": 1769538581.628617
+  },
   "projects": {
     "data": [
       {
@@ -104,191 +289,6 @@
         "progress": 1.0
       }
     ],
-    "expires": 1769388670.5294342
-  },
-  "top_suggestions": {
-    "data": [
-      {
-        "id": "imp_20260112175719_720e71eb",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] discovered in Python,",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_e24435d7",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] #10946: bdist --skip-build should trickle down to subcommands",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_5c052986",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] #2945: upload ignores bdist_rpm files",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_c6eba8d0",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] URLs require a scheme string ('http://') to be used.",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_d3c26989",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] assert_array_equal does not check metadata",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_915fe6b2",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] with signed vs unsigned char errored on power9 and s390x Linux",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_1da78531",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] #1436; the following should succeed",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_a908dc78",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] 776311 and friends.",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_d533d3da",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] described in patches 527371/672491.",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_27c427c2",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] 545855 -- This pattern failed to cause a compile error as it",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_38deb4bb",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] 448951 (similar to 429357, but with single char match).",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_7d02d766",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] 764548, regex.compile() barfs on str/unicode subclasses.",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_9d033785",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] #1700.",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_7ca48a5d",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] 110866: reference to undefined group.",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_8aba91fe",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] 111869: search (PRE/PCRE fails on this one, SRE doesn't).",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_f1774a8b",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] 112468: various expected syntax errors.",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_8ac96b9a",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] 114033: nothing to repeat.",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_6bf466e4",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] 115040: rescan if flags are modified inside pattern.",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_2b829b74",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] 115618: negative lookahead.",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      },
-      {
-        "id": "imp_20260112175719_70135f61",
-        "project": "SAM",
-        "type": "reliability",
-        "description": "[BUG] 116251: character class bug.",
-        "priority": 1,
-        "score": 31.5,
-        "auto_approve": true
-      }
-    ],
-    "expires": 1769388730.834025
+    "expires": 1769538626.512331
   }
 }

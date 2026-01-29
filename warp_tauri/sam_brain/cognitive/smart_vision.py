@@ -26,6 +26,8 @@ from typing import Optional, Dict, List, Any, Tuple
 from datetime import datetime
 from enum import Enum
 
+from .vision_types import VisionTier
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("smart_vision")
 
@@ -35,13 +37,6 @@ logger = logging.getLogger("smart_vision")
 
 VISION_DB_PATH = Path.home() / ".sam" / "vision_memory.db"
 VISION_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-
-class VisionTier(Enum):
-    """Processing tiers from cheapest to most expensive."""
-    ZERO_COST = 0      # Apple Vision, PIL, basic analysis
-    LIGHTWEIGHT = 1    # CoreML, small classifiers
-    LOCAL_VLM = 2      # nanoLLaVA (4GB RAM)
-    CLAUDE = 3         # Escalate to Claude via dual terminal
 
 class TaskType(Enum):
     """Types of vision tasks."""
@@ -293,7 +288,7 @@ def handle_ocr(image_path: str, prompt: str) -> VisionResult:
     start = datetime.now()
 
     try:
-        from apple_ocr import extract_text
+        from see.apple_ocr import extract_text
         result = extract_text(image_path)
 
         if result.get("success"):
@@ -468,7 +463,7 @@ def handle_claude_escalation(image_path: str, prompt: str, task_type: TaskType) 
 
     try:
         # Import the escalation handler
-        from escalation_handler import escalate_to_claude
+        from execution.escalation_handler import escalate_to_claude
 
         # Prepare vision prompt for Claude
         vision_prompt = f"""I'm analyzing an image and need help with a complex vision task.

@@ -34,12 +34,13 @@ class ResourceLevel(Enum):
     GOOD = "good"           # > 4GB free - full capability
 
 
-class VisionTier(Enum):
-    """Vision processing tiers - aligned with vision_engine tiers."""
-    ZERO_COST = "zero_cost"     # Apple Vision OCR - 0 RAM
-    LIGHTWEIGHT = "lightweight"  # CoreML models - ~200MB
-    LOCAL_VLM = "local_vlm"     # nanoLLaVA etc - ~1.5-4GB
-    CLAUDE = "claude"           # Terminal escalation - 0 RAM
+# Training resource thresholds for 8GB M2 Mac Mini
+TRAINING_MIN_FREE_RAM_GB = 2.0      # Don't train unless 2GB+ RAM free
+TRAINING_MAX_SWAP_USED_GB = 3.0     # Don't train if swap exceeds 3GB
+TRAINING_MIN_DISK_FREE_GB = 20.0    # Don't train if disk < 20GB free
+
+
+from .vision_types import VisionTier
 
 
 class VoiceTier(Enum):
@@ -84,7 +85,7 @@ class VisionModelState:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "is_loaded": self.is_loaded,
-            "tier": self.tier.value if self.tier else None,
+            "tier": self.tier.name if self.tier else None,
             "model_name": self.model_name,
             "memory_used_mb": round(self.memory_used_mb, 1),
             "last_used": self.last_used.isoformat() if self.last_used else None,
@@ -405,6 +406,55 @@ class ResourceManager:
             # Fallback: assume 8GB total, 2GB available (conservative)
             return 2.0, 8.0
 
+    def get_swap_usage_gb(self) -> float:
+        """Get current swap usage in GB."""
+        try:
+            import subprocess
+            import re
+            swap_out = subprocess.check_output(['sysctl', 'vm.swapusage']).decode()
+            # Format: "vm.swapusage: total = 3072.00M  used = 1448.38M  free = 1623.62M  (encrypted)"
+            match = re.search(r'used\s*=\s*([\d.]+)M', swap_out)
+            if match:
+                return float(match.group(1)) / 1024.0
+        except Exception:
+            pass
+        return 99.0  # Assume worst case on failure
+
+    def get_disk_free_gb(self, path: str = '/') -> float:
+        """Get free disk space in GB for the given path."""
+        try:
+            import subprocess
+            df_out = subprocess.check_output(['df', '-g', path]).decode()
+            for line in df_out.strip().split('\n')[1:]:
+                parts = line.split()
+                if len(parts) >= 4:
+                    return float(parts[3])
+        except Exception:
+            pass
+        return 0.0  # Assume worst case on failure
+
+    def can_train(self) -> tuple[bool, str]:
+        """
+        Check if the system has enough resources for MLX LoRA training.
+
+        Checks RAM, swap, and disk. Used by both perpetual_learner and
+        auto_learner to gate training runs.
+
+        Returns:
+            (can_train, reason) tuple
+        """
+        free_ram_gb, _ = self.get_memory_info()
+        swap_used_gb = self.get_swap_usage_gb()
+        disk_free_gb = self.get_disk_free_gb()
+
+        if free_ram_gb < TRAINING_MIN_FREE_RAM_GB:
+            return False, f"RAM too low: {free_ram_gb:.1f}GB free (need {TRAINING_MIN_FREE_RAM_GB}GB)"
+        if swap_used_gb > TRAINING_MAX_SWAP_USED_GB:
+            return False, f"Swap too high: {swap_used_gb:.1f}GB used (max {TRAINING_MAX_SWAP_USED_GB}GB)"
+        if disk_free_gb < TRAINING_MIN_DISK_FREE_GB:
+            return False, f"Disk too low: {disk_free_gb:.0f}GB free (need {TRAINING_MIN_DISK_FREE_GB}GB)"
+        return True, f"OK: RAM={free_ram_gb:.1f}GB, swap={swap_used_gb:.1f}GB, disk={disk_free_gb:.0f}GB"
+
     def get_resource_level(self) -> ResourceLevel:
         """Determine current resource availability level."""
         available_gb, _ = self.get_memory_info()
@@ -462,7 +512,7 @@ class ResourceManager:
             status = self._vision_state.to_dict()
             status['available_memory_mb'] = round(available_mb, 1)
             status['can_load_local_vlm'] = self.can_load_vision_model(VisionTier.LOCAL_VLM)
-            status['recommended_tier'] = self._recommend_vision_tier().value
+            status['recommended_tier'] = self._recommend_vision_tier().name
 
             return status
 
@@ -990,3 +1040,9 @@ def get_recommended_voice_tier() -> str:
     """
     manager = ResourceManager()
     return manager.get_recommended_voice_tier().value
+
+
+def can_train() -> tuple[bool, str]:
+    """Check if system has enough resources for MLX LoRA training."""
+    manager = ResourceManager()
+    return manager.can_train()

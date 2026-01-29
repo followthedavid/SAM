@@ -45,14 +45,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 @pytest.fixture
 def voice_preprocessor():
     """Create a VoicePreprocessor instance for testing."""
-    from voice_preprocessor import VoicePreprocessor
+    from voice.voice_preprocessor import VoicePreprocessor
     return VoicePreprocessor()
 
 
 @pytest.fixture
 def voice_settings():
     """Create VoiceSettings instance for testing."""
-    from voice_settings import VoiceSettings
+    from voice.voice_settings import VoiceSettings
     return VoiceSettings()
 
 
@@ -275,7 +275,7 @@ class TestMemoryUsage:
 
     def test_settings_memory_footprint(self):
         """VoiceSettings should have minimal memory footprint."""
-        from voice_settings import VoiceSettings
+        from voice.voice_settings import VoiceSettings
         import sys
 
         settings = VoiceSettings()
@@ -487,7 +487,7 @@ class TestQualitySettingsApplication:
 
     def test_fast_preset_settings(self):
         """Fast preset should use macOS, no RVC."""
-        from voice_settings import VoiceSettings, QualityLevel
+        from voice.voice_settings import VoiceSettings, QualityLevel
 
         settings = VoiceSettings.from_quality_preset(QualityLevel.FAST)
 
@@ -499,7 +499,7 @@ class TestQualitySettingsApplication:
 
     def test_balanced_preset_settings(self):
         """Balanced preset should use F5-TTS, no RVC."""
-        from voice_settings import VoiceSettings, QualityLevel
+        from voice.voice_settings import VoiceSettings, QualityLevel
 
         settings = VoiceSettings.from_quality_preset(QualityLevel.BALANCED)
 
@@ -510,7 +510,7 @@ class TestQualitySettingsApplication:
 
     def test_quality_preset_settings(self):
         """Quality preset should use F5-TTS + RVC."""
-        from voice_settings import VoiceSettings, QualityLevel
+        from voice.voice_settings import VoiceSettings, QualityLevel
 
         settings = VoiceSettings.from_quality_preset(QualityLevel.QUALITY)
 
@@ -522,7 +522,7 @@ class TestQualitySettingsApplication:
 
     def test_apply_quality_preset(self):
         """Applying preset should update settings."""
-        from voice_settings import VoiceSettings, QualityLevel
+        from voice.voice_settings import VoiceSettings, QualityLevel
 
         settings = VoiceSettings()
         settings.engine = "macos"
@@ -536,7 +536,7 @@ class TestQualitySettingsApplication:
 
     def test_rvc_flags_synchronized(self):
         """use_rvc and rvc_enabled should stay synchronized."""
-        from voice_settings import VoiceSettings
+        from voice.voice_settings import VoiceSettings
 
         settings = VoiceSettings(use_rvc=True)
         assert settings.rvc_enabled is True
@@ -546,7 +546,7 @@ class TestQualitySettingsApplication:
 
     def test_emphasis_words_handling(self):
         """Emphasis words should be manageable."""
-        from voice_settings import VoiceSettings
+        from voice.voice_settings import VoiceSettings
 
         settings = VoiceSettings()
 
@@ -562,7 +562,7 @@ class TestQualitySettingsApplication:
 
     def test_settings_validation(self):
         """Settings validation should catch invalid values."""
-        from voice_settings import VoiceSettings
+        from voice.voice_settings import VoiceSettings
 
         # Valid settings
         settings = VoiceSettings()
@@ -584,7 +584,7 @@ class TestQualitySettingsApplication:
 
     def test_quality_description(self):
         """Should provide quality level descriptions."""
-        from voice_settings import VoiceSettings, QualityLevel
+        from voice.voice_settings import VoiceSettings, QualityLevel
 
         for level in QualityLevel:
             settings = VoiceSettings.from_quality_preset(level)
@@ -603,7 +603,7 @@ class TestConcurrentRequests:
 
     def test_settings_thread_safety(self):
         """VoiceSettingsManager should be thread-safe."""
-        from voice_settings import VoiceSettingsManager
+        from voice.voice_settings import VoiceSettingsManager
 
         manager = VoiceSettingsManager.get_instance()
         errors = []
@@ -792,7 +792,7 @@ class TestVoiceSystemIntegration:
 
     def test_settings_serialization_roundtrip(self):
         """Settings should serialize and deserialize correctly."""
-        from voice_settings import VoiceSettings, QualityLevel
+        from voice.voice_settings import VoiceSettings, QualityLevel
 
         original = VoiceSettings.from_quality_preset(QualityLevel.QUALITY)
         original.emphasis_words = ["important", "critical"]
@@ -850,7 +850,7 @@ class TestPerformanceBenchmarks:
 
     def test_settings_load_speed(self):
         """Settings loading should be fast."""
-        from voice_settings import VoiceSettings
+        from voice.voice_settings import VoiceSettings
 
         start = time.time()
         for _ in range(1000):
@@ -864,7 +864,7 @@ class TestPerformanceBenchmarks:
 
     def test_quality_preset_application_speed(self):
         """Quality preset application should be instant."""
-        from voice_settings import VoiceSettings, QualityLevel
+        from voice.voice_settings import VoiceSettings, QualityLevel
 
         settings = VoiceSettings()
 

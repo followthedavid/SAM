@@ -34,7 +34,7 @@ from unittest.mock import Mock, patch, MagicMock
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from training_pipeline import (
+from learn.training_pipeline import (
     TrainingPipeline,
     TrainingRun,
     TRAINING_DATA,
@@ -244,9 +244,9 @@ class TestTrainingJobRunner:
         with patch('training_pipeline.TRAINING_DATA', training_file), \
              patch('training_pipeline.MODELS_DIR', temp_dir / "models"), \
              patch('training_pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
-             patch('training_pipeline.LOGS_DIR', temp_dir / "logs"):
+             patch('training_pipeline.LOGS_DIR', temp_dir / "logs"), \
+             patch('training_pipeline.SCRIPT_DIR', temp_dir):
             pipeline = TrainingPipeline()
-            pipeline.runs_file = temp_dir / "runs.json"
             result = pipeline.should_train()
 
         assert result is True
@@ -323,11 +323,11 @@ class TestProgressMonitoring:
         with patch('training_pipeline.TRAINING_DATA', temp_dir / "training_data.jsonl"), \
              patch('training_pipeline.MODELS_DIR', temp_dir / "models"), \
              patch('training_pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
-             patch('training_pipeline.LOGS_DIR', temp_dir / "logs"):
+             patch('training_pipeline.LOGS_DIR', temp_dir / "logs"), \
+             patch('training_pipeline.SCRIPT_DIR', temp_dir):
 
             # Create and save
             pipeline1 = TrainingPipeline()
-            pipeline1.runs_file = runs_file
             pipeline1.runs.append(TrainingRun(
                 run_id="test_1",
                 start_time="2026-01-25T10:00:00",
@@ -340,8 +340,6 @@ class TestProgressMonitoring:
 
             # Load in new instance
             pipeline2 = TrainingPipeline()
-            pipeline2.runs_file = runs_file
-            pipeline2.runs = pipeline2._load_runs()
 
         assert len(pipeline2.runs) == 1
         assert pipeline2.runs[0].run_id == "test_1"
@@ -357,7 +355,8 @@ class TestProgressMonitoring:
         with patch('training_pipeline.TRAINING_DATA', training_file), \
              patch('training_pipeline.MODELS_DIR', temp_dir / "models"), \
              patch('training_pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
-             patch('training_pipeline.LOGS_DIR', temp_dir / "logs"):
+             patch('training_pipeline.LOGS_DIR', temp_dir / "logs"), \
+             patch('training_pipeline.SCRIPT_DIR', temp_dir):
             pipeline = TrainingPipeline()
             stats = pipeline.stats()
 
@@ -407,7 +406,7 @@ class TestModelDeployment:
 
     def test_deployment_imports(self):
         """Test that deployment module can be imported."""
-        from model_deployment import (
+        from learn.model_deployment import (
             ModelDeployer,
             ModelVersion,
             DeploymentStatus,
@@ -418,7 +417,7 @@ class TestModelDeployment:
 
     def test_model_version_dataclass(self):
         """Test ModelVersion dataclass."""
-        from model_deployment import ModelVersion
+        from learn.model_deployment import ModelVersion
 
         version = ModelVersion(
             version="v1.0.0",
@@ -447,7 +446,7 @@ class TestModelDeployment:
 
     def test_deployer_initialization(self, temp_dir):
         """Test ModelDeployer initialization."""
-        from model_deployment import ModelDeployer, get_versions_path
+        from learn.model_deployment import ModelDeployer, get_versions_path
 
         with patch('model_deployment.get_versions_path', return_value=temp_dir):
             deployer = ModelDeployer()
@@ -458,7 +457,7 @@ class TestModelDeployment:
 
     def test_sanity_check_nonexistent_path(self, temp_dir):
         """Test sanity check fails for non-existent path."""
-        from model_deployment import ModelDeployer
+        from learn.model_deployment import ModelDeployer
 
         with patch('model_deployment.get_versions_path', return_value=temp_dir):
             deployer = ModelDeployer()
@@ -469,7 +468,7 @@ class TestModelDeployment:
 
     def test_sanity_check_valid_adapters(self, temp_dir):
         """Test sanity check passes for valid adapter files."""
-        from model_deployment import ModelDeployer
+        from learn.model_deployment import ModelDeployer
 
         # Create mock adapter file
         adapters_dir = temp_dir / "adapters"
@@ -486,7 +485,7 @@ class TestModelDeployment:
 
     def test_sanity_check_too_small(self, temp_dir):
         """Test sanity check fails for suspiciously small files."""
-        from model_deployment import ModelDeployer
+        from learn.model_deployment import ModelDeployer
 
         adapters_dir = temp_dir / "adapters"
         adapters_dir.mkdir()
@@ -502,7 +501,7 @@ class TestModelDeployment:
 
     def test_rollback_trigger_should_not_rollback(self):
         """Test rollback trigger doesn't trigger prematurely."""
-        from model_deployment import RollbackTrigger
+        from learn.model_deployment import RollbackTrigger
 
         trigger = RollbackTrigger(min_samples=10)
 
@@ -515,7 +514,7 @@ class TestModelDeployment:
 
     def test_rollback_trigger_error_rate(self):
         """Test rollback trigger activates on high error rate."""
-        from model_deployment import RollbackTrigger, RollbackReason
+        from learn.model_deployment import RollbackTrigger, RollbackReason
 
         trigger = RollbackTrigger(max_error_rate=0.1, min_samples=10)
 
@@ -531,7 +530,7 @@ class TestModelDeployment:
 
     def test_rollback_trigger_response_time(self):
         """Test rollback trigger activates on slow response time."""
-        from model_deployment import RollbackTrigger, RollbackReason
+        from learn.model_deployment import RollbackTrigger, RollbackReason
 
         trigger = RollbackTrigger(max_response_time_ms=1000, min_samples=10)
 
@@ -545,7 +544,7 @@ class TestModelDeployment:
 
     def test_safe_deployment_traffic_routing(self):
         """Test SafeDeployment routes traffic correctly."""
-        from model_deployment import SafeDeployment, ModelVersion
+        from learn.model_deployment import SafeDeployment, ModelVersion
 
         old_version = ModelVersion(
             version="v1.0.0",
@@ -578,7 +577,7 @@ class TestModelDeployment:
 
     def test_deployment_stats(self, temp_dir):
         """Test deployment statistics gathering."""
-        from model_deployment import ModelDeployer
+        from learn.model_deployment import ModelDeployer
 
         with patch('model_deployment.get_versions_path', return_value=temp_dir):
             deployer = ModelDeployer()
@@ -592,7 +591,7 @@ class TestModelDeployment:
 
     def test_version_numbering(self, temp_dir):
         """Test automatic version number generation."""
-        from model_deployment import ModelDeployer, ModelVersion
+        from learn.model_deployment import ModelDeployer, ModelVersion
 
         with patch('model_deployment.get_versions_path', return_value=temp_dir):
             deployer = ModelDeployer()
@@ -626,7 +625,7 @@ class TestRollback:
 
     def test_rollback_no_versions(self, temp_dir):
         """Test rollback fails when no versions exist."""
-        from model_deployment import ModelDeployer
+        from learn.model_deployment import ModelDeployer
 
         with patch('model_deployment.get_versions_path', return_value=temp_dir):
             deployer = ModelDeployer()
@@ -638,7 +637,7 @@ class TestRollback:
 
     def test_rollback_to_previous(self, temp_dir):
         """Test rollback to previous version."""
-        from model_deployment import ModelDeployer, ModelVersion, DeploymentStatus
+        from learn.model_deployment import ModelDeployer, ModelVersion, DeploymentStatus
 
         with patch('model_deployment.get_versions_path', return_value=temp_dir):
             deployer = ModelDeployer()
@@ -739,10 +738,10 @@ class TestEndToEndScenarios:
         with patch('training_pipeline.TRAINING_DATA', training_file), \
              patch('training_pipeline.MODELS_DIR', temp_dir / "models"), \
              patch('training_pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
-             patch('training_pipeline.LOGS_DIR', temp_dir / "logs"):
+             patch('training_pipeline.LOGS_DIR', temp_dir / "logs"), \
+             patch('training_pipeline.SCRIPT_DIR', temp_dir):
 
             pipeline = TrainingPipeline()
-            pipeline.runs_file = temp_dir / "runs.json"
 
             # Check should_train
             assert pipeline.should_train() is True
@@ -754,7 +753,7 @@ class TestEndToEndScenarios:
 
     def test_deployment_after_training_mocked(self, temp_dir):
         """Test deployment flow after training."""
-        from model_deployment import ModelDeployer
+        from learn.model_deployment import ModelDeployer
 
         # Create mock adapter files
         adapters_dir = temp_dir / "training_output" / "adapters"

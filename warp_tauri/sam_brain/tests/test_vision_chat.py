@@ -94,7 +94,7 @@ if PYTEST_AVAILABLE:
         """Create a mock conversation memory for testing."""
         db_path = tmp_path / "test_memory.db"
 
-        from conversation_memory import ConversationMemory
+        from memory.conversation_memory import ConversationMemory
         memory = ConversationMemory(str(db_path))
         memory.start_session()
         return memory
@@ -922,7 +922,7 @@ def run_all_tests():
                         elif param_name == "tmp_path":
                             params[param_name] = tmp_path
                         elif param_name == "mock_conversation_memory":
-                            from conversation_memory import ConversationMemory
+                            from memory.conversation_memory import ConversationMemory
                             db_path = tmp_path / "test_memory.db"
                             memory = ConversationMemory(str(db_path))
                             memory.start_session()

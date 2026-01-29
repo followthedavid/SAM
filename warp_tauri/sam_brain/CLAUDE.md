@@ -5,7 +5,7 @@ Self-improving AI companion with personality. Male, cocky, flirty, loyal. Voice:
 
 **Current Version:** v0.5.0 (Full Multi-Modal - MLX Native)
 
-## Architecture (Updated 2026-01-21)
+## Architecture (Updated 2026-01-27)
 
 ### Core Systems
 
@@ -124,9 +124,12 @@ voice_output.py               # TTS engines interface
 voice_server.py               # Voice HTTP API
 audio_utils.py                # Audio loading (soundfile backend)
 vision_server.py              # Persistent vision server (port 8766)
+perpetual_learner.py          # Continuous learning daemon
+auto_learner.py               # Learns from Claude Code sessions
+data_arsenal.py               # Data collection/scraping
 
 cognitive/
-├── __init__.py               # v1.4.0 - All exports
+├── __init__.py               # v1.13.0 - All exports
 ├── mlx_cognitive.py          # Base MLX engine
 ├── mlx_optimized.py          # Optimized engine (KV-cache)
 ├── vision_engine.py          # Multi-tier vision
@@ -135,13 +138,34 @@ cognitive/
 ├── emotional_model.py        # Mood & relationships
 ├── compression.py            # Prompt compression
 ├── cognitive_control.py      # Meta-cognition
-└── resource_manager.py       # Memory monitoring
+├── resource_manager.py       # Memory monitoring
+├── model_selector.py         # Dynamic 1.5B/3B selection based on task
+├── token_budget.py           # Context window management
+├── quality_validator.py      # Response validation, repetition detection
+├── enhanced_retrieval.py     # HyDE and multi-hop retrieval
+├── enhanced_learning.py      # Active learning, predictive caching
+├── code_indexer.py           # Code entity indexing
+├── doc_indexer.py            # Documentation indexing
+├── unified_orchestrator.py   # Integrates all systems, RAG stats
+├── vision_client.py          # Easy integration wrapper for vision
+├── vision_selector.py        # Resource-aware vision tier selection
+├── image_preprocessor.py     # Memory-efficient image handling
+└── self_knowledge_handler.py # Self-knowledge query handling
 
 emotion2vec_mlx/
+├── __init__.py               # Package init
+├── detector.py               # Emotion detection entry point
+├── taxonomy.py               # Emotion taxonomy definitions
+├── prosody_control.py        # Emotion-to-speech mapping
+├── backends/
+│   ├── emotion2vec_backend.py  # MLX emotion2vec backend
+│   └── prosodic_backend.py     # Prosodic analysis backend
 ├── models/
-│   ├── emotion2vec_mlx.py    # MLX model architecture
-│   └── convert_to_mlx.py     # PyTorch weight conversion
-└── emotion2vec_inference.py  # Inference wrapper
+│   ├── emotion2vec_mlx.py      # MLX model architecture
+│   ├── convert_to_mlx.py       # PyTorch weight conversion
+│   ├── convert_weights.py      # Weight format conversion
+│   └── extract_pytorch_weights.py # Weight extraction
+└── utils/                     # Utility functions
 ```
 
 ## Quick Start
@@ -181,3 +205,4 @@ rvc  # or tell SAM "train a voice"
 - Overlaps: `/Volumes/Plex/SSOT/PROJECT_OVERLAPS.md`
 - Voice System: `docs/VOICE_SYSTEM.md` (Phase 6.1)
 - Voice Audit: `docs/VOICE_OUTPUT_AUDIT.md`
+- Specs: `docs/` contains 27 detailed specification files covering memory, voice, training, vision, distillation, RAG, and execution systems

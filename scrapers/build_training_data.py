@@ -30,28 +30,28 @@ from dataclasses import dataclass
 # ============================================================================
 
 CONFIG = {
-    "output_dir": "/Volumes/David External/sam_training",
+    "output_dir": "/Volumes/#1/SAM/training_data",
 
     # Source databases
     "sources": {
-        "vmag": "/Volumes/#1/vmag_archive/vmag_index.db",
-        "wmag": "/Volumes/#1/wmag_archive/wmag_index.db",
-        "wwd": "/Volumes/#1/wwd_archive/wwd_index.db",
-        "dark_psych": "/Volumes/David External/dark_psych_archive/dark_psych_index.db",
+        "vmag": "/Volumes/#1/SAM/fashion_archives/vmag_archive/vmag_index.db",
+        "wmag": "/Volumes/#1/SAM/fashion_archives/wmag_archive/wmag_index.db",
+        "wwd": "/Volumes/#1/SAM/fashion_archives/wwd_archive/wwd_index.db",
+        "dark_psych": "/Volumes/#1/SAM/scraper_archives/dark_psych_archive/dark_psych_index.db",
         "code": "/Volumes/David External/coding_training/code_collection.db",
-        "firstview": "/Volumes/David External/firstview_archive/firstview_index.db",
-        "nifty": "/Volumes/David External/nifty_archive/stories.db",
+        "firstview": "/Volumes/#1/SAM/scraper_archives/firstview_archive/firstview_index.db",
+        "nifty": "/Volumes/#1/SAM/scraper_archives/nifty_archive/stories.db",
         "literotica": "/Volumes/David External/literotica_archive/literotica_index.db",
     },
 
     # Content directories
     "content_dirs": {
-        "vmag": "/Volumes/#1/vmag_archive/articles",
-        "wmag": "/Volumes/#1/wmag_archive/articles",
-        "wwd": "/Volumes/#1/wwd_archive/articles",
-        "dark_psych": "/Volumes/David External/dark_psych_archive/stories",
-        "nifty": "/Volumes/David External/nifty_archive/stories",
-        "firstview": "/Volumes/David External/firstview_archive/photos",
+        "vmag": "/Volumes/#1/SAM/fashion_archives/vmag_archive/articles",
+        "wmag": "/Volumes/#1/SAM/fashion_archives/wmag_archive/articles",
+        "wwd": "/Volumes/#1/SAM/fashion_archives/wwd_archive/articles",
+        "dark_psych": "/Volumes/#1/SAM/scraper_archives/dark_psych_archive/stories",
+        "nifty": "/Volumes/#1/SAM/scraper_archives/nifty_archive/stories",
+        "firstview": "/Volumes/#1/SAM/scraper_archives/firstview_archive/photos",
     },
 
     # SAM's system prompt

@@ -41,7 +41,7 @@ def get_semantic_memory():
     global _semantic_memory
     if _semantic_memory is None:
         try:
-            from semantic_memory import get_memory
+            from memory.semantic_memory import get_memory
             _semantic_memory = get_memory()
         except ImportError:
             _semantic_memory = False
@@ -51,7 +51,7 @@ def get_multi_agent():
     global _multi_agent
     if _multi_agent is None:
         try:
-            from multi_agent import get_orchestrator
+            from core.multi_agent import get_orchestrator
             _multi_agent = get_orchestrator()
         except ImportError:
             _multi_agent = False
@@ -61,7 +61,7 @@ def get_ssot():
     global _ssot_sync
     if _ssot_sync is None:
         try:
-            from ssot_sync import get_sync
+            from projects.ssot_sync import get_sync
             _ssot_sync = get_sync()
         except ImportError:
             _ssot_sync = False
@@ -81,7 +81,7 @@ def get_voice():
     global _voice
     if _voice is None:
         try:
-            from voice_bridge import get_bridge
+            from voice.voice_bridge import get_bridge
             _voice = get_bridge()
         except ImportError:
             _voice = False
@@ -367,7 +367,7 @@ def run_agent(task: str, project_path: str = ".", use_multi_agent: bool = True) 
 
     # Fallback to basic agent
     try:
-        import sam_agent
+        import do.sam_agent as sam_agent
         sam_agent.run_agent(task, project_path, max_iterations=8, auto=True)
         return "[Agent completed]"
     except ImportError:

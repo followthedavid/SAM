@@ -53,7 +53,7 @@ try:
     if _parent_dir not in sys.path:
         sys.path.insert(0, _parent_dir)
 
-    from relevance_scorer import (
+    from remember.relevance_scorer import (
         RelevanceScorer,
         get_relevance_scorer,
         rerank_code_results,

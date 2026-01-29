@@ -1,28 +1,24 @@
 {
   "overall": {
-    "total_examples": 46984,
+    "total_examples": 4,
     "by_source": {
-      "train": 13500,
-      "training_samples": 1949,
-      "curated_training": 15000,
-      "claude_generated_personality": 20,
-      "valid_old": 1500,
-      "claude_generated_escalation": 15,
-      "valid": 1500,
-      "train_old": 13500
+      "train": 3,
+      "commits": 1
     },
     "by_format": {
-      "chat": 15000,
-      "instruction": 31984
+      "instruction": 3,
+      "chat": 1
     },
     "by_quality": {
-      "raw": 46984
+      "silver": 2,
+      "gold": 1,
+      "raw": 1
     },
-    "avg_token_length": 121.6,
-    "total_tokens": 5713496,
-    "oldest_example": null,
-    "newest_example": null,
-    "storage_bytes": 26243423
+    "avg_token_length": 20.2,
+    "total_tokens": 81,
+    "oldest_example": "2026-01-25T10:28:04.108389",
+    "newest_example": "2026-01-27T10:28:04.108585",
+    "storage_bytes": 790
   },
-  "cached_at": "2026-01-25T09:45:19.288965"
+  "cached_at": "2026-01-27T10:28:04.109219"
 }

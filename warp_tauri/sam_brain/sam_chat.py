@@ -18,8 +18,8 @@ from typing import Optional, Dict, List
 
 # Import the escalation handler (uses MLX model + Claude bridge)
 sys.path.insert(0, str(Path(__file__).parent))
-from escalation_handler import process_request, EscalationReason
-from smart_router import Provider, sanitize_content
+from execution.escalation_handler import process_request, EscalationReason
+from core.smart_router import Provider, sanitize_content
 
 # Configuration
 BRIDGE_QUEUE = Path.home() / ".sam_chatgpt_queue.json"
@@ -249,7 +249,7 @@ Examples:
         print("=" * 40)
         # Check MLX model
         try:
-            from mlx_inference import ADAPTER_PATH, BASE_MODEL
+            from think.mlx_inference import ADAPTER_PATH, BASE_MODEL
             if ADAPTER_PATH.exists():
                 print(f"SAM Brain: Ready (adapters at {ADAPTER_PATH})")
             else:

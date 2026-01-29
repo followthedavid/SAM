@@ -29,6 +29,9 @@ from watchdog.events import FileSystemEventHandler
 import threading
 import sqlite3
 
+# Resource checking - single source of truth
+from cognitive.resource_manager import can_train as system_can_train
+
 # Paths
 CLAUDE_DIR = Path.home() / ".claude"
 BRAIN_DIR = Path(__file__).parent
@@ -232,10 +235,12 @@ class ClaudeSessionExtractor:
         # Check projects directory
         projects_dir = CLAUDE_DIR / "projects"
         if projects_dir.exists():
-            # Look for conversation JSON files
+            # Look for conversation JSON and JSONL files
             for project in projects_dir.iterdir():
                 if project.is_dir():
                     for f in project.glob("**/*.json"):
+                        files.append(f)
+                    for f in project.glob("**/*.jsonl"):
                         files.append(f)
 
         # Check for other JSONL conversation logs
@@ -539,6 +544,12 @@ class AutoTrainer:
             if datetime.now() - last < timedelta(hours=TRAINING_COOLDOWN_HOURS):
                 return False
 
+        # Check system resources (RAM, swap, disk)
+        can_train, reason = system_can_train()
+        if not can_train:
+            self._log(f"Training deferred: {reason}")
+            return False
+
         return True
 
     def trigger_training(self) -> bool:
@@ -555,6 +566,12 @@ class AutoTrainer:
 
     def _run_training(self) -> bool:
         """Run the actual training."""
+        # Final resource check right before training
+        can_train, reason = system_can_train()
+        if not can_train:
+            self._log(f"Training aborted at launch: {reason}")
+            return False
+
         self._log("Starting automatic training run...")
 
         # Get unused examples
@@ -605,7 +622,7 @@ class AutoTrainer:
             "--train",
             "--batch-size", "1",
             "--num-layers", "4",
-            "--iters", "300",
+            "--iters", "150",
             "--max-seq-length", "1024",
             "--grad-checkpoint",
             "--adapter-path", str(ADAPTER_PATH),

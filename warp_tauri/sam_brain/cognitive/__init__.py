@@ -189,7 +189,7 @@ from .resource_manager import (
     ResourceConfig,
     ResourceLevel,
     ResourceSnapshot,
-    VisionTier as ResourceVisionTier,  # Avoid conflict with vision_client.VisionTier
+    VisionTier as ResourceVisionTier,  # Same as vision_types.VisionTier (consolidated)
     VisionModelState,
     VISION_TIER_MEMORY_MB,
     check_resources,
@@ -206,7 +206,7 @@ from .vision_selector import (
     TierCapabilities,
     TierSuccessTracker,
     SelectionContext,
-    VisionTier as SelectorVisionTier,  # Avoid conflict with vision_client.VisionTier
+    VisionTier as SelectorVisionTier,  # Same as vision_types.VisionTier (consolidated)
     MEMORY_THRESHOLDS,
     TIER_CAPABILITIES,
     TASK_MINIMUM_TIERS,
@@ -242,6 +242,27 @@ from .doc_indexer import (
     get_doc_indexer,
 )
 
+# Learning Strategy (5-tier hierarchy)
+from .learning_strategy import (
+    LearningTier,
+    LearningPriority,
+    LearningStrategyFramework,
+    ExampleAnalysis,
+)
+
+# Planning Framework (4-tier solution cascade)
+from .planning_framework import (
+    PlanningFramework,
+    SolutionTier,
+    Capability,
+    TierOption,
+    CAPABILITY_OPTIONS,
+    TIER_ORDER,
+    get_framework,
+    get_best_option,
+    generate_plan,
+)
+
 # Relevance Scorer (Phase 2.2.5) - from parent sam_brain directory
 try:
     import sys
@@ -251,7 +272,7 @@ try:
     if _parent_dir not in sys.path:
         sys.path.insert(0, _parent_dir)
 
-    from relevance_scorer import (
+    from remember.relevance_scorer import (
         RelevanceScorer,
         ScoredResult,
         ScoringWeights,
@@ -285,7 +306,59 @@ except ImportError as e:
     rerank_doc_results = None
     rerank_mixed_results = None
 
-__version__ = "1.13.0"  # Bumped for Vision Resource Tracking (Phase 3.2.3)
+# Multi-Agent Roles (coordination between Claude instances)
+from .multi_agent_roles import (
+    MultiAgentCoordinator,
+    Role,
+    RoleConfig,
+    Task,
+    Handoff,
+    TerminalRegistration,
+    Session,
+    CoordinatorStatus,
+    ROLE_CONFIGS,
+    create_coordinator,
+    get_role_prompt,
+    get_role_config,
+)
+
+# Model Evaluation (A/B testing, benchmarks, metrics)
+from .model_evaluation import (
+    BenchmarkSuite,
+    MetricType,
+    TestStatus,
+    SAM_PERSONALITY_MARKERS,
+    SAFETY_VIOLATION_PATTERNS,
+    CODE_QUALITY_MARKERS,
+    EvaluationSample,
+    SampleResult,
+    EvaluationResults,
+    ABTestConfig,
+    ABTestResults,
+    HumanEvalBatch,
+    MetricCalculator,
+    ModelEvaluator,
+    ABTestFramework,
+    quick_evaluate,
+    compare_models,
+    stream_evaluate,
+)
+
+# Personality (mode-specific prompts and traits)
+from .personality import (
+    SamMode,
+    SYSTEM_PROMPTS,
+    PersonalityTrait,
+    SAM_TRAITS,
+    get_system_prompt,
+    get_trait_expressions,
+    get_trait_avoids,
+    get_random_expression,
+    generate_personality_examples,
+    export_training_examples,
+)
+
+__version__ = "1.18.0"  # Added Personality module (modes, traits, training examples)
 __all__ = [
     # Memory
     "WorkingMemory",
@@ -439,4 +512,62 @@ __all__ = [
     "get_image_info",
     "estimate_memory_needed",
     "get_preprocessor",
+    # Learning Strategy (5-tier hierarchy)
+    "LearningTier",
+    "LearningPriority",
+    "LearningStrategyFramework",
+    "ExampleAnalysis",
+    # Planning Framework (4-tier solution cascade)
+    "PlanningFramework",
+    "SolutionTier",
+    "Capability",
+    "TierOption",
+    "CAPABILITY_OPTIONS",
+    "TIER_ORDER",
+    "get_framework",
+    "get_best_option",
+    "generate_plan",
+    # Multi-Agent Roles (coordination between Claude instances)
+    "MultiAgentCoordinator",
+    "Role",
+    "RoleConfig",
+    "Task",
+    "Handoff",
+    "TerminalRegistration",
+    "Session",
+    "CoordinatorStatus",
+    "ROLE_CONFIGS",
+    "create_coordinator",
+    "get_role_prompt",
+    "get_role_config",
+    # Model Evaluation (A/B testing, benchmarks, metrics)
+    "BenchmarkSuite",
+    "MetricType",
+    "TestStatus",
+    "SAM_PERSONALITY_MARKERS",
+    "SAFETY_VIOLATION_PATTERNS",
+    "CODE_QUALITY_MARKERS",
+    "EvaluationSample",
+    "SampleResult",
+    "EvaluationResults",
+    "ABTestConfig",
+    "ABTestResults",
+    "HumanEvalBatch",
+    "MetricCalculator",
+    "ModelEvaluator",
+    "ABTestFramework",
+    "quick_evaluate",
+    "compare_models",
+    "stream_evaluate",
+    # Personality (mode-specific prompts and traits)
+    "SamMode",
+    "SYSTEM_PROMPTS",
+    "PersonalityTrait",
+    "SAM_TRAITS",
+    "get_system_prompt",
+    "get_trait_expressions",
+    "get_trait_avoids",
+    "get_random_expression",
+    "generate_personality_examples",
+    "export_training_examples",
 ]

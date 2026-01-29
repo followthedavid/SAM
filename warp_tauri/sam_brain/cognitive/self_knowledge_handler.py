@@ -16,7 +16,7 @@ try:
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from fact_memory import get_fact_memory, FactMemory, UserFact, FactCategory
+    from memory.fact_memory import get_fact_memory, FactMemory, UserFact, FactCategory
     _fact_memory_available = True
 except ImportError:
     _fact_memory_available = False

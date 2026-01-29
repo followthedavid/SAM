@@ -29,14 +29,14 @@ except ImportError as e:
 
 # Import impact tracker for environmental monitoring
 try:
-    from impact_tracker import ImpactTracker
+    from learn.impact_tracker import ImpactTracker
     IMPACT_TRACKER = ImpactTracker()
 except ImportError:
     IMPACT_TRACKER = None
 
 # Import privacy guard for scanning outgoing messages
 try:
-    from privacy_guard import PrivacyGuard, guard_outgoing
+    from core.privacy_guard import PrivacyGuard, guard_outgoing
     PRIVACY_GUARD = PrivacyGuard()
 except ImportError:
     PRIVACY_GUARD = None
@@ -44,7 +44,7 @@ except ImportError:
 
 # Import response styler for fun, engaging responses
 try:
-    from response_styler import (
+    from core.response_styler import (
         style_success, style_error, style_progress, style_complete,
         style_tip, style_celebration, style_checklist, style_build_result,
         style_test_result, style_file_operation, get_emoji, ResponseType
@@ -55,63 +55,63 @@ except ImportError:
 
 # Import thinking verbs for status messages
 try:
-    from thinking_verbs import get_thinking_verb, get_verb_with_definition
+    from core.thinking_verbs import get_thinking_verb, get_verb_with_definition
     THINKING_VERBS = True
 except ImportError:
     THINKING_VERBS = False
 
 # Import transparency guard (tamper-proof thinking display)
 try:
-    from transparency_guard import TransparencyGuard, scan_for_suspicious_patterns
+    from core.transparency_guard import TransparencyGuard, scan_for_suspicious_patterns
     TRANSPARENCY_GUARD = TransparencyGuard()
 except ImportError:
     TRANSPARENCY_GUARD = None
 
 # Import thought logger for pre-thought capture
 try:
-    from thought_logger import ThoughtLogger, ThoughtPhase
+    from serve.thought_logger import ThoughtLogger, ThoughtPhase
     THOUGHT_LOGGER = ThoughtLogger()
 except ImportError:
     THOUGHT_LOGGER = None
 
 # Import conversation logger for complete history
 try:
-    from conversation_logger import ConversationLogger, PrivacyLevel, MessageRole
+    from serve.conversation_logger import ConversationLogger, PrivacyLevel, MessageRole
     CONVERSATION_LOGGER = ConversationLogger()
 except ImportError:
     CONVERSATION_LOGGER = None
 
 # Import live thinking for streaming display
 try:
-    from live_thinking import stream_thinking, stream_structured_thinking, classify_thought
+    from serve.live_thinking import stream_thinking, stream_structured_thinking, classify_thought
     LIVE_THINKING = True
 except ImportError:
     LIVE_THINKING = False
 
 # Import project dashboard for data-rich status
 try:
-    from project_dashboard import DashboardGenerator
+    from projects.project_dashboard import DashboardGenerator
     DASHBOARD_GENERATOR = DashboardGenerator()
 except ImportError:
     DASHBOARD_GENERATOR = None
 
 # Import data arsenal for intelligence gathering
 try:
-    from data_arsenal import DataArsenal
+    from projects.data_arsenal import DataArsenal
     DATA_ARSENAL = DataArsenal()
 except ImportError:
     DATA_ARSENAL = None
 
 # Import terminal coordination for multi-terminal awareness
 try:
-    from terminal_coordination import TerminalCoordinator
+    from do.terminal_coordination import TerminalCoordinator
     TERMINAL_COORD = TerminalCoordinator()
 except ImportError:
     TERMINAL_COORD = None
 
 # Import auto-coordinator for transparent multi-terminal sync
 try:
-    from auto_coordinator import get_coordinator, CoordinatedSession
+    from do.auto_coordinator import get_coordinator, CoordinatedSession
     AUTO_COORD = get_coordinator()
     COORDINATED = CoordinatedSession()
 except ImportError:
@@ -214,7 +214,7 @@ def handle_re(message: str) -> dict:
     - Network interception for API analysis
     """
     try:
-        from re_orchestrator import handle_re_request
+        from core.re_orchestrator import handle_re_request
         return handle_re_request(message)
     except ImportError as e:
         return {
@@ -231,7 +231,7 @@ def handle_re(message: str) -> dict:
 def handle_voice(message: str) -> dict:
     """Handle voice training requests. Docker managed automatically."""
     try:
-        from voice_trainer import voice_status, voice_prepare, voice_start, voice_stop
+        from voice.voice_trainer import voice_status, voice_prepare, voice_start, voice_stop
 
         msg_lower = message.lower()
 
@@ -363,7 +363,7 @@ Image description:"""
 
     # Try native mflux first (no Docker needed, faster on Apple Silicon)
     try:
-        from image_generator import image_generate, image_status
+        from projects.image_generator import image_generate, image_status
 
         status = image_status()
         if status.get("mflux_available"):
@@ -382,7 +382,7 @@ Image description:"""
 
     # Fallback to ComfyUI (requires Docker)
     try:
-        from comfyui_client import generate_image, enhance_prompt, is_comfyui_running
+        from projects.comfyui_client import generate_image, enhance_prompt, is_comfyui_running
 
         if not is_comfyui_running():
             return {
@@ -498,7 +498,7 @@ def handle_improve(message: str) -> dict:
     """Query evolution tracker and suggest improvements using SAM Intelligence."""
     try:
         # Use SAM Intelligence for fast, smart responses
-        from sam_intelligence import SamIntelligence
+        from learn.sam_intelligence import SamIntelligence
         sam = SamIntelligence()
 
         msg_lower = message.lower()
@@ -511,8 +511,8 @@ def handle_improve(message: str) -> dict:
             }
 
         # Fall back to tracker for detailed queries
-        from evolution_tracker import EvolutionTracker
-        from evolution_ladders import LadderAssessor
+        from learn.evolution_tracker import EvolutionTracker
+        from learn.evolution_ladders import LadderAssessor
 
         tracker = EvolutionTracker()
         assessor = LadderAssessor()
@@ -638,7 +638,7 @@ def handle_improve(message: str) -> dict:
                 }
             else:
                 # Show all ladders summary
-                from evolution_ladders import EVOLUTION_LADDERS
+                from learn.evolution_ladders import EVOLUTION_LADDERS
 
                 ladder_lines = ["🪜 **Evolution Ladders Overview**\n"]
                 for cat, levels in EVOLUTION_LADDERS.items():
@@ -653,7 +653,7 @@ def handle_improve(message: str) -> dict:
 
         elif "scan" in msg_lower:
             # Run a fresh scan
-            from improvement_detector import ImprovementDetector
+            from learn.improvement_detector import ImprovementDetector
             detector = ImprovementDetector()
             scan_result = detector.full_scan()
 
@@ -815,7 +815,7 @@ def handle_project(message: str) -> dict:
         # Also get UI spec for frontend rendering
         ui_spec = None
         try:
-            from narrative_ui_spec import UISpecGenerator
+            from core.narrative_ui_spec import UISpecGenerator
             ui_gen = UISpecGenerator()
             # Create minimal narrative for UI spec
             class MinimalNarrative:
