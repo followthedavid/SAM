@@ -34,7 +34,7 @@ from unittest.mock import Mock, patch, MagicMock
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from learn.training_pipeline import (
+from training.pipeline import (
     TrainingPipeline,
     TrainingRun,
     TRAINING_DATA,
@@ -81,10 +81,10 @@ def mock_training_data_file(temp_dir, sample_training_data):
 @pytest.fixture
 def pipeline_with_mock_paths(temp_dir):
     """Create a pipeline with mocked paths for testing."""
-    with patch('training_pipeline.TRAINING_DATA', temp_dir / "training_data.jsonl"), \
-         patch('training_pipeline.MODELS_DIR', temp_dir / "models"), \
-         patch('training_pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
-         patch('training_pipeline.LOGS_DIR', temp_dir / "logs"):
+    with patch('training.pipeline.TRAINING_DATA', temp_dir / "training_data.jsonl"), \
+         patch('training.pipeline.MODELS_DIR', temp_dir / "models"), \
+         patch('training.pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
+         patch('training.pipeline.LOGS_DIR', temp_dir / "logs"):
         pipeline = TrainingPipeline()
         pipeline.runs_file = temp_dir / "training_runs.json"
         yield pipeline
@@ -109,7 +109,7 @@ class TestDataPreparation:
             for sample in sample_training_data:
                 f.write(json.dumps(sample) + "\n")
 
-        with patch('training_pipeline.TRAINING_DATA', training_file):
+        with patch('training.pipeline.TRAINING_DATA', training_file):
             pipeline = TrainingPipeline()
             samples = pipeline.load_training_data()
 
@@ -125,7 +125,7 @@ class TestDataPreparation:
             f.write('invalid json line\n')
             f.write('{"input": "also valid", "output": "sample"}\n')
 
-        with patch('training_pipeline.TRAINING_DATA', training_file):
+        with patch('training.pipeline.TRAINING_DATA', training_file):
             pipeline = TrainingPipeline()
             samples = pipeline.load_training_data()
 
@@ -140,7 +140,7 @@ class TestDataPreparation:
             f.write('{"output": "missing input"}\n')
             f.write('{"other": "fields"}\n')
 
-        with patch('training_pipeline.TRAINING_DATA', training_file):
+        with patch('training.pipeline.TRAINING_DATA', training_file):
             pipeline = TrainingPipeline()
             samples = pipeline.load_training_data()
 
@@ -155,7 +155,7 @@ class TestDataSplitting:
         # Create 100 samples for cleaner split
         samples = sample_training_data * 20  # 100 samples
 
-        with patch('training_pipeline.MODELS_DIR', temp_dir / "models"):
+        with patch('training.pipeline.MODELS_DIR', temp_dir / "models"):
             pipeline = TrainingPipeline()
             output_dir = temp_dir / "dataset"
             pipeline.prepare_dataset(samples, output_dir)
@@ -174,7 +174,7 @@ class TestDataSplitting:
 
     def test_prepare_dataset_chat_format(self, temp_dir, sample_training_data):
         """Test that samples are converted to chat format."""
-        with patch('training_pipeline.MODELS_DIR', temp_dir / "models"):
+        with patch('training.pipeline.MODELS_DIR', temp_dir / "models"):
             pipeline = TrainingPipeline()
             output_dir = temp_dir / "dataset"
             pipeline.prepare_dataset(sample_training_data, output_dir)
@@ -190,7 +190,7 @@ class TestDataSplitting:
 
     def test_prepare_dataset_creates_output_dir(self, temp_dir, sample_training_data):
         """Test that output directory is created if it doesn't exist."""
-        with patch('training_pipeline.MODELS_DIR', temp_dir / "models"):
+        with patch('training.pipeline.MODELS_DIR', temp_dir / "models"):
             pipeline = TrainingPipeline()
             output_dir = temp_dir / "nested" / "dataset" / "path"
             pipeline.prepare_dataset(sample_training_data, output_dir)
@@ -227,7 +227,7 @@ class TestTrainingJobRunner:
             for i in range(10):
                 f.write(json.dumps({"input": f"input {i}", "output": f"output {i}"}) + "\n")
 
-        with patch('training_pipeline.TRAINING_DATA', training_file):
+        with patch('training.pipeline.TRAINING_DATA', training_file):
             pipeline = TrainingPipeline()
             result = pipeline.should_train()
 
@@ -241,11 +241,11 @@ class TestTrainingJobRunner:
             for i in range(150):
                 f.write(json.dumps({"input": f"input {i}", "output": f"output {i}"}) + "\n")
 
-        with patch('training_pipeline.TRAINING_DATA', training_file), \
-             patch('training_pipeline.MODELS_DIR', temp_dir / "models"), \
-             patch('training_pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
-             patch('training_pipeline.LOGS_DIR', temp_dir / "logs"), \
-             patch('training_pipeline.SCRIPT_DIR', temp_dir):
+        with patch('training.pipeline.TRAINING_DATA', training_file), \
+             patch('training.pipeline.MODELS_DIR', temp_dir / "models"), \
+             patch('training.pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
+             patch('training.pipeline.LOGS_DIR', temp_dir / "logs"), \
+             patch('training.pipeline.SCRIPT_DIR', temp_dir):
             pipeline = TrainingPipeline()
             result = pipeline.should_train()
 
@@ -258,10 +258,10 @@ class TestTrainingJobRunner:
             for i in range(150):
                 f.write(json.dumps({"input": f"input {i}", "output": f"output {i}"}) + "\n")
 
-        with patch('training_pipeline.TRAINING_DATA', training_file), \
-             patch('training_pipeline.MODELS_DIR', temp_dir / "models"), \
-             patch('training_pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
-             patch('training_pipeline.LOGS_DIR', temp_dir / "logs"):
+        with patch('training.pipeline.TRAINING_DATA', training_file), \
+             patch('training.pipeline.MODELS_DIR', temp_dir / "models"), \
+             patch('training.pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
+             patch('training.pipeline.LOGS_DIR', temp_dir / "logs"):
             pipeline = TrainingPipeline()
             pipeline.runs_file = temp_dir / "runs.json"
 
@@ -281,10 +281,10 @@ class TestTrainingJobRunner:
 
     def test_run_training_mlx_not_available(self, temp_dir):
         """Test training fails gracefully when MLX not available."""
-        with patch('training_pipeline.TRAINING_DATA', temp_dir / "training_data.jsonl"), \
-             patch('training_pipeline.MODELS_DIR', temp_dir / "models"), \
-             patch('training_pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
-             patch('training_pipeline.LOGS_DIR', temp_dir / "logs"):
+        with patch('training.pipeline.TRAINING_DATA', temp_dir / "training_data.jsonl"), \
+             patch('training.pipeline.MODELS_DIR', temp_dir / "models"), \
+             patch('training.pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
+             patch('training.pipeline.LOGS_DIR', temp_dir / "logs"):
             pipeline = TrainingPipeline()
 
             with patch.object(pipeline, 'check_mlx_available', return_value=False):
@@ -320,11 +320,11 @@ class TestProgressMonitoring:
         """Test that training runs are saved and loaded correctly."""
         runs_file = temp_dir / "training_runs.json"
 
-        with patch('training_pipeline.TRAINING_DATA', temp_dir / "training_data.jsonl"), \
-             patch('training_pipeline.MODELS_DIR', temp_dir / "models"), \
-             patch('training_pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
-             patch('training_pipeline.LOGS_DIR', temp_dir / "logs"), \
-             patch('training_pipeline.SCRIPT_DIR', temp_dir):
+        with patch('training.pipeline.TRAINING_DATA', temp_dir / "training_data.jsonl"), \
+             patch('training.pipeline.MODELS_DIR', temp_dir / "models"), \
+             patch('training.pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
+             patch('training.pipeline.LOGS_DIR', temp_dir / "logs"), \
+             patch('training.pipeline.SCRIPT_DIR', temp_dir):
 
             # Create and save
             pipeline1 = TrainingPipeline()
@@ -352,11 +352,11 @@ class TestProgressMonitoring:
             for i in range(50):
                 f.write(json.dumps({"input": f"input {i}", "output": f"output {i}"}) + "\n")
 
-        with patch('training_pipeline.TRAINING_DATA', training_file), \
-             patch('training_pipeline.MODELS_DIR', temp_dir / "models"), \
-             patch('training_pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
-             patch('training_pipeline.LOGS_DIR', temp_dir / "logs"), \
-             patch('training_pipeline.SCRIPT_DIR', temp_dir):
+        with patch('training.pipeline.TRAINING_DATA', training_file), \
+             patch('training.pipeline.MODELS_DIR', temp_dir / "models"), \
+             patch('training.pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
+             patch('training.pipeline.LOGS_DIR', temp_dir / "logs"), \
+             patch('training.pipeline.SCRIPT_DIR', temp_dir):
             pipeline = TrainingPipeline()
             stats = pipeline.stats()
 
@@ -374,7 +374,7 @@ class TestModelEvaluation:
 
     def test_list_models_empty(self, temp_dir):
         """Test listing models when none exist."""
-        with patch('training_pipeline.MODELS_DIR', temp_dir / "models"):
+        with patch('training.pipeline.MODELS_DIR', temp_dir / "models"):
             pipeline = TrainingPipeline()
             models = pipeline.list_models()
 
@@ -388,7 +388,7 @@ class TestModelEvaluation:
         adapters_dir.mkdir(parents=True)
         (adapters_dir / "adapter.safetensors").touch()
 
-        with patch('training_pipeline.MODELS_DIR', models_dir):
+        with patch('training.pipeline.MODELS_DIR', models_dir):
             pipeline = TrainingPipeline()
             models = pipeline.list_models()
 
@@ -735,11 +735,11 @@ class TestEndToEndScenarios:
                 sample["input"] = f"Sample {i}: " + sample["input"]
                 f.write(json.dumps(sample) + "\n")
 
-        with patch('training_pipeline.TRAINING_DATA', training_file), \
-             patch('training_pipeline.MODELS_DIR', temp_dir / "models"), \
-             patch('training_pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
-             patch('training_pipeline.LOGS_DIR', temp_dir / "logs"), \
-             patch('training_pipeline.SCRIPT_DIR', temp_dir):
+        with patch('training.pipeline.TRAINING_DATA', training_file), \
+             patch('training.pipeline.MODELS_DIR', temp_dir / "models"), \
+             patch('training.pipeline.CHECKPOINTS_DIR', temp_dir / "checkpoints"), \
+             patch('training.pipeline.LOGS_DIR', temp_dir / "logs"), \
+             patch('training.pipeline.SCRIPT_DIR', temp_dir):
 
             pipeline = TrainingPipeline()
 

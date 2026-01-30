@@ -14,7 +14,7 @@ def get_training_stats() -> dict:
         deployer = get_deployer()
         deployment_stats = deployer.get_deployment_stats()
 
-        from learn.training_pipeline import TrainingPipeline
+        from training.pipeline import TrainingPipeline
         pipeline = TrainingPipeline()
         pipeline_stats = pipeline.stats()
 

@@ -605,7 +605,7 @@ class TestTrainingPipeline:
 
     def test_pipeline_config(self):
         """Test that pipeline config is properly set."""
-        from learn.training_pipeline import (
+        from training.pipeline import (
             MIN_SAMPLES_FOR_TRAINING,
             BASE_MODEL,
             LORA_RANK,
@@ -619,7 +619,7 @@ class TestTrainingPipeline:
 
     def test_training_run_dataclass(self):
         """Test TrainingRun dataclass."""
-        from learn.training_pipeline import TrainingRun
+        from training.pipeline import TrainingRun
 
         run = TrainingRun(
             run_id="test_001",
@@ -636,7 +636,7 @@ class TestTrainingPipeline:
 
     def test_pipeline_stats(self):
         """Test pipeline stats method."""
-        from learn.training_pipeline import TrainingPipeline
+        from training.pipeline import TrainingPipeline
 
         pipeline = TrainingPipeline()
         stats = pipeline.stats()
