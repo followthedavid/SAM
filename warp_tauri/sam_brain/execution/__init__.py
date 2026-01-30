@@ -8,7 +8,6 @@ Modules:
 - auto_fix: Automatic code issue detection and fixing
 - auto_fix_control: Permission and rate limiting for auto-fix
 - command_classifier: Command safety classification
-- command_proposer: Command proposal generation
 - escalation_handler: Claude escalation logic
 - escalation_learner: Learning from escalations
 - execution_history: Execution logging and rollback
@@ -19,7 +18,6 @@ Usage:
         AutoFixer, IssueDetector, detect_issues, fix_file,
         AutoFixController, get_auto_fix_controller,
         CommandClassifier, RiskLevel, CommandType,
-        CommandProposer, ProposalFormatter,
         process_request, escalate_to_claude, EscalationReason,
         EscalationLearner,
         RollbackManager, ExecutionLogger, ExecutionResult,
@@ -74,18 +72,6 @@ from execution.command_classifier import (
     classify_command,
     is_safe_command,
     get_command_dangers,
-)
-
-# command_proposer.py exports
-from execution.command_proposer import (
-    CommandProposal,
-    ExecutionResult as ProposerExecutionResult,
-    CommandProposer,
-    ProposalFormatter,
-    ProposalHistory,
-    propose_fix,
-    propose_task,
-    format_proposal,
 )
 
 # escalation_handler.py exports
@@ -185,15 +171,6 @@ __all__ = [
     "classify_command",
     "is_safe_command",
     "get_command_dangers",
-    # command_proposer
-    "CommandProposal",
-    "ProposerExecutionResult",
-    "CommandProposer",
-    "ProposalFormatter",
-    "ProposalHistory",
-    "propose_fix",
-    "propose_task",
-    "format_proposal",
     # escalation_handler
     "EscalationReason",
     "SAMResponse",

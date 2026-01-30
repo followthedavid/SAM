@@ -48,28 +48,29 @@ export interface AISession {
 
 const sessions = ref<Map<string, AISession>>(new Map());
 const availableModels = ref<string[]>([
-  'sam-trained:latest',
-  'sam-brain:latest',
-  'qwen2.5-coder:1.5b',
-  'dolphin-llama3:8b',
+  'mlx-qwen2.5-1.5b',       // MLX Qwen2.5 base model
+  'mlx-sam-lora',            // MLX Qwen2.5 + SAM LoRA fine-tune
 ]);
 
 export function useAI() {
   const claude = useClaude();
   const scaffoldedAgent = useScaffoldedAgent();
 
-  // Load available models from Ollama
+  // Load available models from MLX via sam_api
   async function refreshModels() {
     try {
-      const models = await invoke<string[]>('list_ollama_models');
-      availableModels.value = models;
+      const response = await fetch('http://localhost:8765/api/status');
+      if (response.ok) {
+        // sam_api is running, models are available
+        availableModels.value = ['mlx-qwen2.5-1.5b', 'mlx-sam-lora'];
+      }
     } catch (error) {
-      console.error('Failed to load Ollama models:', error);
+      console.error('Failed to check MLX models via sam_api:', error);
     }
   }
 
   // Create a new AI session
-  function createSession(tabId: string, model = 'dolphin-llama3:8b'): AISession {
+  function createSession(tabId: string, model = 'mlx-qwen2.5-1.5b'): AISession {
     const session: AISession = {
       id: tabId,
       messages: [],
@@ -383,13 +384,12 @@ export function useAI() {
 
     // Make a follow-up query (non-recursive to avoid infinite loops)
     try {
-      const response = await fetch('http://localhost:11434/api/generate', {
+      // Follow-up query via MLX sam_api
+      const response = await fetch('http://localhost:8765/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: model,
-          prompt: toolResultPrompt,
-          stream: false // Non-streaming for follow-up
+          query: toolResultPrompt,
         }),
       });
 
@@ -422,12 +422,12 @@ export function useAI() {
     }
   }
 
-  // Send prompt to Ollama with streaming
+  // Send prompt to MLX via sam_api with streaming
   async function sendPrompt(tabId: string, prompt: string, model?: string) {
     const session = getSession(tabId);
     const sessionModel = model || session.model;
 
-    addDebugLog(tabId, `[START] Sending prompt to Ollama, model: ${sessionModel}`);
+    addDebugLog(tabId, `[START] Sending prompt to MLX via sam_api, model: ${sessionModel}`);
 
     // Don't allow multiple concurrent requests
     if (session.isThinking) {
@@ -456,32 +456,28 @@ export function useAI() {
 
     try {
       if (isTauri && invoke) {
-        // Use Tauri backend
-        const sessionId = uuidv4();
-        let unlisten: UnlistenFn | null = null;
-        let unlistenDone: UnlistenFn | null = null;
+        // Use sam_api HTTP endpoint (MLX backend) - Ollama decommissioned 2026-01-18
+        try {
+          const response = await fetch('http://localhost:8765/api/query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: prompt }),
+          });
 
-        // Listen for stream chunks
-        unlisten = await listen<string>(`ollama://stream/${sessionId}`, (event) => {
-          assistantMessage.content += event.payload;
-        });
+          if (response.ok) {
+            const data = await response.json();
+            assistantMessage.content = data.response || '';
+          } else {
+            throw new Error(`sam_api error: ${response.status}`);
+          }
+        } catch (fetchErr) {
+          assistantMessage.content = `Error: sam_api not reachable at localhost:8765. Is sam_api.py running? (${fetchErr})`;
+        }
 
-        // Listen for completion
-        unlistenDone = await listen<boolean>(`ollama://stream/${sessionId}/done`, async () => {
-          assistantMessage.streaming = false;
-          session.isThinking = false;
-          if (unlisten) unlisten();
-          if (unlistenDone) unlistenDone();
-          // Parse and execute tool calls after streaming completes
-          await parseAndExecuteToolCalls(tabId, assistantMessage, session, sessionModel);
-        });
-
-        // Invoke Tauri command
-        await invoke('query_ollama_stream', {
-          prompt,
-          model: sessionModel,
-          sessionId,
-        });
+        assistantMessage.streaming = false;
+        session.isThinking = false;
+        // Parse and execute tool calls after response
+        await parseAndExecuteToolCalls(tabId, assistantMessage, session, sessionModel);
       } else {
         // System prompt for tool calling
         const systemPrompt = `You are SAM, an autonomous AI assistant that can execute actions on the user's system.
@@ -525,116 +521,36 @@ User: "check disk space"
 User: "show system status"
 {"tool":"get_system_metrics","args":{}}`;
 
-        // Direct HTTP call to Ollama (browser mode)
-        const response = await fetch('http://localhost:11434/api/generate', {
+        // Direct HTTP call to MLX via sam_api (browser mode)
+        const response = await fetch('http://localhost:8765/api/query', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: sessionModel,
-            system: systemPrompt,
-            prompt: prompt,
-            stream: true,
+            query: `${systemPrompt}\n\nUser: ${prompt}`,
           }),
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`sam_api HTTP error! status: ${response.status}`);
         }
 
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
+        const data = await response.json();
+        assistantMessage.content = data.response || '';
 
-        if (reader) {
-          let buffer = '';
-          let streamComplete = false;
+        addDebugLog(tabId, `[COMPLETE] Response received, total length: ${assistantMessage.content.length}, total messages: ${session.messages.length}`);
+        assistantMessage.streaming = false;
+        session.isThinking = false;
 
-          while (true) {
-            const { done, value } = await reader.read();
-
-            if (done) {
-              addDebugLog(tabId, '[STREAM] Reader done, stream ended naturally');
-              streamComplete = true;
-              break;
-            }
-
-            // Decode the chunk
-            const chunk = decoder.decode(value, { stream: true });
-            buffer += chunk;
-
-            // Split into lines (Ollama sends newline-delimited JSON)
-            const lines = buffer.split('\n');
-
-            // Keep the last line in buffer (might be incomplete JSON)
-            buffer = lines.pop() || '';
-
-            // Process each complete line
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed) continue;
-
-              try {
-                const json = JSON.parse(trimmed);
-
-                // Append response token
-                if (json.response && typeof json.response === 'string') {
-                  assistantMessage.content += json.response;
-                  if (assistantMessage.content.length % 100 === 0 || assistantMessage.content.length < 10) {
-                    addDebugLog(tabId, `[STREAM] Content length: ${assistantMessage.content.length}`);
-                  }
-                }
-
-                // Check for completion
-                if (json.done === true) {
-                  addDebugLog(tabId, '[STREAM] Done flag received, completing stream');
-                  streamComplete = true;
-                  break;
-                }
-              } catch (parseError) {
-                addDebugLog(tabId, `[ERROR] Failed to parse JSON: ${trimmed.substring(0, 50)}`);
-                // Continue processing other lines even if one fails
-              }
-            }
-
-            // Exit outer loop if stream is complete
-            if (streamComplete) {
-              break;
-            }
-          }
-
-          // Process any remaining content in buffer after stream ends
-          if (buffer.trim()) {
-            try {
-              const json = JSON.parse(buffer.trim());
-              console.log('[Ollama] Processing final buffer content');
-
-              if (json.response && typeof json.response === 'string') {
-                assistantMessage.content += json.response;
-              }
-
-              if (json.done === true) {
-                streamComplete = true;
-              }
-            } catch (parseError) {
-              console.warn('[Ollama] Could not parse final buffer:', buffer, parseError);
-            }
-          }
-
-          // Final cleanup
-          addDebugLog(tabId, `[COMPLETE] Stream finished, total length: ${assistantMessage.content.length}, total messages: ${session.messages.length}`);
-          assistantMessage.streaming = false;
-          session.isThinking = false;
-
-          // Parse and execute tool calls from the response
-          await parseAndExecuteToolCalls(tabId, assistantMessage, session, sessionModel);
-        }
+        // Parse and execute tool calls from the response
+        await parseAndExecuteToolCalls(tabId, assistantMessage, session, sessionModel);
 
         assistantMessage.streaming = false;
         session.isThinking = false;
       }
     } catch (error) {
-      addDebugLog(tabId, `[ERROR] Ollama error: ${error}`);
+      addDebugLog(tabId, `[ERROR] MLX query error: ${error}`);
       assistantMessage.content = `Error: ${error}`;
       assistantMessage.streaming = false;
       session.isThinking = false;
@@ -654,14 +570,21 @@ User: "show system status"
     session.isThinking = true;
 
     try {
-      const response = await invoke<string>('query_ollama', {
-        prompt,
-        model: sessionModel,
+      // Query MLX via sam_api
+      const httpResponse = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: prompt }),
       });
 
+      if (!httpResponse.ok) {
+        throw new Error(`sam_api error: ${httpResponse.status}`);
+      }
+
+      const data = await httpResponse.json();
       addMessage(tabId, {
         role: 'assistant',
-        content: response,
+        content: data.response || '',
       });
     } catch (error) {
       addMessage(tabId, {
@@ -704,7 +627,7 @@ User: "show system status"
 
     switch (aiMode) {
       case 'local':
-        // Always use Ollama
+        // Always use MLX via sam_api
         return await sendPrompt(tabId, prompt, model);
 
       case 'claude':
@@ -712,11 +635,11 @@ User: "show system status"
         return await sendPromptClaude(tabId, prompt);
 
       case 'auto':
-        // Claude orchestrates - decides whether to use Ollama or handle itself
+        // Claude orchestrates - decides whether to use MLX or handle itself
         return await sendPromptOrchestrated(tabId, prompt);
 
       case 'hybrid':
-        // Start with Ollama (user can escalate later)
+        // Start with MLX (user can escalate later)
         return await sendPrompt(tabId, prompt, model);
 
       case 'agent':
@@ -985,7 +908,7 @@ User: "show system status"
     const session = getSession(tabId);
 
     if (!claude.isClaudeAvailable.value) {
-      addDebugLog(tabId, '[ERROR] Claude not available, falling back to Ollama');
+      addDebugLog(tabId, '[ERROR] Claude not available, falling back to MLX');
       return await sendPrompt(tabId, prompt);
     }
 
@@ -1035,7 +958,7 @@ User: "show system status"
     const session = getSession(tabId);
 
     if (!claude.isClaudeAvailable.value) {
-      addDebugLog(tabId, '[WARN] Claude not available, using Ollama only');
+      addDebugLog(tabId, '[WARN] Claude not available, using MLX only');
       return await sendPrompt(tabId, prompt);
     }
 
@@ -1066,36 +989,32 @@ User: "show system status"
         content: msg.content
       }));
 
-      // Helper function for Claude to call Ollama
-      const ollamaQueryFn = async (ollamaPrompt: string): Promise<string> => {
-        addDebugLog(tabId, `[ORCHESTRATE] Claude delegated to Ollama: ${ollamaPrompt.substring(0, 50)}...`);
+      // Helper function for Claude to call local MLX model via sam_api
+      const localQueryFn = async (localPrompt: string): Promise<string> => {
+        addDebugLog(tabId, `[ORCHESTRATE] Claude delegated to MLX: ${localPrompt.substring(0, 50)}...`);
 
-        // Query Ollama directly (not via sendPrompt to avoid adding messages)
-        const response = await fetch('http://localhost:11434/api/generate', {
+        // Query MLX via sam_api directly (not via sendPrompt to avoid adding messages)
+        const response = await fetch('http://localhost:8765/api/query', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: session.model,
-            prompt: ollamaPrompt,
-            stream: false // Non-streaming for tool use
-          }),
+          body: JSON.stringify({ query: localPrompt }),
         });
 
         const data = await response.json();
         return data.response || '';
       };
 
-      const { response, usedOllama } = await claude.queryClaudeWithOllamaTool(
+      const { response, usedOllama: usedLocal } = await claude.queryClaudeWithLocalTool(
         prompt,
         conversationHistory,
-        ollamaQueryFn
+        localQueryFn
       );
 
       assistantMessage.content = response;
       assistantMessage.streaming = false;
       session.isThinking = false;
 
-      addDebugLog(tabId, `[ORCHESTRATE] Complete, used Ollama: ${usedOllama}, length: ${response.length}`);
+      addDebugLog(tabId, `[ORCHESTRATE] Complete, used MLX: ${usedLocal}, length: ${response.length}`);
     } catch (error) {
       addDebugLog(tabId, `[ERROR] Orchestration failed: ${error}`);
       assistantMessage.content = `Error: ${error}`;

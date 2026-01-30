@@ -363,11 +363,21 @@ IMPORTANT:
       task.iterations = i + 1;
 
       try {
-        // Query Ollama
-        const response = await invoke<string>('query_ollama', {
-          model: config.model || 'qwen2.5-coder:1.5b',
-          prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n\n'),
+        // Query MLX via sam_api (Ollama decommissioned 2026-01-18)
+        const httpResp = await fetch('http://localhost:8765/api/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: messages.map(m => `${m.role}: ${m.content}`).join('\n\n'),
+          }),
         });
+
+        if (!httpResp.ok) {
+          throw new Error(`sam_api error: ${httpResp.status}`);
+        }
+
+        const respData = await httpResp.json();
+        const response = respData.response || '';
 
         currentResponse = response;
 

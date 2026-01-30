@@ -3,10 +3,12 @@
  * Enables using multiple AI models from different providers
  *
  * Supported Providers:
- * - Ollama (local, default)
+ * - MLX (local, default) - via sam_api.py on port 8765
  * - LM Studio (local)
  * - OpenAI API (optional, cloud)
  * - Anthropic API (optional, cloud)
+ *
+ * Note: Ollama was decommissioned 2026-01-18. Local inference now uses MLX.
  *
  * Features:
  * - Model routing based on task type
@@ -22,7 +24,7 @@ import { ref, computed, reactive } from 'vue';
 // TYPES
 // ============================================================================
 
-export type ProviderType = 'ollama' | 'lmstudio' | 'openai' | 'anthropic';
+export type ProviderType = 'mlx' | 'lmstudio' | 'openai' | 'anthropic';
 
 export interface ModelConfig {
   id: string;
@@ -80,13 +82,13 @@ export interface UsageStats {
 // ============================================================================
 
 const DEFAULT_MODELS: ModelConfig[] = [
-  // Ollama models (local)
+  // MLX models (local via sam_api.py) - Ollama decommissioned 2026-01-18
   {
-    id: 'ollama-qwen-coder',
-    name: 'Qwen 2.5 Coder (1.5B)',
-    provider: 'ollama',
-    model: 'qwen2.5-coder:1.5b',
-    endpoint: 'http://localhost:11434',
+    id: 'mlx-qwen-coder',
+    name: 'Qwen 2.5 (1.5B) MLX',
+    provider: 'mlx',
+    model: 'qwen2.5-1.5b',
+    endpoint: 'http://localhost:8765',
     maxTokens: 2048,
     temperature: 0.1,
     capabilities: ['code', 'command', 'fast'],
@@ -94,28 +96,16 @@ const DEFAULT_MODELS: ModelConfig[] = [
     quality: 'medium'
   },
   {
-    id: 'ollama-sam-trained',
-    name: 'SAM Trained (1.5B)',
-    provider: 'ollama',
-    model: 'sam-trained:latest',
-    endpoint: 'http://localhost:11434',
+    id: 'mlx-sam-lora',
+    name: 'SAM LoRA (1.5B) MLX',
+    provider: 'mlx',
+    model: 'qwen2.5-1.5b+sam-lora',
+    endpoint: 'http://localhost:8765',
     maxTokens: 4096,
     temperature: 0.7,
-    capabilities: ['chat', 'roleplay', 'reasoning'],
+    capabilities: ['chat', 'reasoning'],
     speed: 'fast',
     quality: 'high'
-  },
-  {
-    id: 'ollama-stablelm',
-    name: 'StableLM 2 (1.6B)',
-    provider: 'ollama',
-    model: 'stablelm2:1.6b',
-    endpoint: 'http://localhost:11434',
-    maxTokens: 2048,
-    temperature: 0.2,
-    capabilities: ['chat', 'reasoning', 'fast'],
-    speed: 'fast',
-    quality: 'medium'
   },
 
   // LM Studio (local)
@@ -203,7 +193,7 @@ const TASK_CAPABILITIES: Record<TaskType, ModelCapability[]> = {
 // ============================================================================
 
 const models = ref<ModelConfig[]>([...DEFAULT_MODELS]);
-const activeModelId = ref<string>('ollama-qwen-coder');
+const activeModelId = ref<string>('mlx-qwen-coder');
 const providerHealth = ref<Map<ProviderType, ProviderHealth>>(new Map());
 const usageStats = reactive<Map<string, UsageStats>>(new Map());
 const apiKeys = ref<Map<ProviderType, string>>(new Map());
@@ -245,34 +235,28 @@ loadSettings();
 // PROVIDER IMPLEMENTATIONS
 // ============================================================================
 
-async function queryOllama(model: ModelConfig, prompt: string, options?: { stream?: boolean }): Promise<ModelResponse> {
+async function queryMLX(model: ModelConfig, prompt: string, _options?: { stream?: boolean }): Promise<ModelResponse> {
   const startTime = Date.now();
-  const endpoint = model.endpoint || 'http://localhost:11434';
+  const endpoint = model.endpoint || 'http://localhost:8765';
 
-  const response = await fetch(`${endpoint}/api/generate`, {
+  const response = await fetch(`${endpoint}/api/query`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: model.model,
-      prompt,
-      stream: options?.stream ?? false,
-      options: {
-        temperature: model.temperature,
-        num_predict: model.maxTokens
-      }
+      query: prompt,
     })
   });
 
   if (!response.ok) {
-    throw new Error(`Ollama error: ${response.status}`);
+    throw new Error(`MLX sam_api error: ${response.status}`);
   }
 
   const data = await response.json();
   return {
     content: data.response,
     model: model.model,
-    provider: 'ollama',
-    tokensUsed: data.eval_count,
+    provider: 'mlx',
+    tokensUsed: undefined,
     latencyMs: Date.now() - startTime
   };
 }
@@ -418,8 +402,8 @@ export function useMultiModel() {
       let response: ModelResponse;
 
       switch (model.provider) {
-        case 'ollama':
-          response = await queryOllama(model, prompt, options);
+        case 'mlx':
+          response = await queryMLX(model, prompt, options);
           break;
         case 'lmstudio':
           response = await queryLMStudio(model, prompt);
@@ -492,7 +476,7 @@ export function useMultiModel() {
     // Filter by local preference
     if (preferLocal) {
       const localModels = candidates.filter(m =>
-        m.provider === 'ollama' || m.provider === 'lmstudio'
+        m.provider === 'mlx' || m.provider === 'lmstudio'
       );
       if (localModels.length > 0) {
         candidates = localModels;
@@ -523,7 +507,7 @@ export function useMultiModel() {
 
     // Add other local models
     const localModels = models.value.filter(m =>
-      (m.provider === 'ollama' || m.provider === 'lmstudio') &&
+      (m.provider === 'mlx' || m.provider === 'lmstudio') &&
       m.id !== activeModelId.value
     );
     chain.push(...localModels.map(m => m.id));
@@ -547,8 +531,8 @@ export function useMultiModel() {
 
     try {
       switch (provider) {
-        case 'ollama':
-          await fetch('http://localhost:11434/api/tags');
+        case 'mlx':
+          await fetch('http://localhost:8765/api/status');
           break;
         case 'lmstudio':
           await fetch('http://localhost:1234/v1/models');
@@ -586,7 +570,7 @@ export function useMultiModel() {
    * Check all providers
    */
   async function checkAllHealth(): Promise<Map<ProviderType, ProviderHealth>> {
-    const providers: ProviderType[] = ['ollama', 'lmstudio', 'openai', 'anthropic'];
+    const providers: ProviderType[] = ['mlx', 'lmstudio', 'openai', 'anthropic'];
     await Promise.all(providers.map(p => checkHealth(p)));
     return providerHealth.value;
   }
@@ -674,42 +658,16 @@ export function useMultiModel() {
   }
 
   /**
-   * Get local models from Ollama
+   * Check local MLX models via sam_api
    */
-  async function discoverOllamaModels(): Promise<ModelConfig[]> {
+  async function discoverMLXModels(): Promise<ModelConfig[]> {
     try {
-      const response = await fetch('http://localhost:11434/api/tags');
+      const response = await fetch('http://localhost:8765/api/status');
       if (!response.ok) return [];
 
-      const data = await response.json();
-      const discovered: ModelConfig[] = [];
-
-      for (const model of data.models || []) {
-        const existing = models.value.find(m =>
-          m.provider === 'ollama' && m.model === model.name
-        );
-        if (!existing) {
-          discovered.push({
-            id: `ollama-${model.name.replace(/[:.]/g, '-')}`,
-            name: model.name,
-            provider: 'ollama',
-            model: model.name,
-            endpoint: 'http://localhost:11434',
-            maxTokens: 2048,
-            temperature: 0.2,
-            capabilities: ['chat'],
-            speed: 'medium',
-            quality: 'medium'
-          });
-        }
-      }
-
-      // Add discovered models
-      for (const model of discovered) {
-        addModel(model);
-      }
-
-      return discovered;
+      // sam_api serves the configured MLX models; they are already in DEFAULT_MODELS
+      // This function just verifies the API is reachable
+      return models.value.filter(m => m.provider === 'mlx');
     } catch {
       return [];
     }
@@ -738,7 +696,7 @@ export function useMultiModel() {
     setApiKey,
     addModel,
     removeModel,
-    discoverOllamaModels,
+    discoverMLXModels,
 
     // Stats
     getUsageStats,

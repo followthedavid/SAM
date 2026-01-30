@@ -9,7 +9,7 @@
  */
 
 import { ref, computed, watch } from 'vue'
-import { invoke } from '@tauri-apps/api/tauri'
+// invoke import removed: Ollama decommissioned 2026-01-18, now using MLX via sam_api HTTP
 import { useTools, type ToolResult } from './useTools'
 import {
   ScaffoldedAgent,
@@ -147,7 +147,19 @@ Guidelines: Read before modifying, make minimal changes, be concise.`
 
   async function queryLLM(prompt: string): Promise<string> {
     try {
-      return await invoke<string>('query_ollama', { prompt, model: model.value })
+      // Query MLX via sam_api (Ollama decommissioned 2026-01-18)
+      const response = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: prompt }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`sam_api error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return data.response || ''
     } catch (e) {
       return `Error: ${e}`
     }

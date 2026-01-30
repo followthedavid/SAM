@@ -69,11 +69,12 @@ export function useClaude() {
     }
   }
 
-  // Query Claude with Ollama as a tool (orchestration mode)
-  async function queryClaudeWithOllamaTool(
+  // Query Claude with local MLX as a tool (orchestration mode)
+  // Ollama decommissioned 2026-01-18; now uses MLX via sam_api
+  async function queryClaudeWithLocalTool(
     message: string,
     conversationHistory: Array<{ role: string; content: string }> = [],
-    ollamaQueryFn: (prompt: string) => Promise<string>
+    localQueryFn: (prompt: string) => Promise<string>
   ): Promise<{ response: string; usedOllama: boolean }> {
     if (!anthropic) {
       throw new Error('Claude not initialized. Please set API key.');
@@ -100,14 +101,14 @@ export function useClaude() {
         max_tokens: 4096,
         tools: [
           {
-            name: 'query_local_ollama',
-            description: 'Query the local Ollama AI model for simple programming questions, code examples, explanations, or straightforward queries. Use this for efficiency when the question doesn\'t require complex reasoning. The local model is fast and free.',
+            name: 'query_local_mlx',
+            description: 'Query the local MLX AI model for simple programming questions, code examples, explanations, or straightforward queries. Use this for efficiency when the question doesn\'t require complex reasoning. The local model is fast and free.',
             input_schema: {
               type: 'object',
               properties: {
                 prompt: {
                   type: 'string',
-                  description: 'The question or prompt to send to the local Ollama model'
+                  description: 'The question or prompt to send to the local MLX model'
                 }
               },
               required: ['prompt']
@@ -120,14 +121,14 @@ export function useClaude() {
       // Check if Claude wants to use the tool
       const toolUse = response.content.find(block => block.type === 'tool_use');
 
-      if (toolUse && toolUse.type === 'tool_use' && toolUse.name === 'query_local_ollama') {
-        console.log('[Claude] Delegating to Ollama:', toolUse.input);
+      if (toolUse && toolUse.type === 'tool_use' && toolUse.name === 'query_local_mlx') {
+        console.log('[Claude] Delegating to MLX:', toolUse.input);
         usedOllama = true;
 
-        // Call Ollama
-        const ollamaResponse = await ollamaQueryFn((toolUse.input as any).prompt);
+        // Call MLX via sam_api
+        const localResponse = await localQueryFn((toolUse.input as any).prompt);
 
-        // Send Ollama's response back to Claude for final formatting
+        // Send MLX response back to Claude for final formatting
         const finalResponse = await anthropic.messages.create({
           model: 'claude-sonnet-4-5-20250929',
           max_tokens: 4096,
@@ -143,7 +144,7 @@ export function useClaude() {
                 {
                   type: 'tool_result' as const,
                   tool_use_id: toolUse.id,
-                  content: ollamaResponse
+                  content: localResponse
                 }
               ]
             }
@@ -152,7 +153,7 @@ export function useClaude() {
 
         const textContent = finalResponse.content.find(block => block.type === 'text');
         return {
-          response: textContent?.type === 'text' ? textContent.text : ollamaResponse,
+          response: textContent?.type === 'text' ? textContent.text : localResponse,
           usedOllama: true
         };
       }
@@ -164,7 +165,7 @@ export function useClaude() {
         usedOllama: false
       };
     } catch (error) {
-      console.error('[Claude] Orchestration query failed:', error);
+      console.error('[Claude] Orchestration query (with MLX tool) failed:', error);
       throw error;
     }
   }
@@ -186,7 +187,7 @@ export function useClaude() {
     isClaudeAvailable,
     initClaude,
     queryClaude,
-    queryClaudeWithOllamaTool,
+    queryClaudeWithLocalTool,
     setAIMode,
     getAIMode
   };

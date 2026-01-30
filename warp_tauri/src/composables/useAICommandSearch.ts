@@ -2,12 +2,12 @@
  * useAICommandSearch - Warp-style AI Command Search
  *
  * Allows users to describe what they want to do in natural language
- * and get command suggestions. Uses local LLM (Ollama) to generate
+ * and get command suggestions. Uses local MLX LLM (via sam_api) to generate
  * relevant shell commands.
  */
 
 import { ref, computed } from 'vue'
-import { invoke } from '@tauri-apps/api/tauri'
+// invoke import removed: Ollama decommissioned 2026-01-18, now using MLX via sam_api HTTP
 
 export interface CommandSuggestion {
   id: string
@@ -146,8 +146,19 @@ export function useAICommandSearch() {
     const prompt = `${SYSTEM_PROMPT}\n\nUser request: "${query}"\n\nSuggest commands:`
 
     try {
-      const response = await invoke<string>('query_ollama', { prompt, model: model.value })
-      return parseResponse(response)
+      // Query MLX via sam_api (Ollama decommissioned 2026-01-18)
+      const httpResponse = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: prompt }),
+      })
+
+      if (!httpResponse.ok) {
+        throw new Error(`sam_api error: ${httpResponse.status}`)
+      }
+
+      const data = await httpResponse.json()
+      return parseResponse(data.response || '')
     } catch (e) {
       console.error('AI search error:', e)
       return []
