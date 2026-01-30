@@ -14,18 +14,6 @@
 import { ref, computed } from 'vue';
 import { CONTEXT_SUMMARY_PROMPT, applyTemplate } from './usePromptTemplates';
 
-// Check if we're running in Tauri
-const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
-
-type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-let invoke: InvokeFn | null = null;
-
-if (isTauri) {
-  import('@tauri-apps/api/tauri').then(module => {
-    invoke = module.invoke as InvokeFn;
-  });
-}
-
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -215,10 +203,6 @@ export function useContextCompression() {
     messages: Message[],
     options: CompressionOptions = {}
   ): Promise<{ summary: string; keyPoints: string[] }> {
-    if (!invoke) {
-      throw new Error('Tauri not available');
-    }
-
     const opts = { ...DEFAULT_OPTIONS, ...options };
 
     // Build context for summarization
@@ -239,12 +223,14 @@ export function useContextCompression() {
       context += '\n';
     }
 
-    // Query AI for summary
-    const summary = await invoke<string>('query_ollama', {
-      model: 'qwen2.5-coder:1.5b', // Fast model for summarization
-      prompt: context,
-      maxTokens: opts.maxSummaryTokens,
+    // Query MLX local model for summary
+    const res = await fetch('http://localhost:8765/api/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: context, context: '' }),
     });
+    const data = await res.json();
+    const summary: string = data.response;
 
     // Extract key points from all messages
     const keyPoints: string[] = [];
@@ -502,14 +488,10 @@ export function useContextCompression() {
     const prompt = applyTemplate(CONTEXT_SUMMARY_PROMPT, content);
 
     try {
-      const response = await fetch('http://localhost:11434/api/generate', {
+      const response = await fetch('http://localhost:8765/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'qwen2.5-coder:1.5b',
-          prompt,
-          stream: false,
-        }),
+        body: JSON.stringify({ message: prompt, context: '' }),
       });
 
       if (response.ok) {

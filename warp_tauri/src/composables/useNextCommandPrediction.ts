@@ -257,8 +257,8 @@ export function useNextCommandPrediction() {
       const contextPredictions = getContextPredictions(context);
       allPredictions.push(...contextPredictions);
 
-      // 4. AI-based predictions (if enabled and available)
-      if (config.value.useAI && invoke) {
+      // 4. AI-based predictions (if enabled)
+      if (config.value.useAI) {
         const aiPredictions = await getAIPredictions(context);
         allPredictions.push(...aiPredictions);
       }
@@ -369,19 +369,17 @@ export function useNextCommandPrediction() {
    * Get AI-powered predictions
    */
   async function getAIPredictions(context: CommandContext): Promise<CommandPrediction[]> {
-    if (!invoke) return [];
-
     try {
       const prompt = buildAIPrompt(context);
 
-      const response = await invoke<string>('query_ollama', {
-        model: 'qwen2.5-coder:1.5b', // Fast model for predictions
-        prompt,
-        maxTokens: 200,
-        temperature: 0.3,
+      const response = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt, context: '' }),
       });
+      const data = await response.json();
 
-      return parseAIPredictions(response);
+      return parseAIPredictions(data.response);
     } catch (error) {
       console.error('[NextCommand] AI prediction error:', error);
       return [];

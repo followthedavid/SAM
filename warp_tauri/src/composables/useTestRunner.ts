@@ -262,19 +262,13 @@ If you need to fix code, respond with:
 If the test itself is wrong, explain why.`;
 
     try {
-      let response: string;
-
-      if (isTauri && invoke) {
-        response = await invoke<string>('query_ollama', { prompt, model });
-      } else {
-        const res = await fetch('http://localhost:11434/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model, prompt, stream: false }),
-        });
-        const data = await res.json();
-        response = data.response;
-      }
+      const res = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt, context: '' }),
+      });
+      const resData = await res.json();
+      const response: string = resData.response;
 
       // Check for tool call
       const toolMatch = response.match(/\{[\s\S]*"tool"[\s\S]*"edit_file"[\s\S]*\}/);

@@ -32,7 +32,7 @@ export interface AgentEvent {
 }
 
 export interface AgentConfig {
-  ollama_url?: string;
+  mlx_url?: string;
   model?: string;
   fast?: boolean;
   thorough?: boolean;
@@ -49,67 +49,41 @@ export interface AgentSession {
 }
 
 const activeSessions = ref<Map<number, AgentSession>>(new Map());
-const ollamaStatus = ref<{ running: boolean; model_count: number } | null>(null);
+const mlxStatus = ref<{ running: boolean; model_count: number } | null>(null);
 const availableModels = ref<string[]>([]);
 
 export function useScaffoldedAgent() {
-  // Check if Ollama is running
-  async function checkOllamaStatus(): Promise<{ running: boolean; model_count: number }> {
-    if (!isTauri) {
-      // Browser fallback
-      try {
-        const response = await fetch('http://localhost:11434/api/tags');
-        if (response.ok) {
-          const data = await response.json();
-          const status = { running: true, model_count: data.models?.length || 0 };
-          ollamaStatus.value = status;
-          return status;
-        }
-      } catch {
-        // Ollama not running
-      }
-      const status = { running: false, model_count: 0 };
-      ollamaStatus.value = status;
-      return status;
-    }
-
+  // Check if MLX local model is running
+  async function checkMLXStatus(): Promise<{ running: boolean; model_count: number }> {
     try {
-      const status = await invoke<{ running: boolean; model_count: number }>('check_ollama_status');
-      ollamaStatus.value = status;
-      return status;
-    } catch (error) {
-      console.error('Failed to check Ollama status:', error);
-      const status = { running: false, model_count: 0 };
-      ollamaStatus.value = status;
-      return status;
+      const response = await fetch('http://localhost:8765/api/status');
+      if (response.ok) {
+        const status = { running: true, model_count: 1 };
+        mlxStatus.value = status;
+        return status;
+      }
+    } catch {
+      // MLX not running
     }
+    const status = { running: false, model_count: 0 };
+    mlxStatus.value = status;
+    return status;
   }
 
   // List available models
   async function listModels(): Promise<string[]> {
-    if (!isTauri) {
-      try {
-        const response = await fetch('http://localhost:11434/api/tags');
-        if (response.ok) {
-          const data = await response.json();
-          const models = data.models?.map((m: { name: string }) => m.name) || [];
-          availableModels.value = models;
-          return models;
-        }
-      } catch {
-        // Ollama not running
-      }
-      return [];
-    }
-
     try {
-      const models = await invoke<string[]>('list_agent_models');
-      availableModels.value = models;
-      return models;
-    } catch (error) {
-      console.error('Failed to list models:', error);
-      return [];
+      const response = await fetch('http://localhost:8765/api/status');
+      if (response.ok) {
+        // MLX serves a single model (SAM LoRA)
+        const models = ['mlx-qwen2.5-1.5b-sam'];
+        availableModels.value = models;
+        return models;
+      }
+    } catch {
+      // MLX not running
     }
+    return [];
   }
 
   // Start a new agent task
@@ -329,11 +303,11 @@ export function useScaffoldedAgent() {
   return {
     // State
     activeSessions: computed(() => activeSessions.value),
-    ollamaStatus: computed(() => ollamaStatus.value),
+    mlxStatus: computed(() => mlxStatus.value),
     availableModels: computed(() => availableModels.value),
 
     // Methods
-    checkOllamaStatus,
+    checkMLXStatus,
     listModels,
     startTask,
     executeTool,

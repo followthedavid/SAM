@@ -1,6 +1,6 @@
 /**
  * Image Understanding System
- * Analyze images using local vision models (LLaVA, BakLLaVA) via Ollama.
+ * Analyze images using local vision models via MLX.
  * Supports screenshots, diagrams, code images, and general image analysis.
  */
 
@@ -286,23 +286,23 @@ If there's no code, say "No code detected."`;
     const analysis1 = await analyzeImage(image1Base64, 'Describe this image in detail.');
     const analysis2 = await analyzeImage(image2Base64, 'Describe this image in detail.');
 
-    // Use text model to compare descriptions
-    if (!invoke) {
-      throw new Error('Tauri not available');
-    }
-
-    const comparison = await invoke<string>('query_ollama', {
-      model: 'qwen2.5-coder:1.5b',
-      prompt: `Compare these two image descriptions and identify similarities and differences:
+    // Use local MLX model to compare descriptions
+    const prompt = `Compare these two image descriptions and identify similarities and differences:
 
 Image 1: ${analysis1.description}
 
 Image 2: ${analysis2.description}
 
-Provide a detailed comparison.`,
-    });
+Provide a detailed comparison.`;
 
-    return comparison;
+    const res = await fetch('http://localhost:8765/api/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: prompt, context: '' }),
+    });
+    const data = await res.json();
+
+    return data.response;
   }
 
   /**
@@ -348,15 +348,9 @@ Provide a detailed comparison.`,
    * Check if vision model is available
    */
   async function isVisionAvailable(): Promise<boolean> {
-    if (!invoke) return false;
-
     try {
-      const models = await invoke<Array<{ name: string }>>('list_ollama_models', {});
-      return models.some(m =>
-        m.name.includes('llava') ||
-        m.name.includes('bakllava') ||
-        m.name.includes('vision')
-      );
+      const res = await fetch('http://localhost:8765/api/status');
+      return res.ok;
     } catch {
       return false;
     }

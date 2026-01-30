@@ -3,7 +3,7 @@
  *
  * Provides visual context capabilities:
  * - Screen capture (full screen, window, selection)
- * - Image analysis via local vision models
+ * - Image analysis via local MLX models
  * - OCR for text extraction
  * - UI element detection
  *
@@ -229,34 +229,28 @@ export function useVisualUnderstanding() {
 
       const base64Image = result.stdout.trim()
 
-      // Try to use llava or other vision model via Ollama
+      // Use local MLX model for analysis
       const analysisPrompt = prompt || 'Describe what you see in this screenshot. Identify any UI elements, buttons, text, and suggest what the user might want to do.'
-
-      // Check if llava is available
-      const modelCheck = await invoke<{ stdout: string; exit_code: number }>('execute_shell', {
-        command: 'ollama list | grep -i llava || ollama list | grep -i vision',
-        cwd: undefined
-      })
 
       let description = ''
       let elements: UIElement[] = []
       let extractedText: string[] = []
 
-      if (modelCheck.exit_code === 0 && modelCheck.stdout.trim()) {
-        // Use vision model
-        const modelName = modelCheck.stdout.trim().split('\n')[0].split(/\s+/)[0]
-
-        const analysisResult = await invoke<{ stdout: string; exit_code: number }>('execute_shell', {
-          command: `echo '${analysisPrompt}' | ollama run ${modelName} --images ${imagePath}`,
-          cwd: undefined
+      // Use MLX local model for analysis
+      try {
+        const res = await fetch('http://localhost:8765/api/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: analysisPrompt, context: '' }),
         })
-
-        if (analysisResult.exit_code === 0) {
-          description = analysisResult.stdout.trim()
+        if (res.ok) {
+          const data = await res.json()
+          description = data.response
+        } else {
+          description = 'MLX model not available. Using OCR extraction only.'
         }
-      } else {
-        // Fallback: Use OCR only
-        description = 'No vision model available. Using OCR extraction only.'
+      } catch {
+        description = 'MLX model not available. Using OCR extraction only.'
       }
 
       // Run OCR
@@ -423,13 +417,10 @@ export function useVisualUnderstanding() {
       capabilities.screenCapture = result.exit_code === 0
     } catch {}
 
-    // Check vision model
+    // Check MLX local model availability
     try {
-      const result = await invoke<{ stdout: string; exit_code: number }>('execute_shell', {
-        command: 'ollama list | grep -iE "llava|vision|bakllava|moondream"',
-        cwd: undefined
-      })
-      capabilities.visionModel = result.exit_code === 0 && result.stdout.trim().length > 0
+      const res = await fetch('http://localhost:8765/api/status')
+      capabilities.visionModel = res.ok
     } catch {}
 
     // Check tesseract

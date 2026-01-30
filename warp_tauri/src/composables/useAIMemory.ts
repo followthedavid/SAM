@@ -5,18 +5,6 @@
 
 import { ref, computed, watch } from 'vue';
 
-// Check if we're running in Tauri
-const isTauri = '__TAURI__' in window;
-
-type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-let invoke: InvokeFn | null = null;
-
-if (isTauri) {
-  import('@tauri-apps/api/tauri').then(module => {
-    invoke = module.invoke as InvokeFn;
-  });
-}
-
 export interface MemoryEntry {
   id: string;
   type: 'fact' | 'preference' | 'context' | 'decision' | 'pattern';
@@ -179,19 +167,13 @@ Respond with ONLY valid JSON:
 {"title":"...","summary":"...","keyPoints":["point 1","point 2"]}`;
 
     try {
-      let response: string;
-
-      if (isTauri && invoke) {
-        response = await invoke<string>('query_ollama', { prompt, model });
-      } else {
-        const res = await fetch('http://localhost:11434/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model, prompt, stream: false }),
-        });
-        const data = await res.json();
-        response = data.response;
-      }
+      const res = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt, context: '' }),
+      });
+      const resData = await res.json();
+      const response: string = resData.response;
 
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
@@ -249,19 +231,13 @@ Respond with a JSON array of facts to remember:
 Only include genuinely useful information. If nothing important, return empty array: []`;
 
     try {
-      let response: string;
-
-      if (isTauri && invoke) {
-        response = await invoke<string>('query_ollama', { prompt, model });
-      } else {
-        const res = await fetch('http://localhost:11434/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model, prompt, stream: false }),
-        });
-        const data = await res.json();
-        response = data.response;
-      }
+      const res = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt, context: '' }),
+      });
+      const resData = await res.json();
+      const response: string = resData.response;
 
       const jsonMatch = response.match(/\[[\s\S]*\]/);
       if (jsonMatch) {

@@ -142,19 +142,13 @@ export function useCodeExplainer() {
           prompt = buildDetailedPrompt(code, language, level, context);
       }
 
-      let response: string;
-
-      if (isTauri && invoke) {
-        response = await invoke<string>('query_ollama', { prompt, model });
-      } else {
-        const res = await fetch('http://localhost:11434/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model, prompt, stream: false }),
-        });
-        const data = await res.json();
-        response = data.response;
-      }
+      const res = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt, context: '' }),
+      });
+      const resData = await res.json();
+      const response: string = resData.response;
 
       const explanation = parseExplanationResponse(response, code, language, type);
       currentExplanation.value = explanation;
@@ -381,21 +375,14 @@ Explain:
 2. Why these changes might have been made
 3. Which version is better and why`;
 
-    let response: string;
+    const res = await fetch('http://localhost:8765/api/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: prompt, context: '' }),
+    });
+    const resData = await res.json();
 
-    if (isTauri && invoke) {
-      response = await invoke<string>('query_ollama', { prompt, model });
-    } else {
-      const res = await fetch('http://localhost:11434/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, prompt, stream: false }),
-      });
-      const data = await res.json();
-      response = data.response;
-    }
-
-    return response;
+    return resData.response;
   }
 
   /**

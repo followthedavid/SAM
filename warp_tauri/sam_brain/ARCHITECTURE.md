@@ -1,6 +1,6 @@
 # SAM Architecture
 
-**Version:** 0.6.0 (Reorganization Complete)
+**Version:** 0.6.1 (Route Split + Ollama Decommission Complete)
 **Hardware:** M2 Mac Mini, 8GB RAM
 
 ## Visual Overview
@@ -59,7 +59,7 @@
                                       ▼
               ┌───────────────────────────────────────────────┐
               │         Existing Packages (unchanged)         │
-              │  cognitive/ (32) │ memory/ (8) │ execution/(9)│
+              │  cognitive/ (32) │ memory/ (8) │ execution/(8)│
               │  voice/ (10) │ conversation_engine/ (5)       │
               │  emotion2vec_mlx/ (4) │ utils/ (2)            │
               └───────────────────────────────────────────────┘
@@ -81,12 +81,36 @@
 | serve/ | 5 | External interfaces & logging | approval_queue.py, live_thinking.py, conversation_logger.py |
 | cognitive/ | 32 | MLX engine, vision, retrieval | mlx_cognitive.py, vision_engine.py, vision_types.py |
 | memory/ | 8 | Semantic memory, embeddings | semantic_memory.py |
-| execution/ | 9 | Safe execution, sandboxing | -- |
+| execution/ | 8 | Safe execution, sandboxing | -- |
+| routes/ | 11 | HTTP API route handlers | core.py, vision.py, cognitive.py |
 | voice/ | 10 | Voice pipeline, TTS | voice_pipeline.py, voice_output.py |
 | conversation_engine/ | 5 | Conversation management | -- |
 | emotion2vec_mlx/ | 4 | MLX emotion recognition | detector.py |
 | utils/ | 2 | Shared utilities | -- |
 | tests/ | 21 | Test suite | -- |
+
+## HTTP API Architecture (v0.6.1)
+
+`sam_api.py` uses table-driven route dispatch. Routes are defined in `routes/` modules:
+
+```
+sam_api.py (697 lines)         # SAMHandler + route dispatch
+shared_state.py (793 lines)    # Singletons, monitors, constants
+routes/
+├── __init__.py                # Aggregates all route tables
+├── core.py                    # /api/health, /api/status, /api/config
+├── intelligence.py            # /api/intelligence/*, /api/evolution/*
+├── cognitive.py               # /api/query, /api/memory/*, /api/models/*
+├── facts.py                   # /api/facts/* (CRUD + prefix matching)
+├── project.py                 # /api/project/*
+├── index.py                   # /api/index/*
+├── vision.py                  # /api/vision/*
+├── image_context.py           # /api/image-context/*
+├── voice.py                   # /api/voice/*
+└── distillation.py            # /api/distillation/*
+```
+
+Route types: 52 GET + 26 POST + 4 SSE stream + 2 prefix GET + 1 DELETE
 
 ## Data Flow Example
 
@@ -142,7 +166,7 @@ External Storage:
 ├── /Volumes/David External/SAM_models/      # Model weights
 ├── /Volumes/David External/sam_memory/      # Memory databases
 ├── /Volumes/David External/SAM_Voice_Training/  # Voice data
-├── /Volumes/#1/SAM/dead_code_archive/       # 33 archived dead files
+├── /Volumes/#1/SAM/dead_code_archive/       # 94 archived dead files
 └── /Volumes/Plex/DevSymlinks/               # Caches, venvs
 ```
 
@@ -169,4 +193,9 @@ Phase 9:  [DONE] Projects migration (5 files -> projects/)
 Phase 10: [DONE] Serve migration (5 files -> serve/)
 Phase 11: [DONE] Cleanup (33 dead files archived)
 Phase 12: [DONE] Documentation (this update)
+Phase 13: [DONE] sam_api.py split into routes/ + shared_state.py
+Phase 14: [DONE] Tauri Ollama decommission (Rust + TypeScript)
+Phase 15: [DONE] Broken symlinks fixed (8 symlinks → /Volumes/David External/)
+Phase 16: [DONE] execution/ cleanup (command_proposer.py archived)
+Phase 17: [DONE] Frontend Ollama→MLX migration (composables)
 ```

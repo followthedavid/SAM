@@ -7,18 +7,6 @@ import { ref, computed } from 'vue';
 import { gitStatus, gitDiff, getCurrentBranch, gitCommit, gitAdd } from '../utils/gitOps';
 import { executeCommand } from '../utils/commandOps';
 
-// Check if we're running in Tauri
-const isTauri = '__TAURI__' in window;
-
-type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-let invoke: InvokeFn | null = null;
-
-if (isTauri) {
-  import('@tauri-apps/api/tauri').then(module => {
-    invoke = module.invoke as InvokeFn;
-  });
-}
-
 export interface CommitSuggestion {
   type: 'feat' | 'fix' | 'docs' | 'style' | 'refactor' | 'test' | 'chore';
   scope?: string;
@@ -77,19 +65,13 @@ Generate a commit message following Conventional Commits format:
 Respond with ONLY valid JSON in this exact format:
 {"type":"feat","scope":"api","subject":"add user authentication","body":"Implement JWT-based auth flow"}`;
 
-      let response: string;
-
-      if (isTauri && invoke) {
-        response = await invoke<string>('query_ollama', { prompt, model });
-      } else {
-        const res = await fetch('http://localhost:11434/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model, prompt, stream: false }),
-        });
-        const data = await res.json();
-        response = data.response;
-      }
+      const res = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt, context: '' }),
+      });
+      const resData = await res.json();
+      const response: string = resData.response;
 
       // Parse JSON response
       const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -179,19 +161,13 @@ Generate a PR description with:
 Respond with ONLY valid JSON:
 {"title":"...","summary":"...","changes":["change 1","change 2"],"testPlan":"..."}`;
 
-      let response: string;
-
-      if (isTauri && invoke) {
-        response = await invoke<string>('query_ollama', { prompt, model });
-      } else {
-        const res = await fetch('http://localhost:11434/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model, prompt, stream: false }),
-        });
-        const data = await res.json();
-        response = data.response;
-      }
+      const res = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt, context: '' }),
+      });
+      const resData = await res.json();
+      const response: string = resData.response;
 
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
@@ -282,19 +258,13 @@ Respond with a JSON array of review comments:
 ["comment 1", "comment 2", ...]`;
 
     try {
-      let response: string;
-
-      if (isTauri && invoke) {
-        response = await invoke<string>('query_ollama', { prompt, model });
-      } else {
-        const res = await fetch('http://localhost:11434/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model, prompt, stream: false }),
-        });
-        const data = await res.json();
-        response = data.response;
-      }
+      const res = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt, context: '' }),
+      });
+      const resData = await res.json();
+      const response: string = resData.response;
 
       const jsonMatch = response.match(/\[[\s\S]*\]/);
       if (jsonMatch) {

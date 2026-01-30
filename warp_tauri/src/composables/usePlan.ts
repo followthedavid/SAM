@@ -157,8 +157,8 @@ export function usePlan() {
       let output = '';
 
       switch (step.tool) {
-        case 'ollama':
-          output = await executeOllamaStep(planId, step);
+        case 'mlx':
+          output = await executeMLXStep(planId, step);
           break;
         case 'claude':
           output = await executeClaudeStep(planId, step);
@@ -196,19 +196,23 @@ export function usePlan() {
     }
   }
 
-  // Execute step using Ollama
-  async function executeOllamaStep(planId: string, step: PlanStep): Promise<string> {
-    addLog(planId, `[Ollama] Executing: ${step.title}`);
+  // Execute step using MLX local model
+  async function executeMLXStep(planId: string, step: PlanStep): Promise<string> {
+    addLog(planId, `[MLX] Executing: ${step.title}`);
 
-    // Use the AI composable to query Ollama
-    const session = ai.getSession(planId);
-
-    // Build prompt based on step
     const prompt = step.description || step.title;
 
-    // For now, return a simulated result
-    // In production, this would call actual Ollama
-    return `Ollama executed: ${prompt}`;
+    try {
+      const response = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt, context: '' }),
+      });
+      const data = await response.json();
+      return data.response;
+    } catch (error) {
+      return `MLX execution failed: ${error}`;
+    }
   }
 
   // Execute step using Claude

@@ -116,7 +116,8 @@ Routes requests to specialized handlers:
 
 ### Root Entry Points (10 files)
 ```
-sam_api.py                    # HTTP/CLI API (port 8765) - path traversal fixed
+sam_api.py                    # HTTP/CLI API (port 8765) - route dispatch only (697 lines)
+shared_state.py               # Singletons, monitors, constants (793 lines)
 sam.py                        # Main SAM entry point
 sam_repl.py                   # Interactive REPL
 sam_chat.py                   # Chat interface
@@ -187,11 +188,27 @@ serve/ (5 files)              # External interfaces & logging
 └── live_thinking.py          # Live thinking display
 ```
 
-### Existing Packages (unchanged)
+### Route Modules (NEW - split from sam_api.py)
+```
+routes/ (11 files)            # HTTP API route handlers
+├── __init__.py               # Route aggregation
+├── core.py                   # Health, status, config (299 lines)
+├── intelligence.py           # Learning, evolution (377 lines)
+├── cognitive.py              # MLX engine, memory (482 lines)
+├── facts.py                  # Fact CRUD + prefix routes (296 lines)
+├── project.py                # Project dashboard (277 lines)
+├── index.py                  # Code indexing (335 lines)
+├── vision.py                 # Vision processing (633 lines)
+├── image_context.py          # Image context (163 lines)
+├── voice.py                  # Voice pipeline (329 lines)
+└── distillation.py           # Knowledge distillation (178 lines)
+```
+
+### Existing Packages
 ```
 cognitive/ (32 files)         # MLX engine, vision, memory, retrieval
 memory/ (8 files)             # Semantic memory, embeddings
-execution/ (9 files)          # Safe execution, sandboxing
+execution/ (8 files)          # Safe execution, sandboxing (command_proposer archived)
 voice/ (10 files)             # Voice pipeline, TTS, settings
 conversation_engine/ (5 files) # Conversation management
 emotion2vec_mlx/ (4 files)    # MLX emotion recognition
@@ -243,7 +260,7 @@ rvc  # or tell SAM "train a voice"
 - **Training Data**: `/Volumes/David External/SAM_Voice_Training/`
 - **Memory DB**: `/Volumes/David External/sam_memory/`
 - **Caches/venvs**: `/Volumes/Plex/DevSymlinks/`
-- **Dead Code Archive**: `/Volumes/#1/SAM/dead_code_archive/` (33 archived files)
+- **Dead Code Archive**: `/Volumes/#1/SAM/dead_code_archive/` (94 archived files)
 
 ## Related Documentation
 - SSOT: `/Volumes/Plex/SSOT/CLAUDE_READ_FIRST.md`
