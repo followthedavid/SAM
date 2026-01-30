@@ -324,7 +324,10 @@ export class ModelRouter {
    */
   async getAvailableModels(): Promise<string[]> {
     try {
-      const models = await invoke<string[]>('list_ollama_models');
+      // Query MLX status via sam_api (Ollama decommissioned 2026-01-18)
+      const resp = await fetch('http://localhost:8765/api/status');
+      const statusData = await resp.json();
+      const models = statusData.models || [] as string[];
       return models.filter(m => this.models.has(m));
     } catch (e) {
       return Array.from(this.models.keys()).filter(m =>

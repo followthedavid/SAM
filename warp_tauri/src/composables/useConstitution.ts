@@ -111,9 +111,9 @@ export const ALLOWLISTED_ENDPOINTS = Object.freeze([
   'duckduckgo.com',
   'html.duckduckgo.com',
 
-  // LLM (local only)
-  'localhost:11434', // Ollama
-  '127.0.0.1:11434',
+  // LLM (local only - MLX via sam_api)
+  'localhost:8765',
+  '127.0.0.1:8765',
 ])
 
 /**

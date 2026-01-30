@@ -508,10 +508,15 @@ Rules:
 
 Output ONLY the commit message, nothing else.`;
 
-      const response = await invoke<string>('query_ollama', {
-        prompt,
-        model: 'qwen2.5-coder:1.5b',
+      // Query MLX via sam_api (Ollama decommissioned 2026-01-18)
+      const httpResp = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: prompt }),
       });
+      if (!httpResp.ok) throw new Error(`sam_api error: ${httpResp.status}`);
+      const respData = await httpResp.json();
+      const response = respData.response || '';
 
       commitMessage.value = response.trim().replace(/^["']|["']$/g, '');
     }

@@ -616,7 +616,7 @@ Levels: FORBIDDEN < READ_ONLY < SUGGEST_ONLY < ASK_ONCE < NOTIFY < AUTONOMOUS
   // ============================================================================
 
   async function generateResponse(input: string, emotion: { valence: number; arousal: number }): Promise<string> {
-    // This would connect to the LLM (Ollama or Claude)
+    // This would connect to the LLM (MLX via sam_api or Claude)
     // For now, return a placeholder based on personality
 
     const warmth = config.value.personality.warmth

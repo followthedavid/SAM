@@ -68,37 +68,37 @@ async function loadProjects() {
   // Default projects based on PROJECT_REGISTRY.md
   projects.value = [
     // Tier 1: Core Infrastructure
-    { name: 'SAM Terminal', path: '~/ReverseLab/SAM/warp_tauri', status: 'Building', tier: 'Core', llm: 'Ollama' },
+    { name: 'SAM Terminal', path: '~/ReverseLab/SAM/warp_tauri', status: 'Building', tier: 'Core', llm: 'MLX' },
     { name: 'Orchestrator', path: 'SAM/scaffolding', status: 'Active', tier: 'Core', llm: 'Claude' },
     { name: 'SSOT System', path: '/Volumes/Plex/SSOT', status: 'Active', tier: 'Core', llm: 'All' },
 
     // Tier 2: AI/ML Training
-    { name: 'RVC Voice', path: '~/Projects/RVC', status: 'Ready', tier: 'AI/ML', llm: 'Ollama' },
-    { name: 'ComfyUI/LoRA', path: '~/ai-studio/ComfyUI', status: 'Setup', tier: 'AI/ML', llm: 'Ollama' },
-    { name: 'Motion Pipeline', path: '~/Projects/motion-pipeline', status: 'Idle', tier: 'AI/ML', llm: 'Ollama' },
+    { name: 'RVC Voice', path: '~/Projects/RVC', status: 'Ready', tier: 'AI/ML', llm: 'MLX' },
+    { name: 'ComfyUI/LoRA', path: '~/ai-studio/ComfyUI', status: 'Setup', tier: 'AI/ML', llm: 'MLX' },
+    { name: 'Motion Pipeline', path: '~/Projects/motion-pipeline', status: 'Idle', tier: 'AI/ML', llm: 'MLX' },
     { name: 'Topaz Parity', path: 'DevSymlinks/topaz_parity', status: 'Research', tier: 'AI/ML', llm: 'Claude' },
 
     // Tier 3: Media Services
-    { name: 'Stash Enhancement', path: 'Docker/stash', status: 'Active', tier: 'Media', llm: 'Ollama' },
-    { name: 'Plex Integration', path: 'Docker/plex', status: 'Active', tier: 'Media', llm: 'Ollama' },
-    { name: 'Navidrome', path: 'Docker/navidrome', status: 'Active', tier: 'Media', llm: 'Ollama' },
-    { name: 'Music Library', path: '/Volumes/Music', status: 'Migrating', tier: 'Media', llm: 'Ollama' },
+    { name: 'Stash Enhancement', path: 'Docker/stash', status: 'Active', tier: 'Media', llm: 'MLX' },
+    { name: 'Plex Integration', path: 'Docker/plex', status: 'Active', tier: 'Media', llm: 'MLX' },
+    { name: 'Navidrome', path: 'Docker/navidrome', status: 'Active', tier: 'Media', llm: 'MLX' },
+    { name: 'Music Library', path: '/Volumes/Music', status: 'Migrating', tier: 'Media', llm: 'MLX' },
 
     // Tier 4: Automation
     { name: 'Account Automation', path: 'DevSymlinks/account_automation', status: 'Active', tier: 'Automation', llm: 'Playwright' },
-    { name: 'Warp Auto', path: '~/ReverseLab/warp_auto', status: 'Idle', tier: 'Automation', llm: 'Ollama' },
+    { name: 'Warp Auto', path: '~/ReverseLab/warp_auto', status: 'Idle', tier: 'Automation', llm: 'MLX' },
 
     // Tier 5: Game/Character Dev
-    { name: 'Character Pipeline', path: 'SAM/character_pipeline', status: 'Ready', tier: 'Game Dev', llm: 'Ollama' },
-    { name: 'Unity Project', path: 'SAM/unity_project', status: 'Planned', tier: 'Game Dev', llm: 'Ollama' },
-    { name: 'Unreal Project', path: 'SAM/unreal_project', status: 'Planned', tier: 'Game Dev', llm: 'Ollama' },
-    { name: 'iOS Companion', path: 'SAM/ios-companion', status: 'Planned', tier: 'Game Dev', llm: 'Ollama' },
+    { name: 'Character Pipeline', path: 'SAM/character_pipeline', status: 'Ready', tier: 'Game Dev', llm: 'MLX' },
+    { name: 'Unity Project', path: 'SAM/unity_project', status: 'Planned', tier: 'Game Dev', llm: 'MLX' },
+    { name: 'Unreal Project', path: 'SAM/unreal_project', status: 'Planned', tier: 'Game Dev', llm: 'MLX' },
+    { name: 'iOS Companion', path: 'SAM/ios-companion', status: 'Planned', tier: 'Game Dev', llm: 'MLX' },
 
     // Tier 6: Reverse Engineering
     { name: 'ReverseLab', path: '~/ReverseLab', status: 'Active', tier: 'RE', llm: 'Claude' },
 
     // Tier 7: Data Acquisition
-    { name: 'Tumblr Likes', path: 'David External/ai-studio', status: 'Active', tier: 'Data', llm: 'Ollama' },
+    { name: 'Tumblr Likes', path: 'David External/ai-studio', status: 'Active', tier: 'Data', llm: 'MLX' },
 
     // Tier 8: Multi-Platform
     { name: 'StashGrid tvOS', path: 'SSOT/STASH_GRIDPLAYER_TVOS', status: 'Planned', tier: 'Platform', llm: 'Claude' },

@@ -274,20 +274,17 @@ export function useGitIntegration() {
     const prompt = applyTemplate(GIT_COMMIT_PROMPT, changesSummary);
 
     try {
-      const response = await fetch('http://localhost:11434/api/generate', {
+      // Query MLX via sam_api (Ollama decommissioned 2026-01-18)
+      const response = await fetch('http://localhost:8765/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'qwen2.5-coder:1.5b',
-          prompt,
-          stream: false,
-        }),
+        body: JSON.stringify({ query: prompt }),
       });
 
-      if (!response.ok) throw new Error('Ollama request failed');
+      if (!response.ok) throw new Error('MLX request failed');
 
       const data = await response.json();
-      return data.response.trim().replace(/^["']|["']$/g, '');
+      return (data.response || '').trim().replace(/^["']|["']$/g, '');
     } catch (error) {
       console.error('[GitIntegration] Commit message generation failed:', error);
       // Fallback to simple message
@@ -393,20 +390,17 @@ export function useGitIntegration() {
     const prompt = applyTemplate(GIT_BRANCH_PROMPT, taskDescription);
 
     try {
-      const response = await fetch('http://localhost:11434/api/generate', {
+      // Query MLX via sam_api (Ollama decommissioned 2026-01-18)
+      const response = await fetch('http://localhost:8765/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'qwen2.5-coder:1.5b',
-          prompt,
-          stream: false,
-        }),
+        body: JSON.stringify({ query: prompt }),
       });
 
-      if (!response.ok) throw new Error('Ollama request failed');
+      if (!response.ok) throw new Error('MLX request failed');
 
       const data = await response.json();
-      return data.response.trim().replace(/^["']|["']$/g, '').toLowerCase().replace(/\s+/g, '-');
+      return (data.response || '').trim().replace(/^["']|["']$/g, '').toLowerCase().replace(/\s+/g, '-');
     } catch (error) {
       console.error('[GitIntegration] Branch name suggestion failed:', error);
       return 'feature/new-feature';

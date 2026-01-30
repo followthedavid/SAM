@@ -75,7 +75,7 @@ export function useClaude() {
     message: string,
     conversationHistory: Array<{ role: string; content: string }> = [],
     localQueryFn: (prompt: string) => Promise<string>
-  ): Promise<{ response: string; usedOllama: boolean }> {
+  ): Promise<{ response: string; usedLocal: boolean }> {
     if (!anthropic) {
       throw new Error('Claude not initialized. Please set API key.');
     }
@@ -94,7 +94,7 @@ export function useClaude() {
         }
       ];
 
-      let usedOllama = false;
+      let usedLocal = false;
 
       const response = await anthropic.messages.create({
         model: 'claude-sonnet-4-5-20250929',
@@ -123,7 +123,7 @@ export function useClaude() {
 
       if (toolUse && toolUse.type === 'tool_use' && toolUse.name === 'query_local_mlx') {
         console.log('[Claude] Delegating to MLX:', toolUse.input);
-        usedOllama = true;
+        usedLocal = true;
 
         // Call MLX via sam_api
         const localResponse = await localQueryFn((toolUse.input as any).prompt);
@@ -154,7 +154,7 @@ export function useClaude() {
         const textContent = finalResponse.content.find(block => block.type === 'text');
         return {
           response: textContent?.type === 'text' ? textContent.text : localResponse,
-          usedOllama: true
+          usedLocal: true
         };
       }
 
@@ -162,7 +162,7 @@ export function useClaude() {
       const textContent = response.content.find(block => block.type === 'text');
       return {
         response: textContent?.type === 'text' ? textContent.text : '',
-        usedOllama: false
+        usedLocal: false
       };
     } catch (error) {
       console.error('[Claude] Orchestration query (with MLX tool) failed:', error);

@@ -1004,7 +1004,7 @@ User: "show system status"
         return data.response || '';
       };
 
-      const { response, usedOllama: usedLocal } = await claude.queryClaudeWithLocalTool(
+      const { response, usedLocal } = await claude.queryClaudeWithLocalTool(
         prompt,
         conversationHistory,
         localQueryFn

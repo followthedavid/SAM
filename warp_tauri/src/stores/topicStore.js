@@ -22,7 +22,7 @@ function getInitialTopics() {
       description: 'Main AI terminal application with orchestrator',
       nextSteps: ['Complete Tauri build', 'Test orchestrator routing', 'Verify bridge connections'],
       path: '~/ReverseLab/SAM/warp_tauri',
-      llm: 'Ollama + Claude',
+      llm: 'MLX + Claude',
       updated: new Date().toISOString()
     },
     {
@@ -66,7 +66,7 @@ function getInitialTopics() {
       description: 'Voice cloning with Retrieval-based Voice Conversion',
       nextSteps: ['Complete Dustin Steele model', 'Test inference quality', 'Add batch processing'],
       path: '~/Projects/RVC',
-      llm: 'Ollama',
+      llm: 'MLX',
       updated: new Date().toISOString()
     },
     {
@@ -80,7 +80,7 @@ function getInitialTopics() {
       description: 'Image generation with custom LoRA training',
       nextSteps: ['Download Tumblr training data', 'Set up kohya_ss', 'Train aesthetic LoRA'],
       path: '~/ai-studio/ComfyUI',
-      llm: 'Ollama',
+      llm: 'MLX',
       updated: new Date().toISOString()
     },
     {
@@ -94,7 +94,7 @@ function getInitialTopics() {
       description: 'Video frame interpolation and motion analysis',
       nextSteps: ['Integrate with Topaz', 'Add batch processing', 'Build queue system'],
       path: '~/Projects/motion-pipeline',
-      llm: 'Ollama',
+      llm: 'MLX',
       updated: new Date().toISOString()
     },
     {
@@ -124,7 +124,7 @@ function getInitialTopics() {
       description: 'Personal media manager with AI tagging',
       nextSteps: ['Enable addiction mode', 'Optimize previews', 'Add cache warming'],
       path: 'Docker/stash',
-      llm: 'Ollama',
+      llm: 'MLX',
       updated: new Date().toISOString()
     },
     {
@@ -138,7 +138,7 @@ function getInitialTopics() {
       description: '4TB lossless music library with beets management',
       nextSteps: ['Complete rsync transfer', 'Run beets import', 'Verify quality analysis'],
       path: '/Volumes/Music',
-      llm: 'Ollama',
+      llm: 'MLX',
       updated: new Date().toISOString()
     },
     {
@@ -152,7 +152,7 @@ function getInitialTopics() {
       description: 'Fetch animated album artwork from Apple Music',
       nextSteps: ['Resume fetcher', 'Add to Navidrome', 'Create fallback generator'],
       path: 'Apple-Music-Animated-Artwork-Fetcher',
-      llm: 'Ollama',
+      llm: 'MLX',
       updated: new Date().toISOString()
     },
 
@@ -212,7 +212,7 @@ function getInitialTopics() {
       description: 'AI character personality and dialogue system',
       nextSteps: ['Define character templates', 'Add memory system', 'Build relationship tracking'],
       path: 'SAM/character_pipeline',
-      llm: 'Ollama',
+      llm: 'MLX',
       updated: new Date().toISOString()
     },
     {
@@ -226,7 +226,7 @@ function getInitialTopics() {
       description: 'Unity game with AI companions',
       nextSteps: ['Set up project structure', 'Import character assets', 'Build AI integration'],
       path: 'SAM/unity_project',
-      llm: 'Ollama',
+      llm: 'MLX',
       updated: new Date().toISOString()
     },
     {
@@ -240,7 +240,7 @@ function getInitialTopics() {
       description: 'iOS app for AI companion interaction',
       nextSteps: ['Design SwiftUI interface', 'Add voice input', 'Connect to SAM backend'],
       path: 'SAM/ios-companion',
-      llm: 'Ollama',
+      llm: 'MLX',
       updated: new Date().toISOString()
     },
 
@@ -270,7 +270,7 @@ function getInitialTopics() {
       description: 'Secure remote access via Cloudflare tunnels',
       nextSteps: ['Add cache rules', 'Monitor performance', 'Set up alerts'],
       path: '~/.cloudflared',
-      llm: 'Ollama',
+      llm: 'MLX',
       updated: new Date().toISOString()
     },
 
@@ -302,7 +302,7 @@ function getInitialTopics() {
       description: 'Collecting training data for LoRA and voice models',
       nextSteps: ['Complete Tumblr download', 'Organize by category', 'Prepare for training'],
       path: '/Volumes/David External/ai-studio/training_data',
-      llm: 'Ollama',
+      llm: 'MLX',
       updated: new Date().toISOString()
     }
   ]

@@ -87,10 +87,15 @@ ${toCompress.map(m => `${m.role}: ${m.content.slice(0, 200)}`).join('\n')}
 Summary:`;
 
     try {
-      const newSummary = await invoke<string>('query_ollama', {
-        prompt: compressPrompt,
-        model: this.summarizeModel
+      // Query MLX via sam_api (Ollama decommissioned 2026-01-18)
+      const httpResp = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: compressPrompt }),
       });
+      if (!httpResp.ok) throw new Error(`sam_api error: ${httpResp.status}`);
+      const respData = await httpResp.json();
+      const newSummary = respData.response || '';
       this.state.summary = newSummary.trim();
     } catch (e) {
       // Fallback: just concatenate

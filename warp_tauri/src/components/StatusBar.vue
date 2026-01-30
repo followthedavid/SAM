@@ -87,36 +87,36 @@
         <span>{{ shortModelName }}</span>
       </div>
 
-      <!-- Ollama Connection (Clickable for controls) -->
+      <!-- MLX Connection (Clickable for controls) -->
       <div
         class="status-item status-connection"
-        :class="{ connected: ollamaConnected, loading: ollamaLoading }"
-        @click="toggleOllamaMenu"
+        :class="{ connected: mlxConnected, loading: mlxLoading }"
+        @click="toggleMLXMenu"
       >
-        <span class="connection-dot" :class="{ spinning: ollamaLoading }"></span>
-        <span>{{ ollamaLoading ? 'Loading...' : (ollamaConnected ? 'Ollama' : 'Offline') }}</span>
+        <span class="connection-dot" :class="{ spinning: mlxLoading }"></span>
+        <span>{{ mlxLoading ? 'Loading...' : (mlxConnected ? 'MLX' : 'Offline') }}</span>
 
-        <!-- Ollama Dropdown Menu -->
-        <div v-if="showOllamaMenu" class="ollama-menu" @click.stop>
-          <div class="ollama-menu-header">
-            <span class="menu-title">Ollama Controls</span>
+        <!-- MLX Dropdown Menu -->
+        <div v-if="showMLXMenu" class="mlx-menu" @click.stop>
+          <div class="mlx-menu-header">
+            <span class="menu-title">MLX Controls</span>
             <span class="model-count">{{ availableModels.length }} models</span>
           </div>
 
           <!-- Status -->
-          <div class="ollama-status-row">
-            <span :class="ollamaConnected ? 'status-ok' : 'status-error'">
-              {{ ollamaConnected ? '● Connected' : '○ Disconnected' }}
+          <div class="mlx-status-row">
+            <span :class="mlxConnected ? 'status-ok' : 'status-error'">
+              {{ mlxConnected ? '● Connected' : '○ Disconnected' }}
             </span>
           </div>
 
           <!-- Restart Button -->
-          <button class="ollama-menu-btn" @click="restartOllama" :disabled="ollamaLoading">
-            <span>🔄</span> Restart Ollama
+          <button class="mlx-menu-btn" @click="restartMLX" :disabled="mlxLoading">
+            <span>🔄</span> Restart MLX
           </button>
 
           <!-- Model Selection -->
-          <div class="ollama-models" v-if="availableModels.length > 0">
+          <div class="mlx-models" v-if="availableModels.length > 0">
             <div class="model-section-title">Models</div>
             <div
               v-for="model in availableModels"
@@ -164,10 +164,10 @@ const props = defineProps<{
   isPaused?: boolean
 }>()
 
-// Ollama connection state
-const ollamaConnected = ref(false)
-const ollamaLoading = ref(false)
-const showOllamaMenu = ref(false)
+// MLX connection state (Ollama decommissioned 2026-01-18)
+const mlxConnected = ref(false)
+const mlxLoading = ref(false)
+const showMLXMenu = ref(false)
 const availableModels = ref<string[]>([])
 const currentModel = ref<string | null>(null)
 
@@ -186,7 +186,7 @@ const emit = defineEmits<{
 function toggleCharacterMenu() {
   showCharacterMenu.value = !showCharacterMenu.value
   if (showCharacterMenu.value) {
-    showOllamaMenu.value = false
+    showMLXMenu.value = false
     loadRecentCharacters()
   }
 }
@@ -225,11 +225,11 @@ function selectCharacter(character: { id: string; name: string; archetype?: stri
 // Notification state
 const activeNotification = ref<{ message: string; type: 'info' | 'success' | 'warning' | 'error' } | null>(null)
 
-// Toggle Ollama menu
-function toggleOllamaMenu() {
-  showOllamaMenu.value = !showOllamaMenu.value
-  if (showOllamaMenu.value) {
-    fetchOllamaStatus()
+// Toggle MLX menu
+function toggleMLXMenu() {
+  showMLXMenu.value = !showMLXMenu.value
+  if (showMLXMenu.value) {
+    fetchMLXStatus()
   }
 }
 
@@ -237,44 +237,49 @@ function toggleOllamaMenu() {
 function handleClickOutside(e: MouseEvent) {
   const target = e.target as HTMLElement
   if (!target.closest('.status-connection')) {
-    showOllamaMenu.value = false
+    showMLXMenu.value = false
   }
   if (!target.closest('.status-characters')) {
     showCharacterMenu.value = false
   }
 }
 
-// Fetch Ollama status via Tauri command
-async function fetchOllamaStatus() {
+// Fetch MLX status via sam_api (Ollama decommissioned 2026-01-18)
+async function fetchMLXStatus() {
   try {
-    const status = await invoke<{ running: boolean; models: string[]; current_model: string | null }>('cmd_ollama_status')
-    ollamaConnected.value = status.running
-    availableModels.value = status.models
-    currentModel.value = status.current_model
+    const response = await fetch('http://localhost:8765/api/status')
+    if (response.ok) {
+      const status = await response.json()
+      mlxConnected.value = true
+      availableModels.value = status.models || []
+      currentModel.value = status.current_model || null
+    } else {
+      mlxConnected.value = false
+    }
   } catch (e) {
-    console.error('Failed to get Ollama status:', e)
-    ollamaConnected.value = false
+    console.error('Failed to get MLX status:', e)
+    mlxConnected.value = false
   }
 }
 
-// Restart Ollama
-async function restartOllama() {
-  ollamaLoading.value = true
-  showNotification('Restarting Ollama...', 'info')
+// Restart MLX sam_api
+async function restartMLX() {
+  mlxLoading.value = true
+  showNotification('Restarting MLX sam_api...', 'info')
   try {
-    const result = await invoke<string>('cmd_restart_ollama')
-    showNotification(result, 'success')
-    await fetchOllamaStatus()
+    const result = await invoke<string>('execute_shell', { command: 'launchctl kickstart -k gui/$(id -u)/com.sam.api' })
+    showNotification(result || 'MLX restarted', 'success')
+    await fetchMLXStatus()
   } catch (e) {
     showNotification(`Failed to restart: ${e}`, 'error')
   } finally {
-    ollamaLoading.value = false
+    mlxLoading.value = false
   }
 }
 
 // Warm a model
 async function warmModel(model: string) {
-  ollamaLoading.value = true
+  mlxLoading.value = true
   showNotification(`Warming ${model}...`, 'info')
   try {
     const result = await invoke<string>('cmd_warm_model', { model })
@@ -283,7 +288,7 @@ async function warmModel(model: string) {
   } catch (e) {
     showNotification(`Failed to warm: ${e}`, 'error')
   } finally {
-    ollamaLoading.value = false
+    mlxLoading.value = false
   }
 }
 
@@ -325,13 +330,13 @@ const shortModelName = computed(() => {
   return parts[0] || name
 })
 
-// Check Ollama connection
-async function checkOllamaConnection() {
+// Check MLX sam_api connection (Ollama decommissioned 2026-01-18)
+async function checkMLXConnection() {
   try {
-    const response = await fetch('http://localhost:11434/api/tags')
-    ollamaConnected.value = response.ok
+    const response = await fetch('http://localhost:8765/api/status')
+    mlxConnected.value = response.ok
   } catch {
-    ollamaConnected.value = false
+    mlxConnected.value = false
   }
 }
 
@@ -339,8 +344,8 @@ async function checkOllamaConnection() {
 let connectionCheckInterval: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
-  checkOllamaConnection()
-  connectionCheckInterval = setInterval(checkOllamaConnection, 10000) // Check every 10s
+  checkMLXConnection()
+  connectionCheckInterval = setInterval(checkMLXConnection, 10000) // Check every 10s
   document.addEventListener('click', handleClickOutside)
 })
 
@@ -517,7 +522,7 @@ defineExpose({ showNotification })
   background: var(--warp-bg-hover);
 }
 
-/* Ollama Menu */
+/* MLX Menu */
 .status-connection {
   position: relative;
   cursor: pointer;
@@ -536,7 +541,7 @@ defineExpose({ showNotification })
   to { transform: rotate(360deg); }
 }
 
-.ollama-menu {
+.mlx-menu {
   position: absolute;
   bottom: 100%;
   right: 0;
@@ -550,7 +555,7 @@ defineExpose({ showNotification })
   overflow: hidden;
 }
 
-.ollama-menu-header {
+.mlx-menu-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -569,7 +574,7 @@ defineExpose({ showNotification })
   color: var(--warp-text-tertiary);
 }
 
-.ollama-status-row {
+.mlx-status-row {
   padding: var(--warp-space-2) var(--warp-space-3);
   font-size: var(--warp-text-sm);
 }
@@ -582,7 +587,7 @@ defineExpose({ showNotification })
   color: var(--warp-error);
 }
 
-.ollama-menu-btn {
+.mlx-menu-btn {
   display: flex;
   align-items: center;
   gap: var(--warp-space-2);
@@ -596,16 +601,16 @@ defineExpose({ showNotification })
   transition: background var(--warp-transition-fast);
 }
 
-.ollama-menu-btn:hover:not(:disabled) {
+.mlx-menu-btn:hover:not(:disabled) {
   background: var(--warp-bg-hover);
 }
 
-.ollama-menu-btn:disabled {
+.mlx-menu-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.ollama-models {
+.mlx-models {
   border-top: 1px solid var(--warp-border-subtle);
   max-height: 200px;
   overflow-y: auto;

@@ -138,11 +138,11 @@ async function pollResources() {
   }
 }
 
-// Check Ollama connection
+// Check MLX sam_api connection (Ollama decommissioned 2026-01-18)
 async function checkConnection() {
   try {
     const result = await invoke<{ stdout: string; stderr: string; exit_code: number }>('execute_shell', {
-      command: 'curl -s http://localhost:11434/api/version',
+      command: 'curl -s http://localhost:8765/api/status',
       cwd: undefined
     })
     connectionStatus.value = result.exit_code === 0 ? 'connected' : 'disconnected'

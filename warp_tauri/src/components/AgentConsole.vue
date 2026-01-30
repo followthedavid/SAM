@@ -27,7 +27,7 @@
           <strong>HTTP:</strong>
           <span v-for="(b, i) in backends.http" :key="i" class="badge">
             Port {{ b.port }}
-            <span v-if="b.port === 11434" class="ollama-badge">Ollama</span>
+            <span v-if="b.port === 8765" class="mlx-badge">MLX</span>
             <span v-if="b.port === 9999" class="chatgpt-badge">ChatGPT</span>
           </span>
         </div>
@@ -189,7 +189,7 @@ const recentLogs = computed(() => bridge.logs.value.slice(-200).reverse());
 .backend-list { margin-top:8px; }
 .backend-group { margin-bottom:8px; }
 .badge { display:inline-block; background:#1e293b; padding:4px 8px; border-radius:4px; margin-right:6px; font-size:11px; }
-.ollama-badge { background:#10b981; color:#fff; padding:2px 6px; border-radius:3px; margin-left:4px; font-size:9px; font-weight:bold; }
+.mlx-badge { background:#10b981; color:#fff; padding:2px 6px; border-radius:3px; margin-left:4px; font-size:9px; font-weight:bold; }
 .chatgpt-badge { background:#ef4444; color:#fff; padding:2px 6px; border-radius:3px; margin-left:4px; font-size:9px; font-weight:bold; }
 .controls button { margin-right:6px; margin-bottom:6px; }
 </style>

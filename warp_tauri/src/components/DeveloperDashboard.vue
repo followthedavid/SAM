@@ -8,9 +8,9 @@
           <span class="status-dot"></span>
           {{ isActive ? 'Running' : 'Stopped' }}
         </div>
-        <div class="status-indicator ollama-status" :class="{ active: ollamaAvailable }">
+        <div class="status-indicator mlx-status" :class="{ active: mlxAvailable }">
           <span class="status-dot"></span>
-          Ollama {{ ollamaAvailable ? 'Running' : 'Offline' }}
+          MLX {{ mlxAvailable ? 'Running' : 'Offline' }}
         </div>
       </div>
       <div class="header-controls">
@@ -237,16 +237,16 @@ const newGoalDescription = ref('');
 const newGoalPriority = ref<'low' | 'medium' | 'high' | 'critical'>('medium');
 const logsContainer = ref<HTMLElement | null>(null);
 
-// Ollama connection status
-const ollamaAvailable = ref(false);
+// MLX connection status (Ollama decommissioned 2026-01-18)
+const mlxAvailable = ref(false);
 
-// Check if Ollama is running
-async function checkOllama() {
+// Check if MLX sam_api is running
+async function checkMLX() {
   try {
-    const response = await fetch('http://localhost:11434/api/tags');
-    ollamaAvailable.value = response.ok;
+    const response = await fetch('http://localhost:8765/api/status');
+    mlxAvailable.value = response.ok;
   } catch {
-    ollamaAvailable.value = false;
+    mlxAvailable.value = false;
   }
 }
 
@@ -371,12 +371,12 @@ let refreshInterval: NodeJS.Timeout;
 
 onMounted(() => {
   refreshData();
-  checkOllama();
+  checkMLX();
 
   // Refresh every 2 seconds
   refreshInterval = setInterval(() => {
     refreshData();
-    checkOllama();
+    checkMLX();
   }, 2000);
 
   addLog('Dashboard initialized', 'info');
@@ -443,15 +443,15 @@ onUnmounted(() => {
   animation: pulse 2s infinite;
 }
 
-.ollama-status.active .status-dot {
+.mlx-status.active .status-dot {
   background: #10b981;
 }
 
-.ollama-status:not(.active) {
+.mlx-status:not(.active) {
   color: #ef4444;
 }
 
-.ollama-status:not(.active) .status-dot {
+.mlx-status:not(.active) .status-dot {
   background: #ef4444;
 }
 

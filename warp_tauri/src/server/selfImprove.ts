@@ -177,7 +177,7 @@ const DEFAULT_CONFIG: ImprovementConfig = {
   maxContinuousRuntime: 8,  // 8 hours before mandatory pause
 
   aiModel: 'qwen2.5-coder:7b',
-  aiEndpoint: 'http://localhost:11434',
+  aiEndpoint: 'http://localhost:8765', // MLX via sam_api (Ollama decommissioned 2026-01-18)
 
   notifyOnSuccess: true,
   notifyOnFailure: true,

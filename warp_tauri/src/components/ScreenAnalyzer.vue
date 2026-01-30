@@ -120,8 +120,8 @@
         <div class="warning-icon">⚠️</div>
         <div class="warning-text">
           <strong>No vision model detected</strong>
-          <p>Install llava for full image analysis:</p>
-          <code>ollama pull llava</code>
+          <p>Vision model not available via MLX sam_api.</p>
+          <code><!-- Vision models served via sam_api --></code>
         </div>
       </div>
     </div>

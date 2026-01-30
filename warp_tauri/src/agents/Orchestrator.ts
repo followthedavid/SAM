@@ -202,10 +202,15 @@ Format as JSON array: ["step 1 description", "step 2 description", ...]
 Only output the JSON array, nothing else.`;
 
     try {
-      const response = await invoke<string>('query_ollama', {
-        prompt: planPrompt,
-        model: this.config.model
+      // Query MLX via sam_api (Ollama decommissioned 2026-01-18)
+      const httpResp = await fetch('http://localhost:8765/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: planPrompt }),
       });
+      if (!httpResp.ok) throw new Error(`sam_api error: ${httpResp.status}`);
+      const respData = await httpResp.json();
+      const response = respData.response || '';
 
       // Parse steps
       const stepsMatch = response.match(/\[[\s\S]*\]/);

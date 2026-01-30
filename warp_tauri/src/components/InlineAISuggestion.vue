@@ -70,13 +70,10 @@ async function generateSuggestion(input: string) {
   abortController = new AbortController()
 
   try {
-    // Use Ollama for suggestion
+    // Use MLX via sam_api for suggestion (Ollama decommissioned 2026-01-18)
     const result = await invoke<{ stdout: string; stderr: string; exit_code: number }>('execute_shell', {
-      command: `curl -s http://localhost:11434/api/generate -d '${JSON.stringify({
-        model: 'qwen2.5-coder:1.5b',
-        prompt: `Complete this shell command (respond with ONLY the completion, no explanation):\n${input}`,
-        stream: false,
-        options: { num_predict: 50, temperature: 0.3 }
+      command: `curl -s http://localhost:8765/api/query -H 'Content-Type: application/json' -d '${JSON.stringify({
+        query: `Complete this shell command (respond with ONLY the completion, no explanation):\n${input}`
       })}'`,
       cwd: undefined
     })

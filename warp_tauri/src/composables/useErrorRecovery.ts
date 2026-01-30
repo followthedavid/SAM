@@ -337,17 +337,14 @@ export function useErrorRecovery() {
     const prompt = applyTemplate(ERROR_RECOVERY_PROMPT, error.substring(0, 200));
 
     try {
-      const response = await fetch('http://localhost:11434/api/generate', {
+      // Query MLX via sam_api (Ollama decommissioned 2026-01-18)
+      const response = await fetch('http://localhost:8765/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'qwen2.5-coder:1.5b',
-          prompt,
-          stream: false,
-        }),
+        body: JSON.stringify({ query: prompt }),
       });
 
-      if (!response.ok) throw new Error('Ollama request failed');
+      if (!response.ok) throw new Error('MLX request failed');
 
       const data = await response.json();
       const parsed = extractJSON(data.response);

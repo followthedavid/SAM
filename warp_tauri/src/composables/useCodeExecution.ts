@@ -224,14 +224,11 @@ export function useCodeExecution() {
     const analysisPrompt = applyTemplate(TASK_ANALYSIS_PROMPT, message);
 
     try {
-      const response = await fetch('http://localhost:11434/api/generate', {
+      // Query MLX via sam_api (Ollama decommissioned 2026-01-18)
+      const response = await fetch('http://localhost:8765/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'qwen2.5-coder:1.5b',
-          prompt: analysisPrompt,
-          stream: false,
-        }),
+        body: JSON.stringify({ query: analysisPrompt }),
       });
 
       if (!response.ok) return null;
@@ -296,17 +293,14 @@ export function useCodeExecution() {
     const planPrompt = applyTemplate(promptTemplate, taskDescription);
 
     try {
-      const response = await fetch('http://localhost:11434/api/generate', {
+      // Query MLX via sam_api (Ollama decommissioned 2026-01-18)
+      const response = await fetch('http://localhost:8765/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'qwen2.5-coder:1.5b',
-          prompt: planPrompt,
-          stream: false,
-        }),
+        body: JSON.stringify({ query: planPrompt }),
       });
 
-      if (!response.ok) throw new Error('Ollama request failed');
+      if (!response.ok) throw new Error('MLX request failed');
 
       const data = await response.json();
       console.log('[CodeExecution] Raw LLM response:', data.response);

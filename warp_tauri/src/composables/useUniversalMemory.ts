@@ -7,7 +7,7 @@
  * - Cross-project intelligence ("you built this before in Project X")
  * - Learning from your coding style and preferences
  *
- * Uses Ollama's embedding model (nomic-embed-text) for semantic search.
+ * Uses MLX embedding model (via sam_api) for semantic search.
  */
 
 import { ref, computed, reactive } from 'vue'
@@ -158,7 +158,8 @@ function saveConfig(config: MemoryConfig): void {
 
 async function getEmbedding(text: string, model: string = 'nomic-embed-text'): Promise<number[] | null> {
   try {
-    const response = await fetch('http://localhost:11434/api/embeddings', {
+    // MLX embeddings via sam_api (Ollama decommissioned 2026-01-18)
+    const response = await fetch('http://localhost:8765/api/embeddings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model, prompt: text })

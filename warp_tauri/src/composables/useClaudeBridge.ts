@@ -10,7 +10,7 @@ import { invoke } from '@tauri-apps/api/tauri'
 
 const QUEUE_PATH = '~/.sam_chatgpt_queue.json'
 const RESPONSES_PATH = '~/.sam_chatgpt_responses.json'
-const OLLAMA_URL = 'http://localhost:11434'
+const MLX_URL = 'http://localhost:8765'
 
 export interface BridgeTask {
   id: string
@@ -54,16 +54,10 @@ export function useClaudeBridge() {
       // Warm each model with a minimal prompt
       for (const model of WARM_MODELS) {
         try {
-          await fetch(`${OLLAMA_URL}/api/generate`, {
+          await fetch(`${MLX_URL}/api/query`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              model,
-              prompt: 'hi',
-              stream: false,
-              options: { num_predict: 1 },
-              keep_alive: '30m'  // Keep in memory for 30 minutes
-            })
+            body: JSON.stringify({ query: 'hi' })
           })
           console.log(`[Bridge] ✓ ${model} warmed`)
         } catch (e) {
@@ -125,24 +119,18 @@ export function useClaudeBridge() {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 30000) // 30s timeout
 
-      const response = await fetch(`${OLLAMA_URL}/api/generate`, {
+      const response = await fetch(`${MLX_URL}/api/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          prompt,
-          stream: false,
-          options: { num_predict: 500 },
-          keep_alive: '30m'
-        }),
+        body: JSON.stringify({ query: prompt }),
         signal: controller.signal
       })
 
       clearTimeout(timeoutId)
 
       if (!response.ok) {
-        console.error(`[Bridge] Ollama error: ${response.status}`)
-        throw new Error('Ollama request failed')
+        console.error(`[Bridge] MLX error: ${response.status}`)
+        throw new Error('MLX request failed')
       }
 
       const data = await response.json()
@@ -160,16 +148,10 @@ export function useClaudeBridge() {
       if (!retried) {
         console.log(`[Bridge] Retrying after warming ${model}...`)
         try {
-          await fetch(`${OLLAMA_URL}/api/generate`, {
+          await fetch(`${MLX_URL}/api/query`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              model,
-              prompt: 'hi',
-              stream: false,
-              options: { num_predict: 1 },
-              keep_alive: '30m'
-            })
+            body: JSON.stringify({ query: 'hi' })
           })
           // Retry the original query
           return querySAM(prompt, model, true)

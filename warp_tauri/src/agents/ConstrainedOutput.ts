@@ -206,10 +206,15 @@ Respond with ONLY a valid JSON object:
 
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       try {
-        const response = await invoke<string>('query_ollama', {
-          prompt: currentPrompt,
-          model: this.model
+        // Query MLX via sam_api (Ollama decommissioned 2026-01-18)
+        const httpResp = await fetch('http://localhost:8765/api/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: currentPrompt }),
         });
+        if (!httpResp.ok) throw new Error(`sam_api error: ${httpResp.status}`);
+        const respData = await httpResp.json();
+        const response = respData.response || '';
 
         const result = this.parse(response);
 

@@ -240,7 +240,7 @@ ${recentLearnings}
 
 Generate a JSON array of steps. Each step:
 - title: Brief description
-- tool: [read_file, write_file, command, git, ollama, claude]
+- tool: [read_file, write_file, command, git, mlx, claude]
 - description: Detailed explanation
 - toolParams: { path?, command?, content? }
 - requiresApproval: boolean
@@ -249,7 +249,7 @@ Generate a JSON array of steps. Each step:
 Output ONLY valid JSON array.
 `;
 
-      // Call Claude or Ollama
+      // Call Claude or MLX
       const response = await this.claudeReasoning(prompt);
 
       // Parse response
@@ -471,40 +471,36 @@ Output JSON array:
    */
   private isLowRisk(step: PlanStep): boolean {
     return step.tool === 'read_file' ||
-           step.tool === 'ollama' ||
+           step.tool === 'mlx' ||
            step.tool === 'claude';
   }
 
   /**
-   * AI reasoning call - uses Ollama (local) instead of Claude
+   * AI reasoning call - uses MLX via sam_api (local) instead of Claude
    */
   private async claudeReasoning(prompt: string): Promise<string> {
-    console.log('[AI Developer] Ollama reasoning:', prompt.substring(0, 100));
+    console.log('[AI Developer] MLX reasoning:', prompt.substring(0, 100));
 
     try {
-      // Use Ollama locally instead of Claude API
-      const response = await fetch('http://localhost:11434/api/generate', {
+      // Use MLX via sam_api (Ollama decommissioned 2026-01-18)
+      const response = await fetch('http://localhost:8765/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'qwen2.5-coder:1.5b',
-          prompt: prompt,
-          stream: false
-        }),
+        body: JSON.stringify({ query: prompt }),
       });
 
       if (!response.ok) {
-        throw new Error(`Ollama HTTP error! status: ${response.status}`);
+        throw new Error(`MLX HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
       return data.response || '[]';
 
     } catch (error) {
-      console.error('[AI Developer] Ollama reasoning failed:', error);
+      console.error('[AI Developer] MLX reasoning failed:', error);
       appendPerpetualLog({
         type: 'error',
-        content: `Ollama reasoning failed: ${String(error)}. Is Ollama running?`,
+        content: `MLX reasoning failed: ${String(error)}. Is sam_api running?`,
         status: 'failed',
       });
       return '[]'; // Fallback on error

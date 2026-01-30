@@ -1,6 +1,6 @@
 /**
  * Codebase Embeddings System
- * Semantic search using local embeddings via Ollama's nomic-embed-text model.
+ * Semantic search using local embeddings via MLX (sam_api).
  * Indexes code files and enables natural language queries.
  */
 
@@ -196,7 +196,7 @@ export function useCodebaseEmbeddings() {
   }));
 
   /**
-   * Get embedding from Ollama
+   * Get embedding from MLX via sam_api
    */
   async function getEmbedding(text: string): Promise<number[]> {
     if (!invoke) {

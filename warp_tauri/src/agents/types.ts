@@ -4,7 +4,7 @@
 
 export type StepStatus = 'pending' | 'awaitingApproval' | 'executing' | 'completed' | 'rolledBack';
 export type PlanStatus = 'pending' | 'inProgress' | 'completed' | 'rolledBack';
-export type ToolType = 'ollama' | 'claude' | 'command' | 'read_file' | 'write_file' | 'git';
+export type ToolType = 'mlx' | 'claude' | 'command' | 'read_file' | 'write_file' | 'git';
 
 export interface PlanStep {
   id: string;

@@ -361,11 +361,15 @@ async function sendQuery() {
   scrollToBottom()
 
   try {
-    // Use Ollama for local AI
-    const aiResponse = await invoke<string>('query_ollama', {
-      prompt: buildPrompt(entry.context, query),
-      model: 'qwen2.5-coder:1.5b',
+    // Use MLX via sam_api (Ollama decommissioned 2026-01-18)
+    const httpResp = await fetch('http://localhost:8765/api/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: buildPrompt(entry.context, query) }),
     })
+    if (!httpResp.ok) throw new Error(`sam_api error: ${httpResp.status}`)
+    const respData = await httpResp.json()
+    const aiResponse = respData.response || ''
 
     entry.response = aiResponse
     entry.isLoading = false
@@ -460,10 +464,14 @@ async function generateSuggestions() {
 
   try {
     const prompt = buildSuggestionPrompt(props.lastCommand)
-    const response = await invoke<string>('query_ollama', {
-      prompt,
-      model: 'qwen2.5-coder:1.5b',
+    const httpResp2 = await fetch('http://localhost:8765/api/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: prompt }),
     })
+    if (!httpResp2.ok) throw new Error(`sam_api error: ${httpResp2.status}`)
+    const respData2 = await httpResp2.json()
+    const response = respData2.response || ''
 
     // Parse suggestions from response
     const newSuggestions = parseSuggestions(response)
