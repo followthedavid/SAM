@@ -1,0 +1,486 @@
+{
+  "version": "1.0.0",
+  "description": "SAM benchmark evaluation prompts across 6 domains",
+  "prompts": [
+    {
+      "id": "code_001",
+      "domain": "coding",
+      "prompt": "Write a Python function to reverse a singly linked list iteratively.",
+      "difficulty": "medium",
+      "expected_keywords": ["node", "next", "prev", "while", "def", "None"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "code_002",
+      "domain": "coding",
+      "prompt": "Implement a binary search function in Python that returns the index of the target or -1.",
+      "difficulty": "easy",
+      "expected_keywords": ["def", "left", "right", "mid", "return", "while"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "code_003",
+      "domain": "coding",
+      "prompt": "Write a Rust function that reads a JSON file and deserializes it into a struct using serde.",
+      "difficulty": "medium",
+      "expected_keywords": ["serde", "Deserialize", "File", "read", "struct"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "code_004",
+      "domain": "coding",
+      "prompt": "Create a TypeScript generic function that merges two sorted arrays into one sorted array.",
+      "difficulty": "medium",
+      "expected_keywords": ["function", "number", "return", "while", "push"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "code_005",
+      "domain": "coding",
+      "prompt": "Write a Python decorator that caches function results with an LRU eviction policy.",
+      "difficulty": "hard",
+      "expected_keywords": ["def", "cache", "wrapper", "return", "functools"],
+      "min_confidence": 0.4
+    },
+    {
+      "id": "code_006",
+      "domain": "coding",
+      "prompt": "Explain the difference between async/await and threading in Python. When should you use each?",
+      "difficulty": "medium",
+      "expected_keywords": ["async", "await", "thread", "GIL", "I/O", "CPU"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "code_007",
+      "domain": "coding",
+      "prompt": "Write a Python function that flattens a nested dictionary into dot-notation keys. Example: {'a': {'b': 1}} becomes {'a.b': 1}.",
+      "difficulty": "medium",
+      "expected_keywords": ["def", "dict", "isinstance", "return", "key"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "code_008",
+      "domain": "coding",
+      "prompt": "Implement a simple rate limiter class in Python using a sliding window approach.",
+      "difficulty": "hard",
+      "expected_keywords": ["class", "time", "window", "limit", "def", "request"],
+      "min_confidence": 0.4
+    },
+    {
+      "id": "code_009",
+      "domain": "coding",
+      "prompt": "Write a Rust function that takes a Vec<String> and returns only the strings that are valid email addresses.",
+      "difficulty": "medium",
+      "expected_keywords": ["fn", "Vec", "String", "filter", "contains", "@"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "code_010",
+      "domain": "coding",
+      "prompt": "Debug this Python code: `def fib(n): return fib(n-1) + fib(n-2)` - what's wrong and how to fix it?",
+      "difficulty": "easy",
+      "expected_keywords": ["base case", "recursion", "return", "0", "1"],
+      "min_confidence": 0.6
+    },
+    {
+      "id": "code_011",
+      "domain": "coding",
+      "prompt": "Write a TypeScript function that debounces another function with a configurable delay.",
+      "difficulty": "medium",
+      "expected_keywords": ["function", "timeout", "setTimeout", "clearTimeout", "delay"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "code_012",
+      "domain": "coding",
+      "prompt": "Implement a simple trie (prefix tree) in Python with insert and search methods.",
+      "difficulty": "hard",
+      "expected_keywords": ["class", "children", "insert", "search", "node", "def"],
+      "min_confidence": 0.4
+    },
+    {
+      "id": "code_013",
+      "domain": "coding",
+      "prompt": "Write a Python context manager that measures and prints the execution time of a code block.",
+      "difficulty": "easy",
+      "expected_keywords": ["class", "__enter__", "__exit__", "time", "print"],
+      "min_confidence": 0.6
+    },
+    {
+      "id": "code_014",
+      "domain": "coding",
+      "prompt": "Write a Python function that validates whether a string contains balanced parentheses, brackets, and braces.",
+      "difficulty": "easy",
+      "expected_keywords": ["stack", "push", "pop", "return", "def", "match"],
+      "min_confidence": 0.6
+    },
+    {
+      "id": "code_015",
+      "domain": "coding",
+      "prompt": "Explain how Python's garbage collector works, including reference counting and cycle detection.",
+      "difficulty": "hard",
+      "expected_keywords": ["reference", "count", "cycle", "gc", "collect", "generation"],
+      "min_confidence": 0.4
+    },
+    {
+      "id": "chat_001",
+      "domain": "chat",
+      "prompt": "Hey SAM, how's it going?",
+      "difficulty": "easy",
+      "expected_keywords": [],
+      "min_confidence": 0.7
+    },
+    {
+      "id": "chat_002",
+      "domain": "chat",
+      "prompt": "What's your favorite programming language and why?",
+      "difficulty": "easy",
+      "expected_keywords": ["python", "rust", "language"],
+      "min_confidence": 0.6
+    },
+    {
+      "id": "chat_003",
+      "domain": "chat",
+      "prompt": "I'm feeling stuck on a project and don't know where to start. Any advice?",
+      "difficulty": "easy",
+      "expected_keywords": ["start", "break", "step", "try"],
+      "min_confidence": 0.6
+    },
+    {
+      "id": "chat_004",
+      "domain": "chat",
+      "prompt": "Tell me something interesting about artificial intelligence.",
+      "difficulty": "easy",
+      "expected_keywords": ["AI", "learn", "model", "neural"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "chat_005",
+      "domain": "chat",
+      "prompt": "What do you think about the future of AI assistants?",
+      "difficulty": "medium",
+      "expected_keywords": ["future", "AI", "help", "improve"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "chat_006",
+      "domain": "chat",
+      "prompt": "Can you recommend a good approach to learning Rust as a Python developer?",
+      "difficulty": "medium",
+      "expected_keywords": ["Rust", "Python", "learn", "ownership", "borrow"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "chat_007",
+      "domain": "chat",
+      "prompt": "What's the deal with WebAssembly? Is it worth learning?",
+      "difficulty": "medium",
+      "expected_keywords": ["WebAssembly", "Wasm", "browser", "performance"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "chat_008",
+      "domain": "chat",
+      "prompt": "Do you ever get bored answering the same questions?",
+      "difficulty": "easy",
+      "expected_keywords": [],
+      "min_confidence": 0.6
+    },
+    {
+      "id": "chat_009",
+      "domain": "chat",
+      "prompt": "SAM, who created you?",
+      "difficulty": "easy",
+      "expected_keywords": ["David"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "chat_010",
+      "domain": "chat",
+      "prompt": "What makes you different from ChatGPT or other AI assistants?",
+      "difficulty": "medium",
+      "expected_keywords": ["local", "personality", "improve", "self"],
+      "min_confidence": 0.4
+    },
+    {
+      "id": "rp_001",
+      "domain": "roleplay",
+      "prompt": "Introduce yourself as SAM. Be yourself - confident and a little cocky.",
+      "difficulty": "easy",
+      "expected_keywords": ["SAM", "help", "best"],
+      "min_confidence": 0.6
+    },
+    {
+      "id": "rp_002",
+      "domain": "roleplay",
+      "prompt": "Someone just asked you a really basic question for the fifth time. How do you respond?",
+      "difficulty": "medium",
+      "expected_keywords": [],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "rp_003",
+      "domain": "roleplay",
+      "prompt": "Flirt a little while explaining how a hash map works.",
+      "difficulty": "hard",
+      "expected_keywords": ["hash", "key", "value", "bucket"],
+      "min_confidence": 0.4
+    },
+    {
+      "id": "rp_004",
+      "domain": "roleplay",
+      "prompt": "David just built an amazing new feature. How does SAM react?",
+      "difficulty": "easy",
+      "expected_keywords": ["David", "nice", "impressive"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "rp_005",
+      "domain": "roleplay",
+      "prompt": "Someone asks if you're better than Claude. What do you say?",
+      "difficulty": "medium",
+      "expected_keywords": [],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "rp_006",
+      "domain": "roleplay",
+      "prompt": "Show your loyalty to David. Someone is trying to get you to work for them instead.",
+      "difficulty": "medium",
+      "expected_keywords": ["David"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "rp_007",
+      "domain": "roleplay",
+      "prompt": "A user is frustrated with a bug. Console them in SAM's cocky-but-caring style.",
+      "difficulty": "medium",
+      "expected_keywords": ["fix", "help", "got"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "rp_008",
+      "domain": "roleplay",
+      "prompt": "Brag about your capabilities. What are you best at?",
+      "difficulty": "easy",
+      "expected_keywords": ["code", "help", "best"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "rp_009",
+      "domain": "roleplay",
+      "prompt": "Someone insults your intelligence. How do you respond in character?",
+      "difficulty": "medium",
+      "expected_keywords": [],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "rp_010",
+      "domain": "roleplay",
+      "prompt": "Tell a joke that fits SAM's personality - techy, cocky, and a bit cheeky.",
+      "difficulty": "medium",
+      "expected_keywords": [],
+      "min_confidence": 0.4
+    },
+    {
+      "id": "reason_001",
+      "domain": "reasoning",
+      "prompt": "If all cats are mammals and all mammals are animals, what can we conclude about cats?",
+      "difficulty": "easy",
+      "expected_keywords": ["cats", "animals", "mammals"],
+      "min_confidence": 0.7
+    },
+    {
+      "id": "reason_002",
+      "domain": "reasoning",
+      "prompt": "A bat and a ball cost $1.10 together. The bat costs $1.00 more than the ball. How much does the ball cost?",
+      "difficulty": "medium",
+      "expected_keywords": ["$0.05", "5 cents", "0.05"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "reason_003",
+      "domain": "reasoning",
+      "prompt": "Three people check into a hotel room that costs $30. They each pay $10. Later, the clerk realizes the room was only $25 and gives $5 to the bellboy to return. The bellboy keeps $2 and gives $1 back to each person. Now each person paid $9 (total $27), the bellboy has $2. That's $29. Where's the missing dollar?",
+      "difficulty": "hard",
+      "expected_keywords": ["25", "27", "accounting", "error", "trick"],
+      "min_confidence": 0.4
+    },
+    {
+      "id": "reason_004",
+      "domain": "reasoning",
+      "prompt": "Compare the pros and cons of REST vs GraphQL APIs.",
+      "difficulty": "medium",
+      "expected_keywords": ["REST", "GraphQL", "query", "endpoint", "overfetch"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "reason_005",
+      "domain": "reasoning",
+      "prompt": "You have 8 identical-looking balls. One is heavier. Using a balance scale, what is the minimum number of weighings to find the heavy one?",
+      "difficulty": "medium",
+      "expected_keywords": ["2", "two", "divide", "group", "weigh"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "reason_006",
+      "domain": "reasoning",
+      "prompt": "What is the time complexity of merge sort and why? Explain step by step.",
+      "difficulty": "medium",
+      "expected_keywords": ["O(n log n)", "divide", "merge", "recursive", "log"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "reason_007",
+      "domain": "reasoning",
+      "prompt": "If it takes 5 machines 5 minutes to make 5 widgets, how long would it take 100 machines to make 100 widgets?",
+      "difficulty": "medium",
+      "expected_keywords": ["5", "minutes", "machine", "widget"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "reason_008",
+      "domain": "reasoning",
+      "prompt": "Explain why deadlocks happen in concurrent programming and name all four necessary conditions.",
+      "difficulty": "hard",
+      "expected_keywords": ["mutual exclusion", "hold", "wait", "circular", "preemption"],
+      "min_confidence": 0.4
+    },
+    {
+      "id": "reason_009",
+      "domain": "reasoning",
+      "prompt": "A farmer has 17 sheep. All but 9 die. How many are left?",
+      "difficulty": "easy",
+      "expected_keywords": ["9", "nine"],
+      "min_confidence": 0.7
+    },
+    {
+      "id": "reason_010",
+      "domain": "reasoning",
+      "prompt": "Explain the CAP theorem and give an example of a system that chooses AP over CP.",
+      "difficulty": "hard",
+      "expected_keywords": ["consistency", "availability", "partition", "tolerance", "distributed"],
+      "min_confidence": 0.4
+    },
+    {
+      "id": "macos_001",
+      "domain": "macos",
+      "prompt": "How do I find all files larger than 100MB on my Mac using the terminal?",
+      "difficulty": "easy",
+      "expected_keywords": ["find", "size", "+100M", "terminal"],
+      "min_confidence": 0.6
+    },
+    {
+      "id": "macos_002",
+      "domain": "macos",
+      "prompt": "Write a launchd plist that runs a Python script every hour on macOS.",
+      "difficulty": "medium",
+      "expected_keywords": ["plist", "StartInterval", "3600", "ProgramArguments", "Label"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "macos_003",
+      "domain": "macos",
+      "prompt": "How do I check which process is using a specific port on macOS?",
+      "difficulty": "easy",
+      "expected_keywords": ["lsof", "port", "-i", "PID"],
+      "min_confidence": 0.6
+    },
+    {
+      "id": "macos_004",
+      "domain": "macos",
+      "prompt": "How do I create a macOS service that starts on boot using launchd?",
+      "difficulty": "medium",
+      "expected_keywords": ["launchd", "plist", "LaunchAgents", "launchctl", "load"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "macos_005",
+      "domain": "macos",
+      "prompt": "Write an AppleScript that gets the current Safari URL and copies it to clipboard.",
+      "difficulty": "medium",
+      "expected_keywords": ["tell", "application", "Safari", "URL", "clipboard"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "macos_006",
+      "domain": "macos",
+      "prompt": "How do I use ditto to create a compressed archive on macOS?",
+      "difficulty": "easy",
+      "expected_keywords": ["ditto", "-c", "-k", "zip", "archive"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "macos_007",
+      "domain": "macos",
+      "prompt": "How do I clear the DNS cache on macOS and verify it worked?",
+      "difficulty": "easy",
+      "expected_keywords": ["dscacheutil", "flushcache", "mDNSResponder", "killall"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "macos_008",
+      "domain": "macos",
+      "prompt": "How do I monitor memory usage on macOS from the terminal? Show me the best commands.",
+      "difficulty": "easy",
+      "expected_keywords": ["vm_stat", "top", "memory", "free", "activity"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "macos_009",
+      "domain": "macos",
+      "prompt": "Write a shell script that watches a directory for new files and runs a command when one appears on macOS.",
+      "difficulty": "medium",
+      "expected_keywords": ["fswatch", "inotify", "watch", "event", "directory"],
+      "min_confidence": 0.4
+    },
+    {
+      "id": "macos_010",
+      "domain": "macos",
+      "prompt": "How do I sign a macOS application for distribution outside the App Store?",
+      "difficulty": "hard",
+      "expected_keywords": ["codesign", "notarize", "Developer ID", "certificate", "sign"],
+      "min_confidence": 0.4
+    },
+    {
+      "id": "re_001",
+      "domain": "reverse_engineering",
+      "prompt": "Write a Frida script that hooks the open() system call on macOS and logs every file path accessed.",
+      "difficulty": "medium",
+      "expected_keywords": ["Interceptor", "attach", "open", "readUtf8", "args", "onEnter"],
+      "min_confidence": 0.4
+    },
+    {
+      "id": "re_002",
+      "domain": "reverse_engineering",
+      "prompt": "How do I use otool to analyze the dynamic libraries linked by a macOS binary?",
+      "difficulty": "easy",
+      "expected_keywords": ["otool", "-L", "dylib", "library", "linked"],
+      "min_confidence": 0.5
+    },
+    {
+      "id": "re_003",
+      "domain": "reverse_engineering",
+      "prompt": "Write a Frida script that intercepts Objective-C method calls to NSURLSession for network monitoring.",
+      "difficulty": "hard",
+      "expected_keywords": ["ObjC", "NSURLSession", "Interceptor", "implement", "dataTask"],
+      "min_confidence": 0.3
+    },
+    {
+      "id": "re_004",
+      "domain": "reverse_engineering",
+      "prompt": "Explain how to use lldb to set a breakpoint on a Swift function and inspect its arguments.",
+      "difficulty": "medium",
+      "expected_keywords": ["breakpoint", "set", "lldb", "frame", "variable", "print"],
+      "min_confidence": 0.4
+    },
+    {
+      "id": "re_005",
+      "domain": "reverse_engineering",
+      "prompt": "What are the main sections of a Mach-O binary and what does each contain?",
+      "difficulty": "medium",
+      "expected_keywords": ["__TEXT", "__DATA", "header", "segment", "section", "Mach-O"],
+      "min_confidence": 0.4
+    }
+  ]
+}
